@@ -1,0 +1,1944 @@
+[
+  {
+    "updatedAt": "2026-02-01T12:10:40.476Z",
+    "createdAt": "2026-01-23T20:26:24.550Z",
+    "id": "41S2uTmO2Rx74j-fvQVkZ",
+    "name": "Chron: Takealot transactions to Zoho",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 2,
+                "triggerAtMinute": 30
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          0,
+          -832
+        ],
+        "id": "ab2acfe8-e1c6-4a68-99a6-c8284073a3b9",
+        "name": "Everyday at 02:30am"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "25158d8c-4392-4883-ac7a-88dd3dec25c8",
+                "name": "start_date",
+                "value": "={{ $now.minus(7, 'days').format('yyyy-MM-dd') }}",
+                "type": "string"
+              },
+              {
+                "id": "89ddfd7f-1a6a-4387-b78f-36041f2158ae",
+                "name": "end_date",
+                "value": "={{ $now.minus(1, 'days').format('yyyy-MM-dd') }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          224,
+          -832
+        ],
+        "id": "aae42eb5-aa62-4720-a38e-d2d1191e65e8",
+        "name": "Date Range"
+      },
+      {
+        "parameters": {
+          "url": "https://seller-api.takealot.com/v2/seller/transactions",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "date_from",
+                "value": "={{ $('Date Range').first().json.start_date }}"
+              },
+              {
+                "name": "date_to",
+                "value": "={{ $('Date Range').first().json.end_date }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ $('Get Seller').first().json.takealot_api_key }}"
+              }
+            ]
+          },
+          "options": {
+            "pagination": {
+              "pagination": {
+                "parameters": {
+                  "parameters": [
+                    {
+                      "name": "page_number",
+                      "value": "={{ $pageCount + 1 }}"
+                    },
+                    {
+                      "name": "page_size",
+                      "value": "200"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ $response.body.transactions.length < 200 }}",
+                "limitPagesFetched": true,
+                "requestInterval": 50
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1792,
+          -832
+        ],
+        "id": "cb8a7fe3-cfbf-47ef-8db7-cce91d2c78d6",
+        "name": "Get Takealot Transactions"
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "transactions",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          2016,
+          -832
+        ],
+        "id": "2e8b79ab-9ddd-46a2-a6db-322712f7cdd5",
+        "name": "Split Out"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://accounts.zoho.com/oauth/v2/token",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "refresh_token",
+                "value": "={{ $('Get Seller').item.json.refresh_token }}"
+              },
+              {
+                "name": "client_id",
+                "value": "={{ $json.client_id }}"
+              },
+              {
+                "name": "client_secret",
+                "value": "={{ $json.client_secret }}"
+              },
+              {
+                "name": "redirect_uri",
+                "value": "={{ $json.redirect_uri }}"
+              },
+              {
+                "name": "grant_type",
+                "value": "refresh_token"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          672,
+          -832
+        ],
+        "id": "0ff65303-6024-4037-a3ff-1887ee95d33e",
+        "name": "Get Zoho Access Token"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "f6490ed6-624d-4436-a72d-7b6ab279d31a",
+                "leftValue": "={{ $json.journals.length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          4256,
+          -832
+        ],
+        "id": "88bf0fcf-f730-432d-8707-8e23015ca14f",
+        "name": "Proceed?"
+      },
+      {
+        "parameters": {
+          "jsCode": "const accounts = {};\n\nfor (const item of $('Get Account IDs').all()) {\n  accounts[item.json.account_name] = item.json.zoho_account_id;\n}\n\nreturn [{ json: { accounts } }];\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1120,
+          -832
+        ],
+        "id": "1bba3fcf-8b4e-4b42-8c55-da942c28b3e0",
+        "name": "Map accounts"
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "ITDIyMMUhZATV1du",
+            "mode": "list",
+            "cachedResultName": "account_mapping",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/ITDIyMMUhZATV1du"
+          },
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "seller_id",
+                "keyValue": "={{ $('Get Seller').item.json.SellerID }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          896,
+          -832
+        ],
+        "id": "8fa46c9d-427a-420e-8fe4-9567e7da5372",
+        "name": "Get Account IDs"
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "P2idoCVDSQnCITNY",
+            "mode": "list",
+            "cachedResultName": "zoho_info",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+          },
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "SellerID",
+                "keyValue": "11932"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          448,
+          -832
+        ],
+        "id": "44fbb118-5ae8-4cf7-b8a8-b503449652bd",
+        "name": "Get Seller"
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "b86k9zQxJGJna3OK",
+            "mode": "list",
+            "cachedResultName": "takealot_posting_rules",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/b86k9zQxJGJna3OK"
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          1344,
+          -832
+        ],
+        "id": "436a9807-edc2-4b0f-908e-25824b4c9baa",
+        "name": "Get Posting Rules"
+      },
+      {
+        "parameters": {
+          "url": "https://www.zohoapis.com/books/v3/journals",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller').first().json.OrganizationID }}"
+              },
+              {
+                "name": "reference_number",
+                "value": "=TAL-TXN-{{ $json.transaction_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 50
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "off"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          4032,
+          -832
+        ],
+        "id": "7b5f8388-d027-4554-9d2f-f08e39c9abb9",
+        "name": "Idempotency Check"
+      },
+      {
+        "parameters": {
+          "jsCode": "const postingRules = {};\n\nfor (const item of $('Get Posting Rules').all()) {\n  const rule = item.json;\n  const typeId = String(rule.transaction_type_id);\n\n  postingRules[typeId] = {\n    journal_template: rule.journal_template,\n    expense_role: rule.account_name || null,\n    vat_direction: rule.vat_direction || \"none\",\n    sign: rule.sign || \"normal\"\n  };\n}\n\nreturn [\n  {\n    json: {\n      posting_rules: postingRules\n    }\n  }\n];\n\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1568,
+          -832
+        ],
+        "id": "78fc55dd-6553-4f34-bb52-b6426fdbf298",
+        "name": "Posting Rules"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "64618db8-1b36-4fb6-a4d5-5b91829f3725",
+                "leftValue": "={{ $json.transaction_type.description }}",
+                "rightValue": "Disbursement",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              },
+              {
+                "id": "adfc611d-1d07-4d89-8547-26dc14ea941c",
+                "leftValue": "={{ $json.inc_vat }}",
+                "rightValue": "0.00",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3360,
+          -816
+        ],
+        "id": "cbfc9882-7024-438b-894c-30813a10723f",
+        "name": "Is Disbursement of zero?"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Shared static data (loaded once upstream)\nconst accounts      = $node[\"Map accounts\"].json.accounts;\nconst seller      = $node[\"Get Seller\"].json;\n// requires 'suspense' role to exist\nconst postingRules  = $node[\"Posting Rules\"].json.posting_rules;\n\n// Optional: collect unmapped transactions for alerting\nconst quarantined = [];\nconst out = [];\n\n// Helpers\nfunction requireAccount(role, fallback = 'suspense') {\n  return accounts?.[role] ?? accounts?.[fallback];\n}\n\nfunction flipSide(side) {\n  return side === 'debit' ? 'credit' : 'debit';\n}\n\n// Ensure all amounts are positive and, if sign === -1, flip debit/credit\nfunction applySign(lineItems, sign) {\n  return lineItems.map(li => {\n    const amount = Math.abs(Number(li.amount ?? 0));\n    return {\n      ...li,\n      debit_or_credit: sign === -1 ? flipSide(li.debit_or_credit) : li.debit_or_credit,\n      amount: Number(amount.toFixed(2)),\n    };\n  });\n}\n\n// Iterate (you can replace the next line with: for (const item of items) { ... } )\nfor (const item of $('Is Disbursement of zero?').all()) {\n  const txn = item.json;\n\n  // Defensive checks\n  if (!txn || !txn.transaction_type) {\n    quarantined.push({ reason: \"missing_transaction_type\", txn });\n    continue;\n  }\n\n  const typeId = String(txn.transaction_type.transaction_type_id);\n  const rule = postingRules[typeId];  // may be undefined if mapping missing\n\n  // Resolve rule properties with sensible defaults\n  const template     = rule?.journal_template ?? \"unknown\";\n  const sign         = rule?.sign === \"reverse\" ? -1 : 1;\n  const expenseRole  = rule?.expense_role ?? null;\n  const vatDirection = rule?.vat_direction ?? \"none\";\n\n  // Normalise amounts (positive base numbers)\n  const gross = Math.abs(Number(txn.inc_vat ?? 0));\n  const vat   = Math.abs(Number(txn.vat ?? 0));\n  const net   = Math.abs(Number(gross - vat));\n\n  // Build line items WITHOUT applying sign (keep amounts positive)\n  let line_items = [];\n  \n  if (template === \"revenue\") {\n    // Clearing DR, Revenue CR\n    line_items = [\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('clearing'), \n        description: txn.reference, \n        debit_or_credit: \"debit\",  \n        amount: gross \n      },\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('revenue'), \n        description: txn.reference, \n        debit_or_credit: \"credit\", \n        amount: net   \n      },\n    ];\n\n  } else if (template === \"fee\") {\n    const expenseAccount = expenseRole ? requireAccount(expenseRole) : requireAccount('suspense');\n    line_items = [\n      { \n        customer_id: seller.CustomerID, \n        account_id: expenseAccount, \n        description: txn.reference,            \n        debit_or_credit: \"debit\",  \n        amount: net       \n      },\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('vat'), \n        description: txn.reference,     \n        debit_or_credit: \"debit\",  \n        amount: vat       \n      },\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('clearing'), \n        description: txn.reference,\n        debit_or_credit: \"credit\", \n        amount: net + vat \n      },\n    ];\n\n  } else if (template === \"disbursement\") {\n    line_items = [\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('bank'), \n        description: txn.reference,   \n        debit_or_credit: \"debit\",  \n        amount: gross \n      },\n      { \n        customer_id: seller.CustomerID,\n        account_id: requireAccount('clearing'),\n        description: txn.reference,\n        debit_or_credit: \"credit\", \n        amount: gross \n      },\n    ];\n\n  } else if (template === \"loan\") {\n    // Use chosen direction here. This version: Loan DR, Clearing CR (loan asset increase)\n    // If you intend loan liability increase instead, swap sides or set sign='reverse' in Posting Rules.\n    line_items = [\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('loan'), \n        description: txn.reference,    \n        debit_or_credit: \"debit\",  \n        amount: gross \n      },\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('clearing'), \n        description: txn.reference,\n        debit_or_credit: \"credit\", \n        amount: gross \n      },\n    ];\n\n  } else {\n    // Catch-all / unknown template → route to suspense\n    line_items = [\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('suspense'), \n        description: txn.reference, \n        debit_or_credit: \"debit\",  \n        amount: gross \n      },\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('clearing') ?? requireAccount('suspense'),\n        description: txn.reference, \n        debit_or_credit: \"credit\", \n        amount: gross \n      },\n    ];\n\n    quarantined.push({\n      reason: \"unmapped_type_id\",\n      typeId,\n      transaction_log_id: txn.transaction_log_id,\n      description: txn.transaction_type?.description,\n    });\n  }\n\n  // Apply sign by flipping debit/credit (never sending negative numbers)\n  line_items = applySign(line_items, sign);\n\n  // Optional: balance check (helps catch mapping mistakes)\n  const totalDebit  = line_items.filter(l => l.debit_or_credit === 'debit')\n                                .reduce((s, l) => s + Number(l.amount || 0), 0);\n  const totalCredit = line_items.filter(l => l.debit_or_credit === 'credit')\n                                .reduce((s, l) => s + Number(l.amount || 0), 0);\n  if (Math.abs(totalDebit - totalCredit) > 0.01) {\n    quarantined.push({\n      reason: \"unbalanced_journal\",\n      transaction_log_id: txn.transaction_log_id,\n      template,\n      totalDebit,\n      totalCredit,\n      line_items\n    });\n    // choose: continue; // to skip posting this one\n    throw new Error(\"Unbalanced journal ...\");\n  }\n  \n  out.push({\n    json: {\n      // Downstream / idempotency fields\n      transaction_id: txn.transaction_log_id,\n      reference_number: `TAL-TXN-${txn.transaction_log_id}`,\n      journal_template: template,\n      type_id: typeId,\n      gross,\n      net,\n      vat,\n      sign,\n      vat_direction: vatDirection,\n      line_items,\n      unmapped: !rule,\n    }\n  });\n}\n\n// If you prefer to fail when any quarantined items exist, uncomment:\n// if (quarantined.length) {\n//   throw new Error(\"Quarantined items:\\n\" + JSON.stringify(quarantined.slice(0, 5), null, 2));\n// }\n\nreturn out;"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3584,
+          -832
+        ],
+        "id": "8446d996-2e9b-4339-a614-3633ac86d9b7",
+        "name": "Unified Code"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "ff032293-5e76-4797-872c-de82f4a10c51",
+                "leftValue": "={{ $json.unmapped }}",
+                "rightValue": false,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3808,
+          -832
+        ],
+        "id": "4e8b8e4b-c902-4bbd-9897-03a439e5d4ed",
+        "name": "Unmapped Transaction IDs"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://www.zohoapis.com/books/v3/journals",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller').first().json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "journal_date",
+                "value": "={{$('Split Out').item.json.date_created}}"
+              },
+              {
+                "name": "reference_number",
+                "value": "={{`TAL-TXN-${$('Split Out').item.json.transaction_log_id}`}}"
+              },
+              {
+                "name": "notes",
+                "value": "=TAKEALOT_ORDER_REF: {{ $('Add Regex Fields').item.json.reference }}\nTAKEALOT_ORDER_LINE: {{ $('Add Regex Fields').item.json.order_line_id }}\nTAKEALOT_ORDER_ID: {{ $('Add Regex Fields').item.json.order_id }}\nTXN_TYPE: {{ $('Add Regex Fields').item.json.transaction_type.description }}\n"
+              },
+              {
+                "name": "line_items",
+                "value": "={{$('Unified Code').item.json.line_items.toJsonString()}}"
+              }
+            ]
+          },
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 200
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "off"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          4480,
+          -832
+        ],
+        "id": "75c4a768-a4a8-47e8-9088-d15ec02c29c1",
+        "name": "Post Journals"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "6c27589a-96b6-47c0-90cc-fdc19d5ca992",
+                "name": "order_id",
+                "value": "={{ $json.reference.match(/Order:\\s*(\\d+)/)[1] }}",
+                "type": "string"
+              },
+              {
+                "id": "101729cc-6721-4c0b-88ff-2a2b09a650c7",
+                "name": "order_line_id",
+                "value": "={{ $json.reference.match(/^(\\d+)/)[1] }}",
+                "type": "string"
+              },
+              {
+                "id": "ec230c7b-1a75-4ed5-8112-d315d618cf7a",
+                "name": "description",
+                "value": "={{ $json.description.replace(/[<>\"'&]/g, '') }}",
+                "type": "string"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3136,
+          -832
+        ],
+        "id": "d0710c51-6fc4-4e25-8897-259cd2bbf766",
+        "name": "Add Regex Fields"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "f630ff86-39c9-4011-9b69-caac5b6f26de",
+                "leftValue": "={{ $json.transaction_type.transaction_type_id }}",
+                "rightValue": 7,
+                "operator": {
+                  "type": "number",
+                  "operation": "equals"
+                }
+              },
+              {
+                "id": "19ab66e5-a6db-4d9e-a446-d005ced28fb0",
+                "leftValue": "={{ $json.transaction_type.transaction_type_id }}",
+                "rightValue": 5,
+                "operator": {
+                  "type": "number",
+                  "operation": "equals"
+                }
+              },
+              {
+                "id": "4d836b57-2fba-4bed-9c53-ff8fc553a83b",
+                "leftValue": "={{ $json.transaction_type.transaction_type_id }}",
+                "rightValue": 24,
+                "operator": {
+                  "type": "number",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "or"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2240,
+          -832
+        ],
+        "id": "63e11b24-c2cc-41b1-ace1-905f965e1a33",
+        "name": "Is a return?"
+      },
+      {
+        "parameters": {
+          "url": "https://www.zohoapis.com/books/v3/invoices",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller').first().json.OrganizationID }}"
+              },
+              {
+                "name": "search_text",
+                "value": "=(Order: {{ $json.reference.match(/Order:\\s*(\\d+)/)[1] }})"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 50
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "off"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2496,
+          -1040
+        ],
+        "id": "0f36257f-fc84-44b7-b43f-118bffa91378",
+        "name": "Get Invoice Reference"
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "={{ $('Is a return?').item.json }}",
+          "includeOtherFields": true,
+          "include": "selected",
+          "includeFields": "invoices[0].reference_number",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2704,
+          -1040
+        ],
+        "id": "692433f8-73e5-4964-9f4d-6d9a9a5d5b06",
+        "name": "Add Invoice Reference"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "d1ad8351-1cc9-4097-8820-7b4f3bb31076",
+                "name": "reference",
+                "value": "={{ $json.reference_number }}",
+                "type": "string"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2928,
+          -1040
+        ],
+        "id": "13b5aec0-7d91-48b1-9484-f8845c8645ba",
+        "name": "Rename Field"
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=41S2uTmO2Rx74j-fvQVkZ) to commit change ",
+          "height": 140,
+          "width": 440,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          16,
+          -1040
+        ],
+        "typeVersion": 1,
+        "id": "5aa55339-19d4-4d35-ade4-4db839d2ae0c",
+        "name": "Sticky Note"
+      }
+    ],
+    "connections": {
+      "Everyday at 02:30am": {
+        "main": [
+          [
+            {
+              "node": "Date Range",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Date Range": {
+        "main": [
+          [
+            {
+              "node": "Get Seller",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Takealot Transactions": {
+        "main": [
+          [
+            {
+              "node": "Split Out",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Zoho Access Token": {
+        "main": [
+          [
+            {
+              "node": "Get Account IDs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Out": {
+        "main": [
+          [
+            {
+              "node": "Is a return?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Proceed?": {
+        "main": [
+          [
+            {
+              "node": "Post Journals",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Map accounts": {
+        "main": [
+          [
+            {
+              "node": "Get Posting Rules",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Account IDs": {
+        "main": [
+          [
+            {
+              "node": "Map accounts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Seller": {
+        "main": [
+          [
+            {
+              "node": "Get Zoho Access Token",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Posting Rules": {
+        "main": [
+          [
+            {
+              "node": "Posting Rules",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Idempotency Check": {
+        "main": [
+          [
+            {
+              "node": "Proceed?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Posting Rules": {
+        "main": [
+          [
+            {
+              "node": "Get Takealot Transactions",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Disbursement of zero?": {
+        "main": [
+          [],
+          [
+            {
+              "node": "Unified Code",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Unified Code": {
+        "main": [
+          [
+            {
+              "node": "Unmapped Transaction IDs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Unmapped Transaction IDs": {
+        "main": [
+          [
+            {
+              "node": "Idempotency Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Add Regex Fields": {
+        "main": [
+          [
+            {
+              "node": "Is Disbursement of zero?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is a return?": {
+        "main": [
+          [
+            {
+              "node": "Get Invoice Reference",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Add Regex Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Invoice Reference": {
+        "main": [
+          [
+            {
+              "node": "Add Invoice Reference",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Add Invoice Reference": {
+        "main": [
+          [
+            {
+              "node": "Rename Field",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Rename Field": {
+        "main": [
+          [
+            {
+              "node": "Add Regex Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": null,
+    "pinData": {},
+    "versionId": "7cc9fa9f-ef28-4034-b88d-8caad8361531",
+    "activeVersionId": "7cc9fa9f-ef28-4034-b88d-8caad8361531",
+    "versionCounter": 82,
+    "triggerCount": 1,
+    "shared": [
+      {
+        "updatedAt": "2026-01-23T20:26:24.556Z",
+        "createdAt": "2026-01-23T20:26:24.556Z",
+        "role": "workflow:owner",
+        "workflowId": "41S2uTmO2Rx74j-fvQVkZ",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-01T07:29:09.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-01-31",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [],
+    "activeVersion": {
+      "updatedAt": "2026-02-01T12:10:51.000Z",
+      "createdAt": "2026-02-01T12:10:40.480Z",
+      "versionId": "7cc9fa9f-ef28-4034-b88d-8caad8361531",
+      "workflowId": "41S2uTmO2Rx74j-fvQVkZ",
+      "nodes": [
+        {
+          "parameters": {
+            "rule": {
+              "interval": [
+                {
+                  "triggerAtHour": 2,
+                  "triggerAtMinute": 30
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "typeVersion": 1.3,
+          "position": [
+            0,
+            -832
+          ],
+          "id": "ab2acfe8-e1c6-4a68-99a6-c8284073a3b9",
+          "name": "Everyday at 02:30am"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "25158d8c-4392-4883-ac7a-88dd3dec25c8",
+                  "name": "start_date",
+                  "value": "={{ $now.minus(7, 'days').format('yyyy-MM-dd') }}",
+                  "type": "string"
+                },
+                {
+                  "id": "89ddfd7f-1a6a-4387-b78f-36041f2158ae",
+                  "name": "end_date",
+                  "value": "={{ $now.minus(1, 'days').format('yyyy-MM-dd') }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            224,
+            -832
+          ],
+          "id": "aae42eb5-aa62-4720-a38e-d2d1191e65e8",
+          "name": "Date Range"
+        },
+        {
+          "parameters": {
+            "url": "https://seller-api.takealot.com/v2/seller/transactions",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "date_from",
+                  "value": "={{ $('Date Range').first().json.start_date }}"
+                },
+                {
+                  "name": "date_to",
+                  "value": "={{ $('Date Range').first().json.end_date }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "={{ $('Get Seller').first().json.takealot_api_key }}"
+                }
+              ]
+            },
+            "options": {
+              "pagination": {
+                "pagination": {
+                  "parameters": {
+                    "parameters": [
+                      {
+                        "name": "page_number",
+                        "value": "={{ $pageCount + 1 }}"
+                      },
+                      {
+                        "name": "page_size",
+                        "value": "200"
+                      }
+                    ]
+                  },
+                  "paginationCompleteWhen": "other",
+                  "completeExpression": "={{ $response.body.transactions.length < 200 }}",
+                  "limitPagesFetched": true,
+                  "requestInterval": 50
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1792,
+            -832
+          ],
+          "id": "cb8a7fe3-cfbf-47ef-8db7-cce91d2c78d6",
+          "name": "Get Takealot Transactions"
+        },
+        {
+          "parameters": {
+            "fieldToSplitOut": "transactions",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.splitOut",
+          "typeVersion": 1,
+          "position": [
+            2016,
+            -832
+          ],
+          "id": "2e8b79ab-9ddd-46a2-a6db-322712f7cdd5",
+          "name": "Split Out"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://accounts.zoho.com/oauth/v2/token",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "refresh_token",
+                  "value": "={{ $('Get Seller').item.json.refresh_token }}"
+                },
+                {
+                  "name": "client_id",
+                  "value": "={{ $json.client_id }}"
+                },
+                {
+                  "name": "client_secret",
+                  "value": "={{ $json.client_secret }}"
+                },
+                {
+                  "name": "redirect_uri",
+                  "value": "={{ $json.redirect_uri }}"
+                },
+                {
+                  "name": "grant_type",
+                  "value": "refresh_token"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            672,
+            -832
+          ],
+          "id": "0ff65303-6024-4037-a3ff-1887ee95d33e",
+          "name": "Get Zoho Access Token"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "f6490ed6-624d-4436-a72d-7b6ab279d31a",
+                  "leftValue": "={{ $json.journals.length }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            4256,
+            -832
+          ],
+          "id": "88bf0fcf-f730-432d-8707-8e23015ca14f",
+          "name": "Proceed?"
+        },
+        {
+          "parameters": {
+            "jsCode": "const accounts = {};\n\nfor (const item of $('Get Account IDs').all()) {\n  accounts[item.json.account_name] = item.json.zoho_account_id;\n}\n\nreturn [{ json: { accounts } }];\n"
+          },
+          "type": "n8n-nodes-base.code",
+          "typeVersion": 2,
+          "position": [
+            1120,
+            -832
+          ],
+          "id": "1bba3fcf-8b4e-4b42-8c55-da942c28b3e0",
+          "name": "Map accounts"
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "ITDIyMMUhZATV1du",
+              "mode": "list",
+              "cachedResultName": "account_mapping",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/ITDIyMMUhZATV1du"
+            },
+            "filters": {
+              "conditions": [
+                {
+                  "keyName": "seller_id",
+                  "keyValue": "={{ $('Get Seller').item.json.SellerID }}"
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            896,
+            -832
+          ],
+          "id": "8fa46c9d-427a-420e-8fe4-9567e7da5372",
+          "name": "Get Account IDs"
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "P2idoCVDSQnCITNY",
+              "mode": "list",
+              "cachedResultName": "zoho_info",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+            },
+            "filters": {
+              "conditions": [
+                {
+                  "keyName": "SellerID",
+                  "keyValue": "11932"
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            448,
+            -832
+          ],
+          "id": "44fbb118-5ae8-4cf7-b8a8-b503449652bd",
+          "name": "Get Seller"
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "b86k9zQxJGJna3OK",
+              "mode": "list",
+              "cachedResultName": "takealot_posting_rules",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/b86k9zQxJGJna3OK"
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            1344,
+            -832
+          ],
+          "id": "436a9807-edc2-4b0f-908e-25824b4c9baa",
+          "name": "Get Posting Rules"
+        },
+        {
+          "parameters": {
+            "url": "https://www.zohoapis.com/books/v3/journals",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller').first().json.OrganizationID }}"
+                },
+                {
+                  "name": "reference_number",
+                  "value": "=TAL-TXN-{{ $json.transaction_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {
+              "batching": {
+                "batch": {
+                  "batchSize": 1,
+                  "batchInterval": 50
+                }
+              },
+              "pagination": {
+                "pagination": {
+                  "paginationMode": "off"
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            4032,
+            -832
+          ],
+          "id": "7b5f8388-d027-4554-9d2f-f08e39c9abb9",
+          "name": "Idempotency Check"
+        },
+        {
+          "parameters": {
+            "jsCode": "const postingRules = {};\n\nfor (const item of $('Get Posting Rules').all()) {\n  const rule = item.json;\n  const typeId = String(rule.transaction_type_id);\n\n  postingRules[typeId] = {\n    journal_template: rule.journal_template,\n    expense_role: rule.account_name || null,\n    vat_direction: rule.vat_direction || \"none\",\n    sign: rule.sign || \"normal\"\n  };\n}\n\nreturn [\n  {\n    json: {\n      posting_rules: postingRules\n    }\n  }\n];\n\n"
+          },
+          "type": "n8n-nodes-base.code",
+          "typeVersion": 2,
+          "position": [
+            1568,
+            -832
+          ],
+          "id": "78fc55dd-6553-4f34-bb52-b6426fdbf298",
+          "name": "Posting Rules"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "64618db8-1b36-4fb6-a4d5-5b91829f3725",
+                  "leftValue": "={{ $json.transaction_type.description }}",
+                  "rightValue": "Disbursement",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                },
+                {
+                  "id": "adfc611d-1d07-4d89-8547-26dc14ea941c",
+                  "leftValue": "={{ $json.inc_vat }}",
+                  "rightValue": "0.00",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            3360,
+            -816
+          ],
+          "id": "cbfc9882-7024-438b-894c-30813a10723f",
+          "name": "Is Disbursement of zero?"
+        },
+        {
+          "parameters": {
+            "jsCode": "// Shared static data (loaded once upstream)\nconst accounts      = $node[\"Map accounts\"].json.accounts;\nconst seller      = $node[\"Get Seller\"].json;\n// requires 'suspense' role to exist\nconst postingRules  = $node[\"Posting Rules\"].json.posting_rules;\n\n// Optional: collect unmapped transactions for alerting\nconst quarantined = [];\nconst out = [];\n\n// Helpers\nfunction requireAccount(role, fallback = 'suspense') {\n  return accounts?.[role] ?? accounts?.[fallback];\n}\n\nfunction flipSide(side) {\n  return side === 'debit' ? 'credit' : 'debit';\n}\n\n// Ensure all amounts are positive and, if sign === -1, flip debit/credit\nfunction applySign(lineItems, sign) {\n  return lineItems.map(li => {\n    const amount = Math.abs(Number(li.amount ?? 0));\n    return {\n      ...li,\n      debit_or_credit: sign === -1 ? flipSide(li.debit_or_credit) : li.debit_or_credit,\n      amount: Number(amount.toFixed(2)),\n    };\n  });\n}\n\n// Iterate (you can replace the next line with: for (const item of items) { ... } )\nfor (const item of $('Is Disbursement of zero?').all()) {\n  const txn = item.json;\n\n  // Defensive checks\n  if (!txn || !txn.transaction_type) {\n    quarantined.push({ reason: \"missing_transaction_type\", txn });\n    continue;\n  }\n\n  const typeId = String(txn.transaction_type.transaction_type_id);\n  const rule = postingRules[typeId];  // may be undefined if mapping missing\n\n  // Resolve rule properties with sensible defaults\n  const template     = rule?.journal_template ?? \"unknown\";\n  const sign         = rule?.sign === \"reverse\" ? -1 : 1;\n  const expenseRole  = rule?.expense_role ?? null;\n  const vatDirection = rule?.vat_direction ?? \"none\";\n\n  // Normalise amounts (positive base numbers)\n  const gross = Math.abs(Number(txn.inc_vat ?? 0));\n  const vat   = Math.abs(Number(txn.vat ?? 0));\n  const net   = Math.abs(Number(gross - vat));\n\n  // Build line items WITHOUT applying sign (keep amounts positive)\n  let line_items = [];\n  \n  if (template === \"revenue\") {\n    // Clearing DR, Revenue CR\n    line_items = [\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('clearing'), \n        description: txn.reference, \n        debit_or_credit: \"debit\",  \n        amount: gross \n      },\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('revenue'), \n        description: txn.reference, \n        debit_or_credit: \"credit\", \n        amount: net   \n      },\n    ];\n\n  } else if (template === \"fee\") {\n    const expenseAccount = expenseRole ? requireAccount(expenseRole) : requireAccount('suspense');\n    line_items = [\n      { \n        customer_id: seller.CustomerID, \n        account_id: expenseAccount, \n        description: txn.reference,            \n        debit_or_credit: \"debit\",  \n        amount: net       \n      },\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('vat'), \n        description: txn.reference,     \n        debit_or_credit: \"debit\",  \n        amount: vat       \n      },\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('clearing'), \n        description: txn.reference,\n        debit_or_credit: \"credit\", \n        amount: net + vat \n      },\n    ];\n\n  } else if (template === \"disbursement\") {\n    line_items = [\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('bank'), \n        description: txn.reference,   \n        debit_or_credit: \"debit\",  \n        amount: gross \n      },\n      { \n        customer_id: seller.CustomerID,\n        account_id: requireAccount('clearing'),\n        description: txn.reference,\n        debit_or_credit: \"credit\", \n        amount: gross \n      },\n    ];\n\n  } else if (template === \"loan\") {\n    // Use chosen direction here. This version: Loan DR, Clearing CR (loan asset increase)\n    // If you intend loan liability increase instead, swap sides or set sign='reverse' in Posting Rules.\n    line_items = [\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('loan'), \n        description: txn.reference,    \n        debit_or_credit: \"debit\",  \n        amount: gross \n      },\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('clearing'), \n        description: txn.reference,\n        debit_or_credit: \"credit\", \n        amount: gross \n      },\n    ];\n\n  } else {\n    // Catch-all / unknown template → route to suspense\n    line_items = [\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('suspense'), \n        description: txn.reference, \n        debit_or_credit: \"debit\",  \n        amount: gross \n      },\n      { \n        customer_id: seller.CustomerID, \n        account_id: requireAccount('clearing') ?? requireAccount('suspense'),\n        description: txn.reference, \n        debit_or_credit: \"credit\", \n        amount: gross \n      },\n    ];\n\n    quarantined.push({\n      reason: \"unmapped_type_id\",\n      typeId,\n      transaction_log_id: txn.transaction_log_id,\n      description: txn.transaction_type?.description,\n    });\n  }\n\n  // Apply sign by flipping debit/credit (never sending negative numbers)\n  line_items = applySign(line_items, sign);\n\n  // Optional: balance check (helps catch mapping mistakes)\n  const totalDebit  = line_items.filter(l => l.debit_or_credit === 'debit')\n                                .reduce((s, l) => s + Number(l.amount || 0), 0);\n  const totalCredit = line_items.filter(l => l.debit_or_credit === 'credit')\n                                .reduce((s, l) => s + Number(l.amount || 0), 0);\n  if (Math.abs(totalDebit - totalCredit) > 0.01) {\n    quarantined.push({\n      reason: \"unbalanced_journal\",\n      transaction_log_id: txn.transaction_log_id,\n      template,\n      totalDebit,\n      totalCredit,\n      line_items\n    });\n    // choose: continue; // to skip posting this one\n    throw new Error(\"Unbalanced journal ...\");\n  }\n  \n  out.push({\n    json: {\n      // Downstream / idempotency fields\n      transaction_id: txn.transaction_log_id,\n      reference_number: `TAL-TXN-${txn.transaction_log_id}`,\n      journal_template: template,\n      type_id: typeId,\n      gross,\n      net,\n      vat,\n      sign,\n      vat_direction: vatDirection,\n      line_items,\n      unmapped: !rule,\n    }\n  });\n}\n\n// If you prefer to fail when any quarantined items exist, uncomment:\n// if (quarantined.length) {\n//   throw new Error(\"Quarantined items:\\n\" + JSON.stringify(quarantined.slice(0, 5), null, 2));\n// }\n\nreturn out;"
+          },
+          "type": "n8n-nodes-base.code",
+          "typeVersion": 2,
+          "position": [
+            3584,
+            -832
+          ],
+          "id": "8446d996-2e9b-4339-a614-3633ac86d9b7",
+          "name": "Unified Code"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "ff032293-5e76-4797-872c-de82f4a10c51",
+                  "leftValue": "={{ $json.unmapped }}",
+                  "rightValue": false,
+                  "operator": {
+                    "type": "boolean",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            3808,
+            -832
+          ],
+          "id": "4e8b8e4b-c902-4bbd-9897-03a439e5d4ed",
+          "name": "Unmapped Transaction IDs"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://www.zohoapis.com/books/v3/journals",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller').first().json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "bodyParameters": {
+              "parameters": [
+                {
+                  "name": "journal_date",
+                  "value": "={{$('Split Out').item.json.date_created}}"
+                },
+                {
+                  "name": "reference_number",
+                  "value": "={{`TAL-TXN-${$('Split Out').item.json.transaction_log_id}`}}"
+                },
+                {
+                  "name": "notes",
+                  "value": "=TAKEALOT_ORDER_REF: {{ $('Add Regex Fields').item.json.reference }}\nTAKEALOT_ORDER_LINE: {{ $('Add Regex Fields').item.json.order_line_id }}\nTAKEALOT_ORDER_ID: {{ $('Add Regex Fields').item.json.order_id }}\nTXN_TYPE: {{ $('Add Regex Fields').item.json.transaction_type.description }}\n"
+                },
+                {
+                  "name": "line_items",
+                  "value": "={{$('Unified Code').item.json.line_items.toJsonString()}}"
+                }
+              ]
+            },
+            "options": {
+              "batching": {
+                "batch": {
+                  "batchSize": 1,
+                  "batchInterval": 200
+                }
+              },
+              "pagination": {
+                "pagination": {
+                  "paginationMode": "off"
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            4480,
+            -832
+          ],
+          "id": "75c4a768-a4a8-47e8-9088-d15ec02c29c1",
+          "name": "Post Journals"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "6c27589a-96b6-47c0-90cc-fdc19d5ca992",
+                  "name": "order_id",
+                  "value": "={{ $json.reference.match(/Order:\\s*(\\d+)/)[1] }}",
+                  "type": "string"
+                },
+                {
+                  "id": "101729cc-6721-4c0b-88ff-2a2b09a650c7",
+                  "name": "order_line_id",
+                  "value": "={{ $json.reference.match(/^(\\d+)/)[1] }}",
+                  "type": "string"
+                },
+                {
+                  "id": "ec230c7b-1a75-4ed5-8112-d315d618cf7a",
+                  "name": "description",
+                  "value": "={{ $json.description.replace(/[<>\"'&]/g, '') }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "includeOtherFields": true,
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            3136,
+            -832
+          ],
+          "id": "d0710c51-6fc4-4e25-8897-259cd2bbf766",
+          "name": "Add Regex Fields"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "f630ff86-39c9-4011-9b69-caac5b6f26de",
+                  "leftValue": "={{ $json.transaction_type.transaction_type_id }}",
+                  "rightValue": 7,
+                  "operator": {
+                    "type": "number",
+                    "operation": "equals"
+                  }
+                },
+                {
+                  "id": "19ab66e5-a6db-4d9e-a446-d005ced28fb0",
+                  "leftValue": "={{ $json.transaction_type.transaction_type_id }}",
+                  "rightValue": 5,
+                  "operator": {
+                    "type": "number",
+                    "operation": "equals"
+                  }
+                },
+                {
+                  "id": "4d836b57-2fba-4bed-9c53-ff8fc553a83b",
+                  "leftValue": "={{ $json.transaction_type.transaction_type_id }}",
+                  "rightValue": 24,
+                  "operator": {
+                    "type": "number",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "or"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            2240,
+            -832
+          ],
+          "id": "63e11b24-c2cc-41b1-ace1-905f965e1a33",
+          "name": "Is a return?"
+        },
+        {
+          "parameters": {
+            "url": "https://www.zohoapis.com/books/v3/invoices",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller').first().json.OrganizationID }}"
+                },
+                {
+                  "name": "search_text",
+                  "value": "=(Order: {{ $json.reference.match(/Order:\\s*(\\d+)/)[1] }})"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {
+              "batching": {
+                "batch": {
+                  "batchSize": 1,
+                  "batchInterval": 50
+                }
+              },
+              "pagination": {
+                "pagination": {
+                  "paginationMode": "off"
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2496,
+            -1040
+          ],
+          "id": "0f36257f-fc84-44b7-b43f-118bffa91378",
+          "name": "Get Invoice Reference"
+        },
+        {
+          "parameters": {
+            "mode": "raw",
+            "jsonOutput": "={{ $('Is a return?').item.json }}",
+            "includeOtherFields": true,
+            "include": "selected",
+            "includeFields": "invoices[0].reference_number",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            2704,
+            -1040
+          ],
+          "id": "692433f8-73e5-4964-9f4d-6d9a9a5d5b06",
+          "name": "Add Invoice Reference"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "d1ad8351-1cc9-4097-8820-7b4f3bb31076",
+                  "name": "reference",
+                  "value": "={{ $json.reference_number }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "includeOtherFields": true,
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            2928,
+            -1040
+          ],
+          "id": "13b5aec0-7d91-48b1-9484-f8845c8645ba",
+          "name": "Rename Field"
+        },
+        {
+          "parameters": {
+            "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=41S2uTmO2Rx74j-fvQVkZ) to commit change ",
+            "height": 140,
+            "width": 440,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            16,
+            -1040
+          ],
+          "typeVersion": 1,
+          "id": "5aa55339-19d4-4d35-ade4-4db839d2ae0c",
+          "name": "Sticky Note"
+        }
+      ],
+      "connections": {
+        "Everyday at 02:30am": {
+          "main": [
+            [
+              {
+                "node": "Date Range",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Date Range": {
+          "main": [
+            [
+              {
+                "node": "Get Seller",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Takealot Transactions": {
+          "main": [
+            [
+              {
+                "node": "Split Out",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Zoho Access Token": {
+          "main": [
+            [
+              {
+                "node": "Get Account IDs",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Split Out": {
+          "main": [
+            [
+              {
+                "node": "Is a return?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Proceed?": {
+          "main": [
+            [
+              {
+                "node": "Post Journals",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            []
+          ]
+        },
+        "Map accounts": {
+          "main": [
+            [
+              {
+                "node": "Get Posting Rules",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Account IDs": {
+          "main": [
+            [
+              {
+                "node": "Map accounts",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Seller": {
+          "main": [
+            [
+              {
+                "node": "Get Zoho Access Token",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Posting Rules": {
+          "main": [
+            [
+              {
+                "node": "Posting Rules",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Idempotency Check": {
+          "main": [
+            [
+              {
+                "node": "Proceed?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Posting Rules": {
+          "main": [
+            [
+              {
+                "node": "Get Takealot Transactions",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Is Disbursement of zero?": {
+          "main": [
+            [],
+            [
+              {
+                "node": "Unified Code",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Unified Code": {
+          "main": [
+            [
+              {
+                "node": "Unmapped Transaction IDs",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Unmapped Transaction IDs": {
+          "main": [
+            [
+              {
+                "node": "Idempotency Check",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Add Regex Fields": {
+          "main": [
+            [
+              {
+                "node": "Is Disbursement of zero?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Is a return?": {
+          "main": [
+            [
+              {
+                "node": "Get Invoice Reference",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Add Regex Fields",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Invoice Reference": {
+          "main": [
+            [
+              {
+                "node": "Add Invoice Reference",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Add Invoice Reference": {
+          "main": [
+            [
+              {
+                "node": "Rename Field",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Rename Field": {
+          "main": [
+            [
+              {
+                "node": "Add Regex Fields",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version 7cc9fa9f",
+      "description": "Added github note",
+      "autosaved": false,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-01T12:10:51.145Z",
+          "id": 47,
+          "workflowId": "41S2uTmO2Rx74j-fvQVkZ",
+          "versionId": "7cc9fa9f-ef28-4034-b88d-8caad8361531",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
