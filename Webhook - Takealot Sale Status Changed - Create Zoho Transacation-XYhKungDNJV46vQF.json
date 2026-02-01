@@ -1,0 +1,3068 @@
+[
+  {
+    "updatedAt": "2026-02-01T15:10:12.039Z",
+    "createdAt": "2026-01-01T15:28:55.444Z",
+    "id": "XYhKungDNJV46vQF",
+    "name": "Webhook - Takealot Sale Status Changed - Create Zoho Transacation",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": ":seller_id",
+          "options": {
+            "rawBody": true
+          }
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -736,
+          464
+        ],
+        "id": "fd6cf5b0-c95c-48ad-be0e-cc46d02762ec",
+        "name": "Webhook",
+        "webhookId": "fa329524-5a4e-4fab-a636-cfcd3b496f4b"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://accounts.zoho.com/oauth/v2/token",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpCustomAuth",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          608,
+          368
+        ],
+        "id": "357e44a9-f2f4-4ec2-9f49-98a4a12e46dc",
+        "name": "Get Zoho Access Token",
+        "credentials": {
+          "httpCustomAuth": {
+            "id": "9SvOEsYF9SjtHbhQ",
+            "name": "Zoho_Access_Token"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "https://www.zohoapis.com/inventory/v1/items",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "search_text",
+                "value": "={{ $('Webhook').item.json.body.sale.sku.substring(0, 4) }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          832,
+          368
+        ],
+        "id": "b17cc03e-80a5-438e-a669-8bf82b27a4e8",
+        "name": "Get Item ID from SKU"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.body.salesorder.salesorder_id }}/status/confirmed",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2176,
+          -16
+        ],
+        "id": "65ea9213-8821-474b-b8a6-0533fc805532",
+        "name": "Confirm Salesorder"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "4841da88-677c-4093-9e86-9a06ac2a6f83",
+                "name": "zoho_endpoint",
+                "value": "={{ ({\n  2: \"https://www.zohoapis.com/inventory/v1/salesorders\",\n  3: \"https://www.zohoapis.com/inventory/v1/invoices\",\n  19: \"https://www.zohoapis.com/inventory/v1/creditnotes\"\n})[$('Webhook').item.json.body.sale.sale_status_id] || null }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          160,
+          464
+        ],
+        "id": "b2c36f0d-80be-4c33-97b8-128c72e7ea10",
+        "name": "Set Endpoint"
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "={\n  \"customer_id\": \"{{ $('Get row(s)').item.json.CustomerID }}\",\n  \"date\": {{ $('Webhook').item.json.body.event_timestamp_utc.slice(0, 10) }},\n  \"doc_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"order_id\": {{ $('Webhook').item.json.body.sale.order_id }},\n  \"order_item_id\": {{ $('Webhook').item.json.body.sale.order_item_id }},\n  \"reference_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"salesorder_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"is_inclusive_tax\": true,\n  \"due_date\": {{ $json.due_date }},\n  \"location_id\": \"{{ $('Get row(s)').item.json.ParentLocationID }}\",\n  \"notes\": \"Customer name: {{ $('Webhook').item.json.body.sale.customer }}\",\n  \"line_items\": [{\n    \"item_id\": \"{{ $('Get Item ID from SKU').item.json.items[0].item_id }}\",\n    \"name\": \"{{ $('Webhook').item.json.body.sale.product_title }}\",\n    \"rate\": {{ $('Webhook').item.json.body.sale.selling_price / $('Webhook').item.json.body.sale.quantity }},\n    \"quantity\": {{ $('Webhook').item.json.body.sale.quantity }},\n    \"tax_id\": \"{{ $('Get row(s)').item.json.TaxID }}\",\n    \"item_total\": {{ $('Webhook').item.json.body.sale.selling_price }},\n    \"location_id\": \"{{ $('Get row(s)').item.json.LocationID }}\"\n  }]\n }",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1280,
+          368
+        ],
+        "id": "d099e97d-a493-4ba0-bf3a-202815532fba",
+        "name": "Build JSON"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.invoice.invoice_id }}/status/sent",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2624,
+          368
+        ],
+        "id": "f3b3b099-d358-4179-894f-27d95f6e8003",
+        "name": "Mark Invoice as Sent"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/mapwithorder",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "invoice_ids",
+                "value": "={{ $('Create Invoice').item.json.invoice.invoice_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2848,
+          368
+        ],
+        "id": "79ea6a67-3a85-4bc6-ba23-f675df713a7d",
+        "name": "Map to Salesorder"
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "P2idoCVDSQnCITNY",
+            "mode": "list",
+            "cachedResultName": "zoho_info",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+          },
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "SellerID",
+                "keyValue": "={{ $('Webhook').item.json.params.seller_id }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          -64,
+          464
+        ],
+        "id": "b7faec4b-cd5a-44a4-9152-87aacdf90fea",
+        "name": "Get row(s)"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          608,
+          560
+        ],
+        "id": "12f4f9ef-1f63-47f8-9219-4c1e55029ef9",
+        "name": "No Operation, do nothing"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "8f3e18e0-c669-4dd3-a2e7-f8c04ba01d7a",
+                "leftValue": "={{ $('Set Endpoint').item.json.zoho_endpoint }}",
+                "rightValue": 3,
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          384,
+          464
+        ],
+        "id": "56528ec2-07b7-4f83-a907-c7f4b6083fb3",
+        "name": "if valid transaction"
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "={\"due_date\": \"{{ \n  (() => {\n    const d = new Date($node[\"Webhook\"].json.body.event_timestamp_utc);\n\n    d.setDate(d.getDate() + 3);\n\n    const daysToThursday = (4 - d.getDay() + 7) % 7;\n    d.setDate(d.getDate() + daysToThursday);\n\n    return d.toISOString().split('T')[0];\n  })()\n}}\"}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1056,
+          368
+        ],
+        "id": "8f9d60d1-6341-43da-8d64-3d2efb3e1852",
+        "name": "Calculate Due Date",
+        "alwaysOutputData": false
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.zohoapis.com/inventory/v1/packages",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "salesorder_id",
+                "value": "={{ $('Create Salesorder').item.json.body.salesorder.salesorder_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"package_number\": \"{{ $('Create Salesorder').item.json.body.salesorder.salesorder_number }}\",\n  \"date\": \"{{ $('Create Salesorder').item.json.body.salesorder.date }}\",\n  \"line_items\": [\n    {\n      \"so_line_item_id\": \"{{ $('Create Salesorder').item.json.body.salesorder.line_items[0].line_item_id }}\",\n      \"quantity\": {{ $('Create Salesorder').item.json.body.salesorder.line_items[0].quantity }}\n    }\n  ],\n  \"notes\": \"{{ $('Create Salesorder').item.json.body.salesorder.notes }}\"\n} ",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2400,
+          -16
+        ],
+        "id": "41afaa63-5132-4ae6-afa9-83a1dd3f9472",
+        "name": "Create package"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/packages",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "=organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "search_text",
+                "value": "={{ $('Build JSON').item.json.doc_number }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1728,
+          368
+        ],
+        "id": "0ae581b6-d038-41f2-a6e7-a8c41bac503e",
+        "name": "Get Package"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.zohoapis.com/inventory/v1/shipmentorders",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "salesorder_id",
+                "value": "={{ $json.packages[0].salesorder_id }}"
+              },
+              {
+                "name": "package_ids",
+                "value": "={{ $json.packages[0].package_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"shipment_number\": \"{{ $('Build JSON').item.json.reference_number }}\",\n  \"date\": \"{{ $('Build JSON').item.json.date }}\",\n  \"delivery_method\": \"Takealot\",\n  \"tracking_number\": \"{{ $('Build JSON').item.json.reference_number }}\"\n} ",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1952,
+          368
+        ],
+        "id": "84e2f9c6-91b2-4ca6-b1aa-1ab285b2b1ae",
+        "name": "Create Shipment",
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.zohoapis.com/inventory/v1/shipmentorders/{{ $json.shipmentorder.shipment_id }}/status/delivered",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2176,
+          368
+        ],
+        "id": "d4917ca1-51c5-4630-958c-c954508d2eb1",
+        "name": "Mark as Delivered"
+      },
+      {
+        "parameters": {
+          "action": "hmac",
+          "binaryData": true,
+          "type": "SHA256",
+          "dataPropertyName": "HMAC",
+          "secret": "531df3f76b214a36a0f44184b9dca8a1"
+        },
+        "type": "n8n-nodes-base.crypto",
+        "typeVersion": 1,
+        "position": [
+          -512,
+          464
+        ],
+        "id": "e2234e8e-9921-49bd-9c16-b12e02edb77b",
+        "name": "Crypto"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.zohoapis.com/inventory/v1/salesreturns",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "salesorder_id",
+                "value": "={{ $('Get SO Details').item.json.salesorder.salesorder_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n    \"date\": \"{{ $('Build JSON').item.json.date }}\",\n    \"return_type\": \"return_credit\",\n    \"location_id\": \"{{ $('Get SO Details').item.json.salesorder.location_id }}\",\n    \"line_items\": [\n        {\n            \"item_id\": \"{{ $('Get SO Details').item.json.salesorder.line_items[0].item_id }}\",\n            \"salesorder_item_id\": \"{{ $('Get SO Details').item.json.salesorder.line_items[0].line_item_id }}\",\n            \"quantity\": {{ $('Build JSON').item.json.line_items[0].quantity }},\n            \"location_id\": \"{{ $('Build JSON').item.json.line_items[0].location_id }}\"\n        }\n    ]\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2848,
+          848
+        ],
+        "id": "fe4f06f8-f8cc-4800-b122-85ec14082b3c",
+        "name": "Create Sales Return"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.zohoapis.com/inventory/v1/salesreturnreceives",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "salesreturn_id",
+                "value": "={{ $json.salesreturn.salesreturn_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n    \"date\": \"{{ $json.salesreturn.date }}\",\n    \"line_items\": [\n        {\n            \"line_item_id\": \"{{ $json.salesreturn.line_items[0].line_item_id }}\",\n            \"quantity\": {{ $json.salesreturn.line_items[0].quantity }}\n        }\n    ]\n} ",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          3072,
+          848
+        ],
+        "id": "66680dc4-1e04-44bc-8510-730943cf0196",
+        "name": "Receive Sales Return",
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $('Webhook').item.json.body.sale.sale_status_id }}",
+                      "rightValue": 2,
+                      "operator": {
+                        "type": "number",
+                        "operation": "equals"
+                      },
+                      "id": "2bfe015f-886e-410e-a6fa-5f3c5c78f27e"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Preparing"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "9a4a839e-94a9-47e8-aeb3-7f54e02d9b9a",
+                      "leftValue": "={{ $('Webhook').item.json.body.sale.sale_status_id }}",
+                      "rightValue": 3,
+                      "operator": {
+                        "type": "number",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Shipped"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "c1b2e3aa-9b22-449e-9027-0483a4d7ba3f",
+                      "leftValue": "={{ $('Webhook').item.json.body.sale.sale_status_id }}",
+                      "rightValue": 19,
+                      "operator": {
+                        "type": "number",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Returned"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          1504,
+          352
+        ],
+        "id": "67bd83cd-1721-4f03-9645-fc5dd5255d70",
+        "name": "Switch1"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('Build JSON').item.json.toJsonString() }}",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true,
+                "responseFormat": "json"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1728,
+          -16
+        ],
+        "id": "4865e69f-9e68-4106-9d45-bef3ffc12efd",
+        "name": "Create Salesorder"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('Build JSON').item.json.toJsonString() }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2400,
+          368
+        ],
+        "id": "909bcb86-660e-4120-9cf7-6770ef2159bb",
+        "name": "Create Invoice"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('Build JSON').item.json.toJsonString() }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          3296,
+          848
+        ],
+        "id": "f3e281dc-3e61-4e91-8564-fed313c409d8",
+        "name": "Create Credit Note"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/salesorders",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "search_text",
+                "value": "={{ $json.reference_number }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1728,
+          656
+        ],
+        "id": "0d226bf8-19fa-4be5-9ad9-04fef58a6f98",
+        "name": "Get Original Sales Order Number",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $json.salesorders[0].salesorder_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2176,
+          560
+        ],
+        "id": "8a9a8728-c201-4016-8ff9-0a1f720692fb",
+        "name": "Get SO Details"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "d3418105-3246-4d2f-a5b4-a0c693f137d3",
+                "leftValue": "={{ $json.salesorders }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "array",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1952,
+          656
+        ],
+        "id": "468a7244-2a8d-45e0-8411-a2104cb4e7c0",
+        "name": "Found Original Sales Order"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          2176,
+          752
+        ],
+        "id": "2f140d0c-4e54-42d5-bfc3-6a2cbfc33159",
+        "name": "No Operation, do nothing1"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/salesreturns",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "search_text",
+                "value": "={{ $json.salesorder.salesorder_number }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n    \"date\": \"{{ $('Build JSON').item.json.date }}\",\n    \"location_id\": \"{{ $json.salesorder.location_id }}\",\n    \"line_items\": [\n        {\n            \"item_id\": \"{{ $json.salesorder.line_items[0].item_id }}\",\n            \"salesorder_item_id\": \"{{ $json.salesorder.line_items[0].line_item_id }}\",\n            \"quantity\": {{ $('Build JSON').item.json.line_items[0].quantity }},\n            \"location_id\": \"{{ $('Build JSON').item.json.line_items[0].location_id }}\"\n        }\n    ]\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2400,
+          560
+        ],
+        "id": "a7c86499-84b5-48f0-adfc-3ecdce8f409f",
+        "name": "Check for Existing SR"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "d442d061-0c45-4f91-8197-37b8d34e2cf4",
+                "leftValue": "={{ $json.salesreturns.length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2624,
+          560
+        ],
+        "id": "af670c31-9da6-40f4-808b-eb82c44f4559",
+        "name": "SR Exists"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "d442d061-0c45-4f91-8197-37b8d34e2cf4",
+                "leftValue": "={{ $json.salesreturns[0].quantity_yet_to_receive }}",
+                "rightValue": -1,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2848,
+          560
+        ],
+        "id": "bc8780ca-7b8c-48ea-8f55-7e1849d5b5d9",
+        "name": "Available for return"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          3072,
+          656
+        ],
+        "id": "a28f0175-9702-4305-9f7e-6660f4906cfc",
+        "name": "No Operation, do nothing2"
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "=https://www.zohoapis.com/inventory/v1/salesreturns/{{ $json.salesreturns[0].salesreturn_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n    \"date\": \"{{ $('Build JSON').item.json.date }}\",\n    \"location_id\": \"{{ $json.salesorder.location_id }}\",\n    \"line_items\": [\n        {\n            \"item_id\": \"{{ $json.salesorder.line_items[0].item_id }}\",\n            \"salesorder_item_id\": \"{{ $json.salesorder.line_items[0].line_item_id }}\",\n            \"quantity\": {{ $('Build JSON').item.json.line_items[0].quantity }},\n            \"location_id\": \"{{ $('Build JSON').item.json.line_items[0].location_id }}\"\n        }\n    ]\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          3072,
+          464
+        ],
+        "id": "4029a5c9-4946-4254-9616-044f2dac24d3",
+        "name": "Update SR"
+      },
+      {
+        "parameters": {
+          "url": "=https://httpbin.dev/base64/encode/{{ encodeURIComponent($json.HMAC) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -288,
+          464
+        ],
+        "id": "d6f1dc40-bbde-4160-b00f-f45ae88ee304",
+        "name": "HTTP Request"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "43a58f31-369b-4b21-8ed0-620bb3f52cac",
+                "leftValue": "={{ $json.statusCode }}",
+                "rightValue": 201,
+                "operator": {
+                  "type": "number",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1952,
+          -16
+        ],
+        "id": "65e6be3a-d72a-4ba1-9c77-918f343324d7",
+        "name": "SO Created?"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          2176,
+          176
+        ],
+        "id": "ff9c5dda-5338-4214-b8e6-a80bf36c6938",
+        "name": "Duplicate SO"
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=XYhKungDNJV46vQF) to commit change ",
+          "height": 140,
+          "width": 440,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -736,
+          240
+        ],
+        "typeVersion": 1,
+        "id": "9f61b6de-7d67-4253-bd47-37b685aa75f7",
+        "name": "Sticky Note"
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Crypto",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Zoho Access Token": {
+        "main": [
+          [
+            {
+              "node": "Get Item ID from SKU",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Item ID from SKU": {
+        "main": [
+          [
+            {
+              "node": "Calculate Due Date",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Endpoint": {
+        "main": [
+          [
+            {
+              "node": "if valid transaction",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build JSON": {
+        "main": [
+          [
+            {
+              "node": "Switch1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark Invoice as Sent": {
+        "main": [
+          [
+            {
+              "node": "Map to Salesorder",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get row(s)": {
+        "main": [
+          [
+            {
+              "node": "Set Endpoint",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "if valid transaction": {
+        "main": [
+          [
+            {
+              "node": "Get Zoho Access Token",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Operation, do nothing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Calculate Due Date": {
+        "main": [
+          [
+            {
+              "node": "Build JSON",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Confirm Salesorder": {
+        "main": [
+          [
+            {
+              "node": "Create package",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Package": {
+        "main": [
+          [
+            {
+              "node": "Create Shipment",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Shipment": {
+        "main": [
+          [
+            {
+              "node": "Mark as Delivered",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark as Delivered": {
+        "main": [
+          [
+            {
+              "node": "Create Invoice",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Crypto": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Sales Return": {
+        "main": [
+          [
+            {
+              "node": "Receive Sales Return",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch1": {
+        "main": [
+          [
+            {
+              "node": "Create Salesorder",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Get Package",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Get Original Sales Order Number",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Salesorder": {
+        "main": [
+          [
+            {
+              "node": "SO Created?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Invoice": {
+        "main": [
+          [
+            {
+              "node": "Mark Invoice as Sent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Receive Sales Return": {
+        "main": [
+          [
+            {
+              "node": "Create Credit Note",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Original Sales Order Number": {
+        "main": [
+          [
+            {
+              "node": "Found Original Sales Order",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get SO Details": {
+        "main": [
+          [
+            {
+              "node": "Check for Existing SR",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Found Original Sales Order": {
+        "main": [
+          [
+            {
+              "node": "Get SO Details",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Operation, do nothing1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check for Existing SR": {
+        "main": [
+          [
+            {
+              "node": "SR Exists",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SR Exists": {
+        "main": [
+          [
+            {
+              "node": "Available for return",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create Sales Return",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Available for return": {
+        "main": [
+          [
+            {
+              "node": "Update SR",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Operation, do nothing2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "Get row(s)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SO Created?": {
+        "main": [
+          [
+            {
+              "node": "Confirm Salesorder",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Duplicate SO",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": null,
+    "pinData": {
+      "Webhook": [
+        {
+          "json": {
+            "headers": {
+              "host": "n8n.tallypro.co.za",
+              "user-agent": "python-requests/2.32.5",
+              "content-length": "538",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate",
+              "baggage": "sentry-trace_id=c25498e3e00246b599920642df0e6390,sentry-environment=production,sentry-release=a1ac744c79fe02a8f9aa8d6f7965e0d714879435,sentry-public_key=84bf495d467f45298f58b8e051832348",
+              "content-type": "application/json",
+              "sentry-trace": "c25498e3e00246b599920642df0e6390-a486aeb79e41ed4a",
+              "x-forwarded-for": "34.76.105.150",
+              "x-forwarded-host": "n8n.tallypro.co.za",
+              "x-forwarded-port": "443",
+              "x-forwarded-proto": "https",
+              "x-forwarded-server": "ec104f85d712",
+              "x-real-ip": "34.76.105.150",
+              "x-takealot-delivery": "73f988dd-e23d-4693-ab5a-13bfb4eb48e7",
+              "x-takealot-event": "sale_status_changed",
+              "x-takealot-signature": "NmVlYjNmODM0ZTIzY2IxMDE0MWQyMzJkNzAzYzk4M2U0YTFmMzFhMTkyZDRkMjljZDU5MzI1OTkwZjY0NGQ2YQ=="
+            },
+            "params": {
+              "seller_id": "11932"
+            },
+            "query": {},
+            "body": {
+              "sale": {
+                "order_item_id": 395612511,
+                "offer_id": 207730444,
+                "order_id": 202430445,
+                "warehouse": "JHB",
+                "warehouse_id": "JHB",
+                "sale_status_id": 2,
+                "sale_status": "Preparing for Customer",
+                "order_date": "2026-01-26T15:44:25",
+                "product_title": "DigiDoor Garage Door 4 Button Remote",
+                "takealot_url_mobi": "https://www.takealot.com/x/PLID92937409",
+                "sku": "0361Bx001",
+                "tsin": 93384324,
+                "quantity": 2,
+                "selling_price": 604,
+                "customer": "Rethabile Selebalo",
+                "customer_warehouse": "JHB"
+              },
+              "event_timestamp_utc": "2026-01-26T13:44:33.208152"
+            },
+            "webhookUrl": "https://n8n.tallypro.co.za/webhook/fa329524-5a4e-4fab-a636-cfcd3b496f4b/:seller_id",
+            "executionMode": "production"
+          },
+          "binary": {
+            "data": {
+              "data": "eyJzYWxlIjogeyJvcmRlcl9pdGVtX2lkIjogMzk1NjEyNTExLCAib2ZmZXJfaWQiOiAyMDc3MzA0NDQsICJvcmRlcl9pZCI6IDIwMjQzMDQ0NSwgIndhcmVob3VzZSI6ICJKSEIiLCAid2FyZWhvdXNlX2lkIjogIkpIQiIsICJzYWxlX3N0YXR1c19pZCI6IDIsICJzYWxlX3N0YXR1cyI6ICJQcmVwYXJpbmcgZm9yIEN1c3RvbWVyIiwgIm9yZGVyX2RhdGUiOiAiMjAyNi0wMS0yNlQxNTo0NDoyNSIsICJwcm9kdWN0X3RpdGxlIjogIkRpZ2lEb29yIEdhcmFnZSBEb29yIDQgQnV0dG9uIFJlbW90ZSIsICJ0YWtlYWxvdF91cmxfbW9iaSI6ICJodHRwczovL3d3dy50YWtlYWxvdC5jb20veC9QTElEOTI5Mzc0MDkiLCAic2t1IjogIjAzNjFCeDAwMSIsICJ0c2luIjogOTMzODQzMjQsICJxdWFudGl0eSI6IDIsICJzZWxsaW5nX3ByaWNlIjogNjA0LCAiY3VzdG9tZXIiOiAiUmV0aGFiaWxlIFNlbGViYWxvIiwgImN1c3RvbWVyX3dhcmVob3VzZSI6ICJKSEIifSwgImV2ZW50X3RpbWVzdGFtcF91dGMiOiAiMjAyNi0wMS0yNlQxMzo0NDozMy4yMDgxNTIifQ==",
+              "mimeType": "application/json"
+            }
+          },
+          "pairedItem": {
+            "item": 0
+          }
+        }
+      ]
+    },
+    "versionId": "c5ec1500-cf5a-43fb-8d14-5d2642956b53",
+    "activeVersionId": "c5ec1500-cf5a-43fb-8d14-5d2642956b53",
+    "versionCounter": 192,
+    "triggerCount": 1,
+    "shared": [
+      {
+        "updatedAt": "2026-01-01T15:28:55.930Z",
+        "createdAt": "2026-01-01T15:28:55.930Z",
+        "role": "workflow:owner",
+        "workflowId": "XYhKungDNJV46vQF",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-01T07:29:09.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-01-31",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [],
+    "activeVersion": {
+      "updatedAt": "2026-02-01T15:10:26.000Z",
+      "createdAt": "2026-02-01T15:10:12.041Z",
+      "versionId": "c5ec1500-cf5a-43fb-8d14-5d2642956b53",
+      "workflowId": "XYhKungDNJV46vQF",
+      "nodes": [
+        {
+          "parameters": {
+            "httpMethod": "POST",
+            "path": ":seller_id",
+            "options": {
+              "rawBody": true
+            }
+          },
+          "type": "n8n-nodes-base.webhook",
+          "typeVersion": 2.1,
+          "position": [
+            -736,
+            464
+          ],
+          "id": "fd6cf5b0-c95c-48ad-be0e-cc46d02762ec",
+          "name": "Webhook",
+          "webhookId": "fa329524-5a4e-4fab-a636-cfcd3b496f4b"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://accounts.zoho.com/oauth/v2/token",
+            "authentication": "genericCredentialType",
+            "genericAuthType": "httpCustomAuth",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            608,
+            368
+          ],
+          "id": "357e44a9-f2f4-4ec2-9f49-98a4a12e46dc",
+          "name": "Get Zoho Access Token",
+          "credentials": {
+            "httpCustomAuth": {
+              "id": "9SvOEsYF9SjtHbhQ",
+              "name": "Zoho_Access_Token"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "url": "https://www.zohoapis.com/inventory/v1/items",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "search_text",
+                  "value": "={{ $('Webhook').item.json.body.sale.sku.substring(0, 4) }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            832,
+            368
+          ],
+          "id": "b17cc03e-80a5-438e-a669-8bf82b27a4e8",
+          "name": "Get Item ID from SKU"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.body.salesorder.salesorder_id }}/status/confirmed",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2176,
+            -16
+          ],
+          "id": "65ea9213-8821-474b-b8a6-0533fc805532",
+          "name": "Confirm Salesorder"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "4841da88-677c-4093-9e86-9a06ac2a6f83",
+                  "name": "zoho_endpoint",
+                  "value": "={{ ({\n  2: \"https://www.zohoapis.com/inventory/v1/salesorders\",\n  3: \"https://www.zohoapis.com/inventory/v1/invoices\",\n  19: \"https://www.zohoapis.com/inventory/v1/creditnotes\"\n})[$('Webhook').item.json.body.sale.sale_status_id] || null }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            160,
+            464
+          ],
+          "id": "b2c36f0d-80be-4c33-97b8-128c72e7ea10",
+          "name": "Set Endpoint"
+        },
+        {
+          "parameters": {
+            "mode": "raw",
+            "jsonOutput": "={\n  \"customer_id\": \"{{ $('Get row(s)').item.json.CustomerID }}\",\n  \"date\": {{ $('Webhook').item.json.body.event_timestamp_utc.slice(0, 10) }},\n  \"doc_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"order_id\": {{ $('Webhook').item.json.body.sale.order_id }},\n  \"order_item_id\": {{ $('Webhook').item.json.body.sale.order_item_id }},\n  \"reference_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"salesorder_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"is_inclusive_tax\": true,\n  \"due_date\": {{ $json.due_date }},\n  \"location_id\": \"{{ $('Get row(s)').item.json.ParentLocationID }}\",\n  \"notes\": \"Customer name: {{ $('Webhook').item.json.body.sale.customer }}\",\n  \"line_items\": [{\n    \"item_id\": \"{{ $('Get Item ID from SKU').item.json.items[0].item_id }}\",\n    \"name\": \"{{ $('Webhook').item.json.body.sale.product_title }}\",\n    \"rate\": {{ $('Webhook').item.json.body.sale.selling_price / $('Webhook').item.json.body.sale.quantity }},\n    \"quantity\": {{ $('Webhook').item.json.body.sale.quantity }},\n    \"tax_id\": \"{{ $('Get row(s)').item.json.TaxID }}\",\n    \"item_total\": {{ $('Webhook').item.json.body.sale.selling_price }},\n    \"location_id\": \"{{ $('Get row(s)').item.json.LocationID }}\"\n  }]\n }",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            1280,
+            368
+          ],
+          "id": "d099e97d-a493-4ba0-bf3a-202815532fba",
+          "name": "Build JSON"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.invoice.invoice_id }}/status/sent",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2624,
+            368
+          ],
+          "id": "f3b3b099-d358-4179-894f-27d95f6e8003",
+          "name": "Mark Invoice as Sent"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/mapwithorder",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "invoice_ids",
+                  "value": "={{ $('Create Invoice').item.json.invoice.invoice_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2848,
+            368
+          ],
+          "id": "79ea6a67-3a85-4bc6-ba23-f675df713a7d",
+          "name": "Map to Salesorder"
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "P2idoCVDSQnCITNY",
+              "mode": "list",
+              "cachedResultName": "zoho_info",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+            },
+            "filters": {
+              "conditions": [
+                {
+                  "keyName": "SellerID",
+                  "keyValue": "={{ $('Webhook').item.json.params.seller_id }}"
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            -64,
+            464
+          ],
+          "id": "b7faec4b-cd5a-44a4-9152-87aacdf90fea",
+          "name": "Get row(s)"
+        },
+        {
+          "parameters": {},
+          "type": "n8n-nodes-base.noOp",
+          "typeVersion": 1,
+          "position": [
+            608,
+            560
+          ],
+          "id": "12f4f9ef-1f63-47f8-9219-4c1e55029ef9",
+          "name": "No Operation, do nothing"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "8f3e18e0-c669-4dd3-a2e7-f8c04ba01d7a",
+                  "leftValue": "={{ $('Set Endpoint').item.json.zoho_endpoint }}",
+                  "rightValue": 3,
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEmpty",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            384,
+            464
+          ],
+          "id": "56528ec2-07b7-4f83-a907-c7f4b6083fb3",
+          "name": "if valid transaction"
+        },
+        {
+          "parameters": {
+            "mode": "raw",
+            "jsonOutput": "={\"due_date\": \"{{ \n  (() => {\n    const d = new Date($node[\"Webhook\"].json.body.event_timestamp_utc);\n\n    d.setDate(d.getDate() + 3);\n\n    const daysToThursday = (4 - d.getDay() + 7) % 7;\n    d.setDate(d.getDate() + daysToThursday);\n\n    return d.toISOString().split('T')[0];\n  })()\n}}\"}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            1056,
+            368
+          ],
+          "id": "8f9d60d1-6341-43da-8d64-3d2efb3e1852",
+          "name": "Calculate Due Date",
+          "alwaysOutputData": false
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://www.zohoapis.com/inventory/v1/packages",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "salesorder_id",
+                  "value": "={{ $('Create Salesorder').item.json.body.salesorder.salesorder_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n  \"package_number\": \"{{ $('Create Salesorder').item.json.body.salesorder.salesorder_number }}\",\n  \"date\": \"{{ $('Create Salesorder').item.json.body.salesorder.date }}\",\n  \"line_items\": [\n    {\n      \"so_line_item_id\": \"{{ $('Create Salesorder').item.json.body.salesorder.line_items[0].line_item_id }}\",\n      \"quantity\": {{ $('Create Salesorder').item.json.body.salesorder.line_items[0].quantity }}\n    }\n  ],\n  \"notes\": \"{{ $('Create Salesorder').item.json.body.salesorder.notes }}\"\n} ",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2400,
+            -16
+          ],
+          "id": "41afaa63-5132-4ae6-afa9-83a1dd3f9472",
+          "name": "Create package"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/packages",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "=organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "search_text",
+                  "value": "={{ $('Build JSON').item.json.doc_number }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1728,
+            368
+          ],
+          "id": "0ae581b6-d038-41f2-a6e7-a8c41bac503e",
+          "name": "Get Package"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://www.zohoapis.com/inventory/v1/shipmentorders",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "salesorder_id",
+                  "value": "={{ $json.packages[0].salesorder_id }}"
+                },
+                {
+                  "name": "package_ids",
+                  "value": "={{ $json.packages[0].package_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n  \"shipment_number\": \"{{ $('Build JSON').item.json.reference_number }}\",\n  \"date\": \"{{ $('Build JSON').item.json.date }}\",\n  \"delivery_method\": \"Takealot\",\n  \"tracking_number\": \"{{ $('Build JSON').item.json.reference_number }}\"\n} ",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1952,
+            368
+          ],
+          "id": "84e2f9c6-91b2-4ca6-b1aa-1ab285b2b1ae",
+          "name": "Create Shipment",
+          "onError": "continueRegularOutput"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://www.zohoapis.com/inventory/v1/shipmentorders/{{ $json.shipmentorder.shipment_id }}/status/delivered",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2176,
+            368
+          ],
+          "id": "d4917ca1-51c5-4630-958c-c954508d2eb1",
+          "name": "Mark as Delivered"
+        },
+        {
+          "parameters": {
+            "action": "hmac",
+            "binaryData": true,
+            "type": "SHA256",
+            "dataPropertyName": "HMAC",
+            "secret": "531df3f76b214a36a0f44184b9dca8a1"
+          },
+          "type": "n8n-nodes-base.crypto",
+          "typeVersion": 1,
+          "position": [
+            -512,
+            464
+          ],
+          "id": "e2234e8e-9921-49bd-9c16-b12e02edb77b",
+          "name": "Crypto"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://www.zohoapis.com/inventory/v1/salesreturns",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "salesorder_id",
+                  "value": "={{ $('Get SO Details').item.json.salesorder.salesorder_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n    \"date\": \"{{ $('Build JSON').item.json.date }}\",\n    \"return_type\": \"return_credit\",\n    \"location_id\": \"{{ $('Get SO Details').item.json.salesorder.location_id }}\",\n    \"line_items\": [\n        {\n            \"item_id\": \"{{ $('Get SO Details').item.json.salesorder.line_items[0].item_id }}\",\n            \"salesorder_item_id\": \"{{ $('Get SO Details').item.json.salesorder.line_items[0].line_item_id }}\",\n            \"quantity\": {{ $('Build JSON').item.json.line_items[0].quantity }},\n            \"location_id\": \"{{ $('Build JSON').item.json.line_items[0].location_id }}\"\n        }\n    ]\n}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2848,
+            848
+          ],
+          "id": "fe4f06f8-f8cc-4800-b122-85ec14082b3c",
+          "name": "Create Sales Return"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://www.zohoapis.com/inventory/v1/salesreturnreceives",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "salesreturn_id",
+                  "value": "={{ $json.salesreturn.salesreturn_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n    \"date\": \"{{ $json.salesreturn.date }}\",\n    \"line_items\": [\n        {\n            \"line_item_id\": \"{{ $json.salesreturn.line_items[0].line_item_id }}\",\n            \"quantity\": {{ $json.salesreturn.line_items[0].quantity }}\n        }\n    ]\n} ",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            3072,
+            848
+          ],
+          "id": "66680dc4-1e04-44bc-8510-730943cf0196",
+          "name": "Receive Sales Return",
+          "onError": "continueRegularOutput"
+        },
+        {
+          "parameters": {
+            "rules": {
+              "values": [
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "leftValue": "={{ $('Webhook').item.json.body.sale.sale_status_id }}",
+                        "rightValue": 2,
+                        "operator": {
+                          "type": "number",
+                          "operation": "equals"
+                        },
+                        "id": "2bfe015f-886e-410e-a6fa-5f3c5c78f27e"
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "Preparing"
+                },
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "id": "9a4a839e-94a9-47e8-aeb3-7f54e02d9b9a",
+                        "leftValue": "={{ $('Webhook').item.json.body.sale.sale_status_id }}",
+                        "rightValue": 3,
+                        "operator": {
+                          "type": "number",
+                          "operation": "equals"
+                        }
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "Shipped"
+                },
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "id": "c1b2e3aa-9b22-449e-9027-0483a4d7ba3f",
+                        "leftValue": "={{ $('Webhook').item.json.body.sale.sale_status_id }}",
+                        "rightValue": 19,
+                        "operator": {
+                          "type": "number",
+                          "operation": "equals"
+                        }
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "Returned"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.switch",
+          "typeVersion": 3.4,
+          "position": [
+            1504,
+            352
+          ],
+          "id": "67bd83cd-1721-4f03-9645-fc5dd5255d70",
+          "name": "Switch1"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $('Build JSON').item.json.toJsonString() }}",
+            "options": {
+              "response": {
+                "response": {
+                  "fullResponse": true,
+                  "neverError": true,
+                  "responseFormat": "json"
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1728,
+            -16
+          ],
+          "id": "4865e69f-9e68-4106-9d45-bef3ffc12efd",
+          "name": "Create Salesorder"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $('Build JSON').item.json.toJsonString() }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2400,
+            368
+          ],
+          "id": "909bcb86-660e-4120-9cf7-6770ef2159bb",
+          "name": "Create Invoice"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $('Build JSON').item.json.toJsonString() }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            3296,
+            848
+          ],
+          "id": "f3e281dc-3e61-4e91-8564-fed313c409d8",
+          "name": "Create Credit Note"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/salesorders",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "search_text",
+                  "value": "={{ $json.reference_number }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1728,
+            656
+          ],
+          "id": "0d226bf8-19fa-4be5-9ad9-04fef58a6f98",
+          "name": "Get Original Sales Order Number",
+          "alwaysOutputData": true
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $json.salesorders[0].salesorder_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2176,
+            560
+          ],
+          "id": "8a9a8728-c201-4016-8ff9-0a1f720692fb",
+          "name": "Get SO Details"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "d3418105-3246-4d2f-a5b4-a0c693f137d3",
+                  "leftValue": "={{ $json.salesorders }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "array",
+                    "operation": "exists",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            1952,
+            656
+          ],
+          "id": "468a7244-2a8d-45e0-8411-a2104cb4e7c0",
+          "name": "Found Original Sales Order"
+        },
+        {
+          "parameters": {},
+          "type": "n8n-nodes-base.noOp",
+          "typeVersion": 1,
+          "position": [
+            2176,
+            752
+          ],
+          "id": "2f140d0c-4e54-42d5-bfc3-6a2cbfc33159",
+          "name": "No Operation, do nothing1"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/salesreturns",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "search_text",
+                  "value": "={{ $json.salesorder.salesorder_number }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n    \"date\": \"{{ $('Build JSON').item.json.date }}\",\n    \"location_id\": \"{{ $json.salesorder.location_id }}\",\n    \"line_items\": [\n        {\n            \"item_id\": \"{{ $json.salesorder.line_items[0].item_id }}\",\n            \"salesorder_item_id\": \"{{ $json.salesorder.line_items[0].line_item_id }}\",\n            \"quantity\": {{ $('Build JSON').item.json.line_items[0].quantity }},\n            \"location_id\": \"{{ $('Build JSON').item.json.line_items[0].location_id }}\"\n        }\n    ]\n}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2400,
+            560
+          ],
+          "id": "a7c86499-84b5-48f0-adfc-3ecdce8f409f",
+          "name": "Check for Existing SR"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "d442d061-0c45-4f91-8197-37b8d34e2cf4",
+                  "leftValue": "={{ $json.salesreturns.length }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gt"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            2624,
+            560
+          ],
+          "id": "af670c31-9da6-40f4-808b-eb82c44f4559",
+          "name": "SR Exists"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "d442d061-0c45-4f91-8197-37b8d34e2cf4",
+                  "leftValue": "={{ $json.salesreturns[0].quantity_yet_to_receive }}",
+                  "rightValue": -1,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gt"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            2848,
+            560
+          ],
+          "id": "bc8780ca-7b8c-48ea-8f55-7e1849d5b5d9",
+          "name": "Available for return"
+        },
+        {
+          "parameters": {},
+          "type": "n8n-nodes-base.noOp",
+          "typeVersion": 1,
+          "position": [
+            3072,
+            656
+          ],
+          "id": "a28f0175-9702-4305-9f7e-6660f4906cfc",
+          "name": "No Operation, do nothing2"
+        },
+        {
+          "parameters": {
+            "method": "PUT",
+            "url": "=https://www.zohoapis.com/inventory/v1/salesreturns/{{ $json.salesreturns[0].salesreturn_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n    \"date\": \"{{ $('Build JSON').item.json.date }}\",\n    \"location_id\": \"{{ $json.salesorder.location_id }}\",\n    \"line_items\": [\n        {\n            \"item_id\": \"{{ $json.salesorder.line_items[0].item_id }}\",\n            \"salesorder_item_id\": \"{{ $json.salesorder.line_items[0].line_item_id }}\",\n            \"quantity\": {{ $('Build JSON').item.json.line_items[0].quantity }},\n            \"location_id\": \"{{ $('Build JSON').item.json.line_items[0].location_id }}\"\n        }\n    ]\n}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            3072,
+            464
+          ],
+          "id": "4029a5c9-4946-4254-9616-044f2dac24d3",
+          "name": "Update SR"
+        },
+        {
+          "parameters": {
+            "url": "=https://httpbin.dev/base64/encode/{{ encodeURIComponent($json.HMAC) }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -288,
+            464
+          ],
+          "id": "d6f1dc40-bbde-4160-b00f-f45ae88ee304",
+          "name": "HTTP Request"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "43a58f31-369b-4b21-8ed0-620bb3f52cac",
+                  "leftValue": "={{ $json.statusCode }}",
+                  "rightValue": 201,
+                  "operator": {
+                    "type": "number",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            1952,
+            -16
+          ],
+          "id": "65e6be3a-d72a-4ba1-9c77-918f343324d7",
+          "name": "SO Created?"
+        },
+        {
+          "parameters": {},
+          "type": "n8n-nodes-base.noOp",
+          "typeVersion": 1,
+          "position": [
+            2176,
+            176
+          ],
+          "id": "ff9c5dda-5338-4214-b8e6-a80bf36c6938",
+          "name": "Duplicate SO"
+        },
+        {
+          "parameters": {
+            "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=XYhKungDNJV46vQF) to commit change ",
+            "height": 140,
+            "width": 440,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            -736,
+            240
+          ],
+          "typeVersion": 1,
+          "id": "9f61b6de-7d67-4253-bd47-37b685aa75f7",
+          "name": "Sticky Note"
+        }
+      ],
+      "connections": {
+        "Webhook": {
+          "main": [
+            [
+              {
+                "node": "Crypto",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Zoho Access Token": {
+          "main": [
+            [
+              {
+                "node": "Get Item ID from SKU",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Item ID from SKU": {
+          "main": [
+            [
+              {
+                "node": "Calculate Due Date",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Set Endpoint": {
+          "main": [
+            [
+              {
+                "node": "if valid transaction",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Build JSON": {
+          "main": [
+            [
+              {
+                "node": "Switch1",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Mark Invoice as Sent": {
+          "main": [
+            [
+              {
+                "node": "Map to Salesorder",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get row(s)": {
+          "main": [
+            [
+              {
+                "node": "Set Endpoint",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "if valid transaction": {
+          "main": [
+            [
+              {
+                "node": "Get Zoho Access Token",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "No Operation, do nothing",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Calculate Due Date": {
+          "main": [
+            [
+              {
+                "node": "Build JSON",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Confirm Salesorder": {
+          "main": [
+            [
+              {
+                "node": "Create package",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Package": {
+          "main": [
+            [
+              {
+                "node": "Create Shipment",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create Shipment": {
+          "main": [
+            [
+              {
+                "node": "Mark as Delivered",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Mark as Delivered": {
+          "main": [
+            [
+              {
+                "node": "Create Invoice",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Crypto": {
+          "main": [
+            [
+              {
+                "node": "HTTP Request",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create Sales Return": {
+          "main": [
+            [
+              {
+                "node": "Receive Sales Return",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Switch1": {
+          "main": [
+            [
+              {
+                "node": "Create Salesorder",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Get Package",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Get Original Sales Order Number",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create Salesorder": {
+          "main": [
+            [
+              {
+                "node": "SO Created?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create Invoice": {
+          "main": [
+            [
+              {
+                "node": "Mark Invoice as Sent",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Receive Sales Return": {
+          "main": [
+            [
+              {
+                "node": "Create Credit Note",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Original Sales Order Number": {
+          "main": [
+            [
+              {
+                "node": "Found Original Sales Order",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get SO Details": {
+          "main": [
+            [
+              {
+                "node": "Check for Existing SR",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Found Original Sales Order": {
+          "main": [
+            [
+              {
+                "node": "Get SO Details",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "No Operation, do nothing1",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Check for Existing SR": {
+          "main": [
+            [
+              {
+                "node": "SR Exists",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "SR Exists": {
+          "main": [
+            [
+              {
+                "node": "Available for return",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Create Sales Return",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Available for return": {
+          "main": [
+            [
+              {
+                "node": "Update SR",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "No Operation, do nothing2",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "HTTP Request": {
+          "main": [
+            [
+              {
+                "node": "Get row(s)",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "SO Created?": {
+          "main": [
+            [
+              {
+                "node": "Confirm Salesorder",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Duplicate SO",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version c5ec1500",
+      "description": "added github note",
+      "autosaved": false,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-01T15:10:26.092Z",
+          "id": 48,
+          "workflowId": "XYhKungDNJV46vQF",
+          "versionId": "c5ec1500-cf5a-43fb-8d14-5d2642956b53",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
