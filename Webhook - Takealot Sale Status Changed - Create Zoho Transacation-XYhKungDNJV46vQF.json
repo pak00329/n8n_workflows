@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-03T08:16:43.794Z",
+    "updatedAt": "2026-02-03T10:03:59.432Z",
     "createdAt": "2026-01-01T15:28:55.444Z",
     "id": "XYhKungDNJV46vQF",
     "name": "Webhook - Takealot Sale Status Changed - Create Zoho Transacation",
@@ -303,23 +303,6 @@
         ],
         "id": "56528ec2-07b7-4f83-a907-c7f4b6083fb3",
         "name": "if valid transaction"
-      },
-      {
-        "parameters": {
-          "mode": "raw",
-          "jsonOutput": "={\"due_date\": \"{{ \n  (() => {\n    const d = new Date($node[\"Webhook\"].json.body.event_timestamp_utc);\n\n    d.setDate(d.getDate() + 3);\n\n    const daysToThursday = (4 - d.getDay() + 7) % 7;\n    d.setDate(d.getDate() + daysToThursday);\n\n    return d.toISOString().split('T')[0];\n  })()\n}}\"}",
-          "options": {}
-        },
-        "type": "n8n-nodes-base.set",
-        "typeVersion": 3.4,
-        "position": [
-          3936,
-          256
-        ],
-        "id": "8f9d60d1-6341-43da-8d64-3d2efb3e1852",
-        "name": "Calculate Due Date",
-        "alwaysOutputData": false,
-        "disabled": true
       },
       {
         "parameters": {
@@ -1267,7 +1250,7 @@
                 }
               }
             ],
-            "combinator": "or"
+            "combinator": "and"
           },
           "options": {}
         },
@@ -1279,43 +1262,6 @@
         ],
         "id": "e44637fc-27a5-4155-9201-4e8208598740",
         "name": "Check Package Prerequisites"
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.body.salesorder.salesorder_id }}/status/void",
-          "sendQuery": true,
-          "queryParameters": {
-            "parameters": [
-              {
-                "name": "organization_id",
-                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
-              }
-            ]
-          },
-          "sendHeaders": true,
-          "headerParameters": {
-            "parameters": [
-              {
-                "name": "Authorization",
-                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
-              }
-            ]
-          },
-          "options": {}
-        },
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.3,
-        "position": [
-          3936,
-          -144
-        ],
-        "id": "6283fcf6-eb64-48ba-8cf9-4b1b7c7a3fd6",
-        "name": "Rollback: Void SO",
-        "retryOnFail": true,
-        "maxTries": 2,
-        "waitBetweenTries": 2000,
-        "onError": "continueErrorOutput"
       },
       {
         "parameters": {
@@ -1408,143 +1354,6 @@
       },
       {
         "parameters": {
-          "assignments": {
-            "assignments": [
-              {
-                "id": "ba67302f-5f1f-4976-9e91-fb34d770ec9f",
-                "name": "salesorder_id",
-                "value": "={{ $json.body.salesorders[0].salesorder_id }}",
-                "type": "string"
-              },
-              {
-                "id": "3cd5fbdc-ad38-470e-b377-88099e5cbcd7",
-                "name": "customer_name",
-                "value": "={{ $json.body.salesorders[0].customer_name }}",
-                "type": "string"
-              },
-              {
-                "id": "3e8e59ab-c0cf-4624-8f1c-7bd4e56499e3",
-                "name": "customer_id",
-                "value": "={{ $json.body.salesorders[0].customer_id }}",
-                "type": "string"
-              },
-              {
-                "id": "c472b14e-5b59-4e08-8103-ec4393d8e958",
-                "name": "salesorder_number",
-                "value": "={{ $json.body.salesorders[0].salesorder_number }}",
-                "type": "string"
-              },
-              {
-                "id": "38b78b2f-2e6b-4250-8057-0af2cd5b7915",
-                "name": "reference_number",
-                "value": "={{ $json.body.salesorders[0].reference_number }}",
-                "type": "string"
-              },
-              {
-                "id": "7785e9f0-cfe9-48af-bc5f-31b2d5e0f82f",
-                "name": "date",
-                "value": "={{ $json.body.salesorders[0].date }}",
-                "type": "string"
-              },
-              {
-                "id": "25198faf-971a-454b-9c1a-c1c9d3dbba62",
-                "name": "total",
-                "value": "={{ $json.body.salesorders[0].total }}",
-                "type": "number"
-              },
-              {
-                "id": "71cb6060-2884-4304-85bc-eadefb2eb47a",
-                "name": "total_invoiced_amount",
-                "value": "={{ $json.body.salesorders[0].total_invoiced_amount }}",
-                "type": "number"
-              },
-              {
-                "id": "57e23d09-0eac-4eb7-86fc-0ea26a3e28c4",
-                "name": "quantity",
-                "value": "={{ $json.body.salesorders[0].quantity }}",
-                "type": "number"
-              },
-              {
-                "id": "55779e4c-1daa-49c1-8f43-74b57fbdd7c4",
-                "name": "quantity_invoiced",
-                "value": "={{ $json.body.salesorders[0].quantity_invoiced }}",
-                "type": "number"
-              },
-              {
-                "id": "db16fef4-9b86-4983-9e8f-6142d7a508f0",
-                "name": "quantity_packed",
-                "value": "={{ $json.body.salesorders[0].quantity_packed }}",
-                "type": "number"
-              },
-              {
-                "id": "bfbe54eb-4848-41fd-9611-43f392268286",
-                "name": "quantity_shipped",
-                "value": "={{ $json.body.salesorders[0].quantity_shipped }}",
-                "type": "number"
-              },
-              {
-                "id": "dcb4609a-bc9b-4d39-a0ee-467c7f982919",
-                "name": "order_status",
-                "value": "={{ $json.body.salesorders[0].order_status }}",
-                "type": "string"
-              },
-              {
-                "id": "1e1b4013-eed8-4dd3-8902-c30845ad295d",
-                "name": "invoiced_status",
-                "value": "={{ $json.body.salesorders[0].invoiced_status }}",
-                "type": "string"
-              },
-              {
-                "id": "92f6962b-800a-4a71-b401-07f3ad2d6bf9",
-                "name": "paid_status",
-                "value": "={{ $json.body.salesorders[0].paid_status }}",
-                "type": "string"
-              },
-              {
-                "id": "8a934458-8621-45d8-8695-f3c1951e56ed",
-                "name": "shipped_status",
-                "value": "={{ $json.body.salesorders[0].shipped_status }}",
-                "type": "string"
-              },
-              {
-                "id": "ce6a06d5-0fb7-40b0-80cf-169d4a8f130f",
-                "name": "status",
-                "value": "={{ $json.body.salesorders[0].status }}",
-                "type": "string"
-              },
-              {
-                "id": "e946ea90-e015-4d85-8d39-f568f9ddc684",
-                "name": "branch_id",
-                "value": "={{ $json.body.salesorders[0].branch_id }}",
-                "type": "string"
-              },
-              {
-                "id": "575975b3-9cba-4e6b-93af-10af8bd4289c",
-                "name": "location_id",
-                "value": "={{ $json.body.salesorders[0].location_id }}",
-                "type": "string"
-              },
-              {
-                "id": "af9baa9c-87ea-490a-9ea0-24ce7990e2e8",
-                "name": "balance",
-                "value": "={{ $json.body.salesorders[0].balance }}",
-                "type": "number"
-              }
-            ]
-          },
-          "options": {}
-        },
-        "type": "n8n-nodes-base.set",
-        "typeVersion": 3.4,
-        "position": [
-          3936,
-          32
-        ],
-        "id": "d901c180-6890-4c19-91de-64bb64812e93",
-        "name": "Set SO Data"
-      },
-      {
-        "parameters": {
           "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $('Validate SO Data').item.json.salesorder_id }}",
           "sendQuery": true,
           "queryParameters": {
@@ -1625,6 +1434,539 @@
         ],
         "id": "3c43a92e-b3e2-4ff3-96ee-c27d84fb12b7",
         "name": "Get Existing SO"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "create_so",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "error",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Sales Order creation failed",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2672,
+          192
+        ],
+        "id": "1e614a3c-48e5-48f6-8e7b-fb9ed139da97",
+        "name": "Log Entry - Failed SO Create"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "confirm_so",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "error",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Sales Order confirmation failed",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3216,
+          -16
+        ],
+        "id": "733c646d-82f1-4444-8fb3-89c974ddd0aa",
+        "name": "Log Entry - SO Confirm Fail"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "package_check",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "error",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Package Prerequisites Failed",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3648,
+          -144
+        ],
+        "id": "104e58b1-0392-4fb9-b4e3-d9fbf69f2b15",
+        "name": "Log Entry - Package Prerequisites failed"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "validate_so",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "error",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Sales Order invalid",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2880,
+          80
+        ],
+        "id": "0e21a2ab-1f0d-49e6-a936-1c9e0bcffeac",
+        "name": "Log Entry - Invalid SO"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "void_so",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "error",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Sales Order exists in status VOID",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2432,
+          -320
+        ],
+        "id": "9c9d6f02-6e27-4fdb-ad75-c998b96beac4",
+        "name": "Log Entry - SO = Void"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "package_create",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "error",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Package Create Failed",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3856,
+          -304
+        ],
+        "id": "9afc2845-9d12-41f0-92e5-f009ed90bdcd",
+        "name": "Log Entry - Create Package failed"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "so_workflow",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "success",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Salesorder workflow completed successfully",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3872,
+          -496
+        ],
+        "id": "4616373a-f409-4da9-a2a3-7ff658ca3b93",
+        "name": "Log Entry - Success"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          4304,
+          48
+        ],
+        "id": "008e76ba-56f5-4546-8302-500be80a254d",
+        "name": "Log Result to Backendless"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2656,
+          -512
+        ],
+        "id": "2e2c2aff-7590-4113-b5cb-e4792d68cfc7",
+        "name": "Log Event to Backendless"
       }
     ],
     "connections": {
@@ -1723,16 +2065,18 @@
           ]
         ]
       },
-      "Calculate Due Date": {
-        "main": [
-          []
-        ]
-      },
       "Confirm Salesorder": {
         "main": [
           [
             {
               "node": "Get Created SO",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log Entry - SO Confirm Fail",
               "type": "main",
               "index": 0
             }
@@ -1824,6 +2168,13 @@
           [
             {
               "node": "Validate SO Creation",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log Entry - Failed SO Create",
               "type": "main",
               "index": 0
             }
@@ -1988,7 +2339,13 @@
               "index": 0
             }
           ],
-          []
+          [
+            {
+              "node": "Log Entry - Invalid SO",
+              "type": "main",
+              "index": 0
+            }
+          ]
         ]
       },
       "Validate SO Data": {
@@ -2010,18 +2367,43 @@
               "type": "main",
               "index": 0
             }
+          ],
+          [
+            {
+              "node": "Log Entry - Package Prerequisites failed",
+              "type": "main",
+              "index": 0
+            }
           ]
         ]
       },
       "Create package": {
         "main": [
-          [],
-          []
+          [
+            {
+              "node": "Log Entry - Success",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log Entry - Create Package failed",
+              "type": "main",
+              "index": 0
+            }
+          ]
         ]
       },
       "Switch": {
         "main": [
-          [],
+          [
+            {
+              "node": "Log Entry - SO = Void",
+              "type": "main",
+              "index": 0
+            }
+          ],
           [
             {
               "node": "Get Existing SO",
@@ -2036,11 +2418,6 @@
               "index": 0
             }
           ]
-        ]
-      },
-      "Set SO Data": {
-        "main": [
-          []
         ]
       },
       "Get Created SO": {
@@ -2064,6 +2441,83 @@
             }
           ]
         ]
+      },
+      "Log Entry - Package Prerequisites failed": {
+        "main": [
+          [
+            {
+              "node": "Log Result to Backendless",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - Success": {
+        "main": [
+          [
+            {
+              "node": "Log Result to Backendless",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - Create Package failed": {
+        "main": [
+          [
+            {
+              "node": "Log Result to Backendless",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - SO Confirm Fail": {
+        "main": [
+          [
+            {
+              "node": "Log Result to Backendless",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - Invalid SO": {
+        "main": [
+          [
+            {
+              "node": "Log Result to Backendless",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - Failed SO Create": {
+        "main": [
+          [
+            {
+              "node": "Log Result to Backendless",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - SO = Void": {
+        "main": [
+          [
+            {
+              "node": "Log Event to Backendless",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "settings": {
@@ -2073,9 +2527,9 @@
     "staticData": null,
     "meta": null,
     "pinData": {},
-    "versionId": "193f73c2-c00f-4332-9731-a4828d720611",
-    "activeVersionId": "193f73c2-c00f-4332-9731-a4828d720611",
-    "versionCounter": 211,
+    "versionId": "20186417-1651-46ae-8075-ad4df1abf0c1",
+    "activeVersionId": "20186417-1651-46ae-8075-ad4df1abf0c1",
+    "versionCounter": 230,
     "triggerCount": 1,
     "shared": [
       {
@@ -2134,9 +2588,9 @@
     ],
     "tags": [],
     "activeVersion": {
-      "updatedAt": "2026-02-03T08:18:04.000Z",
-      "createdAt": "2026-02-03T08:16:43.800Z",
-      "versionId": "193f73c2-c00f-4332-9731-a4828d720611",
+      "updatedAt": "2026-02-03T10:04:02.000Z",
+      "createdAt": "2026-02-03T10:03:59.435Z",
+      "versionId": "20186417-1651-46ae-8075-ad4df1abf0c1",
       "workflowId": "XYhKungDNJV46vQF",
       "nodes": [
         {
@@ -2434,23 +2888,6 @@
           ],
           "id": "56528ec2-07b7-4f83-a907-c7f4b6083fb3",
           "name": "if valid transaction"
-        },
-        {
-          "parameters": {
-            "mode": "raw",
-            "jsonOutput": "={\"due_date\": \"{{ \n  (() => {\n    const d = new Date($node[\"Webhook\"].json.body.event_timestamp_utc);\n\n    d.setDate(d.getDate() + 3);\n\n    const daysToThursday = (4 - d.getDay() + 7) % 7;\n    d.setDate(d.getDate() + daysToThursday);\n\n    return d.toISOString().split('T')[0];\n  })()\n}}\"}",
-            "options": {}
-          },
-          "type": "n8n-nodes-base.set",
-          "typeVersion": 3.4,
-          "position": [
-            3936,
-            256
-          ],
-          "id": "8f9d60d1-6341-43da-8d64-3d2efb3e1852",
-          "name": "Calculate Due Date",
-          "alwaysOutputData": false,
-          "disabled": true
         },
         {
           "parameters": {
@@ -3398,7 +3835,7 @@
                   }
                 }
               ],
-              "combinator": "or"
+              "combinator": "and"
             },
             "options": {}
           },
@@ -3410,43 +3847,6 @@
           ],
           "id": "e44637fc-27a5-4155-9201-4e8208598740",
           "name": "Check Package Prerequisites"
-        },
-        {
-          "parameters": {
-            "method": "POST",
-            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.body.salesorder.salesorder_id }}/status/void",
-            "sendQuery": true,
-            "queryParameters": {
-              "parameters": [
-                {
-                  "name": "organization_id",
-                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
-                }
-              ]
-            },
-            "sendHeaders": true,
-            "headerParameters": {
-              "parameters": [
-                {
-                  "name": "Authorization",
-                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
-                }
-              ]
-            },
-            "options": {}
-          },
-          "type": "n8n-nodes-base.httpRequest",
-          "typeVersion": 4.3,
-          "position": [
-            3936,
-            -144
-          ],
-          "id": "6283fcf6-eb64-48ba-8cf9-4b1b7c7a3fd6",
-          "name": "Rollback: Void SO",
-          "retryOnFail": true,
-          "maxTries": 2,
-          "waitBetweenTries": 2000,
-          "onError": "continueErrorOutput"
         },
         {
           "parameters": {
@@ -3539,143 +3939,6 @@
         },
         {
           "parameters": {
-            "assignments": {
-              "assignments": [
-                {
-                  "id": "ba67302f-5f1f-4976-9e91-fb34d770ec9f",
-                  "name": "salesorder_id",
-                  "value": "={{ $json.body.salesorders[0].salesorder_id }}",
-                  "type": "string"
-                },
-                {
-                  "id": "3cd5fbdc-ad38-470e-b377-88099e5cbcd7",
-                  "name": "customer_name",
-                  "value": "={{ $json.body.salesorders[0].customer_name }}",
-                  "type": "string"
-                },
-                {
-                  "id": "3e8e59ab-c0cf-4624-8f1c-7bd4e56499e3",
-                  "name": "customer_id",
-                  "value": "={{ $json.body.salesorders[0].customer_id }}",
-                  "type": "string"
-                },
-                {
-                  "id": "c472b14e-5b59-4e08-8103-ec4393d8e958",
-                  "name": "salesorder_number",
-                  "value": "={{ $json.body.salesorders[0].salesorder_number }}",
-                  "type": "string"
-                },
-                {
-                  "id": "38b78b2f-2e6b-4250-8057-0af2cd5b7915",
-                  "name": "reference_number",
-                  "value": "={{ $json.body.salesorders[0].reference_number }}",
-                  "type": "string"
-                },
-                {
-                  "id": "7785e9f0-cfe9-48af-bc5f-31b2d5e0f82f",
-                  "name": "date",
-                  "value": "={{ $json.body.salesorders[0].date }}",
-                  "type": "string"
-                },
-                {
-                  "id": "25198faf-971a-454b-9c1a-c1c9d3dbba62",
-                  "name": "total",
-                  "value": "={{ $json.body.salesorders[0].total }}",
-                  "type": "number"
-                },
-                {
-                  "id": "71cb6060-2884-4304-85bc-eadefb2eb47a",
-                  "name": "total_invoiced_amount",
-                  "value": "={{ $json.body.salesorders[0].total_invoiced_amount }}",
-                  "type": "number"
-                },
-                {
-                  "id": "57e23d09-0eac-4eb7-86fc-0ea26a3e28c4",
-                  "name": "quantity",
-                  "value": "={{ $json.body.salesorders[0].quantity }}",
-                  "type": "number"
-                },
-                {
-                  "id": "55779e4c-1daa-49c1-8f43-74b57fbdd7c4",
-                  "name": "quantity_invoiced",
-                  "value": "={{ $json.body.salesorders[0].quantity_invoiced }}",
-                  "type": "number"
-                },
-                {
-                  "id": "db16fef4-9b86-4983-9e8f-6142d7a508f0",
-                  "name": "quantity_packed",
-                  "value": "={{ $json.body.salesorders[0].quantity_packed }}",
-                  "type": "number"
-                },
-                {
-                  "id": "bfbe54eb-4848-41fd-9611-43f392268286",
-                  "name": "quantity_shipped",
-                  "value": "={{ $json.body.salesorders[0].quantity_shipped }}",
-                  "type": "number"
-                },
-                {
-                  "id": "dcb4609a-bc9b-4d39-a0ee-467c7f982919",
-                  "name": "order_status",
-                  "value": "={{ $json.body.salesorders[0].order_status }}",
-                  "type": "string"
-                },
-                {
-                  "id": "1e1b4013-eed8-4dd3-8902-c30845ad295d",
-                  "name": "invoiced_status",
-                  "value": "={{ $json.body.salesorders[0].invoiced_status }}",
-                  "type": "string"
-                },
-                {
-                  "id": "92f6962b-800a-4a71-b401-07f3ad2d6bf9",
-                  "name": "paid_status",
-                  "value": "={{ $json.body.salesorders[0].paid_status }}",
-                  "type": "string"
-                },
-                {
-                  "id": "8a934458-8621-45d8-8695-f3c1951e56ed",
-                  "name": "shipped_status",
-                  "value": "={{ $json.body.salesorders[0].shipped_status }}",
-                  "type": "string"
-                },
-                {
-                  "id": "ce6a06d5-0fb7-40b0-80cf-169d4a8f130f",
-                  "name": "status",
-                  "value": "={{ $json.body.salesorders[0].status }}",
-                  "type": "string"
-                },
-                {
-                  "id": "e946ea90-e015-4d85-8d39-f568f9ddc684",
-                  "name": "branch_id",
-                  "value": "={{ $json.body.salesorders[0].branch_id }}",
-                  "type": "string"
-                },
-                {
-                  "id": "575975b3-9cba-4e6b-93af-10af8bd4289c",
-                  "name": "location_id",
-                  "value": "={{ $json.body.salesorders[0].location_id }}",
-                  "type": "string"
-                },
-                {
-                  "id": "af9baa9c-87ea-490a-9ea0-24ce7990e2e8",
-                  "name": "balance",
-                  "value": "={{ $json.body.salesorders[0].balance }}",
-                  "type": "number"
-                }
-              ]
-            },
-            "options": {}
-          },
-          "type": "n8n-nodes-base.set",
-          "typeVersion": 3.4,
-          "position": [
-            3936,
-            32
-          ],
-          "id": "d901c180-6890-4c19-91de-64bb64812e93",
-          "name": "Set SO Data"
-        },
-        {
-          "parameters": {
             "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $('Validate SO Data').item.json.salesorder_id }}",
             "sendQuery": true,
             "queryParameters": {
@@ -3756,6 +4019,539 @@
           ],
           "id": "3c43a92e-b3e2-4ff3-96ee-c27d84fb12b7",
           "name": "Get Existing SO"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "create_so",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "error",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Sales Order creation failed",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            2672,
+            192
+          ],
+          "id": "1e614a3c-48e5-48f6-8e7b-fb9ed139da97",
+          "name": "Log Entry - Failed SO Create"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "confirm_so",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "error",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Sales Order confirmation failed",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            3216,
+            -16
+          ],
+          "id": "733c646d-82f1-4444-8fb3-89c974ddd0aa",
+          "name": "Log Entry - SO Confirm Fail"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "package_check",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "error",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Package Prerequisites Failed",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            3648,
+            -144
+          ],
+          "id": "104e58b1-0392-4fb9-b4e3-d9fbf69f2b15",
+          "name": "Log Entry - Package Prerequisites failed"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "validate_so",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "error",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Sales Order invalid",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            2880,
+            80
+          ],
+          "id": "0e21a2ab-1f0d-49e6-a936-1c9e0bcffeac",
+          "name": "Log Entry - Invalid SO"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "void_so",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "error",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Sales Order exists in status VOID",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            2432,
+            -320
+          ],
+          "id": "9c9d6f02-6e27-4fdb-ad75-c998b96beac4",
+          "name": "Log Entry - SO = Void"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "package_create",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "error",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Package Create Failed",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            3856,
+            -304
+          ],
+          "id": "9afc2845-9d12-41f0-92e5-f009ed90bdcd",
+          "name": "Log Entry - Create Package failed"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "so_workflow",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "success",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Salesorder workflow completed successfully",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            3872,
+            -496
+          ],
+          "id": "4616373a-f409-4da9-a2a3-7ff658ca3b93",
+          "name": "Log Entry - Success"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $json }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            4304,
+            48
+          ],
+          "id": "008e76ba-56f5-4546-8302-500be80a254d",
+          "name": "Log Result to Backendless"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $json }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2656,
+            -512
+          ],
+          "id": "2e2c2aff-7590-4113-b5cb-e4792d68cfc7",
+          "name": "Log Event to Backendless"
         }
       ],
       "connections": {
@@ -3854,16 +4650,18 @@
             ]
           ]
         },
-        "Calculate Due Date": {
-          "main": [
-            []
-          ]
-        },
         "Confirm Salesorder": {
           "main": [
             [
               {
                 "node": "Get Created SO",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Log Entry - SO Confirm Fail",
                 "type": "main",
                 "index": 0
               }
@@ -3955,6 +4753,13 @@
             [
               {
                 "node": "Validate SO Creation",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Log Entry - Failed SO Create",
                 "type": "main",
                 "index": 0
               }
@@ -4119,7 +4924,13 @@
                 "index": 0
               }
             ],
-            []
+            [
+              {
+                "node": "Log Entry - Invalid SO",
+                "type": "main",
+                "index": 0
+              }
+            ]
           ]
         },
         "Validate SO Data": {
@@ -4141,18 +4952,43 @@
                 "type": "main",
                 "index": 0
               }
+            ],
+            [
+              {
+                "node": "Log Entry - Package Prerequisites failed",
+                "type": "main",
+                "index": 0
+              }
             ]
           ]
         },
         "Create package": {
           "main": [
-            [],
-            []
+            [
+              {
+                "node": "Log Entry - Success",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Log Entry - Create Package failed",
+                "type": "main",
+                "index": 0
+              }
+            ]
           ]
         },
         "Switch": {
           "main": [
-            [],
+            [
+              {
+                "node": "Log Entry - SO = Void",
+                "type": "main",
+                "index": 0
+              }
+            ],
             [
               {
                 "node": "Get Existing SO",
@@ -4167,11 +5003,6 @@
                 "index": 0
               }
             ]
-          ]
-        },
-        "Set SO Data": {
-          "main": [
-            []
           ]
         },
         "Get Created SO": {
@@ -4195,18 +5026,95 @@
               }
             ]
           ]
+        },
+        "Log Entry - Package Prerequisites failed": {
+          "main": [
+            [
+              {
+                "node": "Log Result to Backendless",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - Success": {
+          "main": [
+            [
+              {
+                "node": "Log Result to Backendless",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - Create Package failed": {
+          "main": [
+            [
+              {
+                "node": "Log Result to Backendless",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - SO Confirm Fail": {
+          "main": [
+            [
+              {
+                "node": "Log Result to Backendless",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - Invalid SO": {
+          "main": [
+            [
+              {
+                "node": "Log Result to Backendless",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - Failed SO Create": {
+          "main": [
+            [
+              {
+                "node": "Log Result to Backendless",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - SO = Void": {
+          "main": [
+            [
+              {
+                "node": "Log Event to Backendless",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version 193f73c2",
-      "description": "Hardened SO creation branch",
+      "name": "Version 20186417",
+      "description": "",
       "autosaved": false,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-03T08:18:04.709Z",
-          "id": 49,
+          "createdAt": "2026-02-03T10:04:02.391Z",
+          "id": 52,
           "workflowId": "XYhKungDNJV46vQF",
-          "versionId": "193f73c2-c00f-4332-9731-a4828d720611",
+          "versionId": "20186417-1651-46ae-8075-ad4df1abf0c1",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
