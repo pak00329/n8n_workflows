@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-01T15:10:12.039Z",
+    "updatedAt": "2026-02-03T08:16:43.794Z",
     "createdAt": "2026-01-01T15:28:55.444Z",
     "id": "XYhKungDNJV46vQF",
     "name": "Webhook - Takealot Sale Status Changed - Create Zoho Transacation",
@@ -88,7 +88,7 @@
       {
         "parameters": {
           "method": "POST",
-          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.body.salesorder.salesorder_id }}/status/confirmed",
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.salesorder_id }}/status/confirmed",
           "sendQuery": true,
           "queryParameters": {
             "parameters": [
@@ -112,11 +112,15 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2176,
-          -16
+          2960,
+          -96
         ],
         "id": "65ea9213-8821-474b-b8a6-0533fc805532",
-        "name": "Confirm Salesorder"
+        "name": "Confirm Salesorder",
+        "retryOnFail": true,
+        "maxTries": 2,
+        "waitBetweenTries": 2000,
+        "onError": "continueErrorOutput"
       },
       {
         "parameters": {
@@ -144,7 +148,7 @@
       {
         "parameters": {
           "mode": "raw",
-          "jsonOutput": "={\n  \"customer_id\": \"{{ $('Get row(s)').item.json.CustomerID }}\",\n  \"date\": {{ $('Webhook').item.json.body.event_timestamp_utc.slice(0, 10) }},\n  \"doc_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"order_id\": {{ $('Webhook').item.json.body.sale.order_id }},\n  \"order_item_id\": {{ $('Webhook').item.json.body.sale.order_item_id }},\n  \"reference_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"salesorder_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"is_inclusive_tax\": true,\n  \"due_date\": {{ $json.due_date }},\n  \"location_id\": \"{{ $('Get row(s)').item.json.ParentLocationID }}\",\n  \"notes\": \"Customer name: {{ $('Webhook').item.json.body.sale.customer }}\",\n  \"line_items\": [{\n    \"item_id\": \"{{ $('Get Item ID from SKU').item.json.items[0].item_id }}\",\n    \"name\": \"{{ $('Webhook').item.json.body.sale.product_title }}\",\n    \"rate\": {{ $('Webhook').item.json.body.sale.selling_price / $('Webhook').item.json.body.sale.quantity }},\n    \"quantity\": {{ $('Webhook').item.json.body.sale.quantity }},\n    \"tax_id\": \"{{ $('Get row(s)').item.json.TaxID }}\",\n    \"item_total\": {{ $('Webhook').item.json.body.sale.selling_price }},\n    \"location_id\": \"{{ $('Get row(s)').item.json.LocationID }}\"\n  }]\n }",
+          "jsonOutput": "={\n  \"customer_id\": \"{{ $('Get row(s)').item.json.CustomerID }}\",\n\"date\": \"{{ (() => {\n  const date = $('Webhook').item.json.body.event_timestamp_utc.split('T')[0];\n  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) {\n    throw new Error('Invalid date format');\n  }\n  return date;\n})() }}\",\n  \"doc_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"order_id\": {{ $('Webhook').item.json.body.sale.order_id }},\n  \"order_item_id\": {{ $('Webhook').item.json.body.sale.order_item_id }},\n  \"reference_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"salesorder_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"is_inclusive_tax\": true,\n  \"due_date\": {{ $('Webhook').item.json.body.event_timestamp_utc.slice(0, 10) }},\n  \"location_id\": \"{{ $('Get row(s)').item.json.ParentLocationID }}\",\n  \"notes\": \"Customer name: {{ $('Webhook').item.json.body.sale.customer }}\",\n  \"line_items\": [{\n    \"item_id\": \"{{ $('Get Item ID from SKU').item.json.items[0].item_id }}\",\n    \"name\": \"{{ $('Webhook').item.json.body.sale.product_title }}\",\n    \"rate\": {{ (() => {\n  const price = $('Webhook').item.json.body.sale.selling_price;\n  const qty = $('Webhook').item.json.body.sale.quantity;\n  if (qty === 0) throw new Error('Quantity cannot be zero');\n  return price / qty;\n})() }},\n    \"quantity\": {{ $('Webhook').item.json.body.sale.quantity }},\n    \"tax_id\": \"{{ $('Get row(s)').item.json.TaxID }}\",\n    \"item_total\": {{ $('Webhook').item.json.body.sale.selling_price }},\n    \"location_id\": \"{{ $('Get row(s)').item.json.LocationID }}\"\n  }]\n }",
           "options": {}
         },
         "type": "n8n-nodes-base.set",
@@ -154,7 +158,8 @@
           368
         ],
         "id": "d099e97d-a493-4ba0-bf3a-202815532fba",
-        "name": "Build JSON"
+        "name": "Build JSON",
+        "notes": "Added date check to see if date is valid and safe division for \"rate\" in case quantity is zero"
       },
       {
         "parameters": {
@@ -248,7 +253,7 @@
         "type": "n8n-nodes-base.dataTable",
         "typeVersion": 1.1,
         "position": [
-          -64,
+          -528,
           464
         ],
         "id": "b7faec4b-cd5a-44a4-9152-87aacdf90fea",
@@ -308,12 +313,13 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          1056,
-          368
+          3936,
+          256
         ],
         "id": "8f9d60d1-6341-43da-8d64-3d2efb3e1852",
         "name": "Calculate Due Date",
-        "alwaysOutputData": false
+        "alwaysOutputData": false,
+        "disabled": true
       },
       {
         "parameters": {
@@ -328,7 +334,7 @@
               },
               {
                 "name": "salesorder_id",
-                "value": "={{ $('Create Salesorder').item.json.body.salesorder.salesorder_id }}"
+                "value": "={{ $json.body.salesorder.salesorder_id }}"
               }
             ]
           },
@@ -343,17 +349,21 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\n  \"package_number\": \"{{ $('Create Salesorder').item.json.body.salesorder.salesorder_number }}\",\n  \"date\": \"{{ $('Create Salesorder').item.json.body.salesorder.date }}\",\n  \"line_items\": [\n    {\n      \"so_line_item_id\": \"{{ $('Create Salesorder').item.json.body.salesorder.line_items[0].line_item_id }}\",\n      \"quantity\": {{ $('Create Salesorder').item.json.body.salesorder.line_items[0].quantity }}\n    }\n  ],\n  \"notes\": \"{{ $('Create Salesorder').item.json.body.salesorder.notes }}\"\n} ",
+          "jsonBody": "={\n  \"package_number\": \"{{ $json.body.salesorder.salesorder_number }}\",\n  \"date\": \"{{ $json.body.salesorder.date }}\",\n  \"line_items\": [\n    {\n      \"so_line_item_id\": \"{{ $json.body.salesorder.line_items[0].line_item_id }}\",\n      \"quantity\": {{ $json.body.salesorder.line_items[0].quantity }}\n    }\n  ],\n  \"notes\": \"{{ $json.body.salesorder.notes }}\"\n} ",
           "options": {}
         },
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2400,
-          -16
+          3648,
+          -352
         ],
         "id": "41afaa63-5132-4ae6-afa9-83a1dd3f9472",
-        "name": "Create package"
+        "name": "Create package",
+        "retryOnFail": true,
+        "maxTries": 2,
+        "waitBetweenTries": 2000,
+        "onError": "continueErrorOutput"
       },
       {
         "parameters": {
@@ -475,16 +485,17 @@
           "binaryData": true,
           "type": "SHA256",
           "dataPropertyName": "HMAC",
-          "secret": "531df3f76b214a36a0f44184b9dca8a1"
+          "secret": "={{ $json.takealot_webhook_secret }}"
         },
         "type": "n8n-nodes-base.crypto",
         "typeVersion": 1,
         "position": [
-          -512,
+          -272,
           464
         ],
         "id": "e2234e8e-9921-49bd-9c16-b12e02edb77b",
-        "name": "Crypto"
+        "name": "Crypto",
+        "disabled": true
       },
       {
         "parameters": {
@@ -694,11 +705,15 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          1728,
-          -16
+          2208,
+          64
         ],
         "id": "4865e69f-9e68-4106-9d45-bef3ffc12efd",
-        "name": "Create Salesorder"
+        "name": "Create Salesorder",
+        "retryOnFail": true,
+        "maxTries": 2,
+        "waitBetweenTries": 2000,
+        "onError": "continueErrorOutput"
       },
       {
         "parameters": {
@@ -1046,55 +1061,12 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          -288,
+          -32,
           464
         ],
         "id": "d6f1dc40-bbde-4160-b00f-f45ae88ee304",
-        "name": "HTTP Request"
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 3
-            },
-            "conditions": [
-              {
-                "id": "43a58f31-369b-4b21-8ed0-620bb3f52cac",
-                "leftValue": "={{ $json.statusCode }}",
-                "rightValue": 201,
-                "operator": {
-                  "type": "number",
-                  "operation": "equals"
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.3,
-        "position": [
-          1952,
-          -16
-        ],
-        "id": "65e6be3a-d72a-4ba1-9c77-918f343324d7",
-        "name": "SO Created?"
-      },
-      {
-        "parameters": {},
-        "type": "n8n-nodes-base.noOp",
-        "typeVersion": 1,
-        "position": [
-          2176,
-          176
-        ],
-        "id": "ff9c5dda-5338-4214-b8e6-a80bf36c6938",
-        "name": "Duplicate SO"
+        "name": "HTTP Request",
+        "disabled": true
       },
       {
         "parameters": {
@@ -1111,6 +1083,548 @@
         "typeVersion": 1,
         "id": "9f61b6de-7d67-4253-bd47-37b685aa75f7",
         "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "salesorder_number",
+                "value": "={{ $('Build JSON').item.json.reference_number }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('Build JSON').item.json.toJsonString() }}",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true,
+                "responseFormat": "json"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1744,
+          -16
+        ],
+        "id": "38f3fef2-5bff-49cc-a0ca-5b022977c81c",
+        "name": "Check for Existing SO"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "e5eb83b5-8333-475a-8184-ddc2d334528d",
+                "leftValue": "={{ $json.body.salesorders.length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1952,
+          -16
+        ],
+        "id": "ab7bba60-a5f9-4c01-a8d8-dc1da002fa75",
+        "name": "SO Exists?"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "43a58f31-369b-4b21-8ed0-620bb3f52cac",
+                "leftValue": "={{ $json.statusCode }}",
+                "rightValue": 200,
+                "operator": {
+                  "type": "number",
+                  "operation": "gte"
+                }
+              },
+              {
+                "id": "eca26688-5dd0-425f-8936-08a78e1c7e56",
+                "leftValue": "={{ $json.statusCode }}",
+                "rightValue": 299,
+                "operator": {
+                  "type": "number",
+                  "operation": "lte"
+                }
+              },
+              {
+                "id": "335c6485-e0ad-4a9b-9de6-94b570f4c89c",
+                "leftValue": "={{ $json.body.salesorder.salesorder_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "df8a4a14-54b8-48a3-bf80-a5610815f6e2",
+                "leftValue": "={{ $json.body.salesorder.line_items.length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2480,
+          0
+        ],
+        "id": "65e6be3a-d72a-4ba1-9c77-918f343324d7",
+        "name": "Validate SO Creation"
+      },
+      {
+        "parameters": {
+          "jsCode": "const response = $input.item.json.body.salesorder;\nconst expected = $('Build JSON').item.json;\n\n// Validate critical fields match\nconst errors = [];\n\nif (response.order_id !== expected.salesorder_id) {\n  errors.push(`Order ID mismatch: ${response.salesorder_id} vs ${expected.salesorder_id}`);\n}\n\nif (Math.abs(response.total - expected.line_items[0].item_total) > 0.01) {\n  errors.push(`Total mismatch: ${response.total} vs ${expected.line_items[0].item_total}`);\n}\n\nif (response.line_items[0].quantity !== expected.line_items[0].quantity) {\n  errors.push(`Quantity mismatch`);\n}\n\nif (errors.length > 0) {\n  throw new Error(`SO validation failed: ${errors.join(', ')}`);\n}\n\nreturn {\n  json: {\n    validated: true,\n    salesorder_id: response.salesorder_id,\n    ...response\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2704,
+          -96
+        ],
+        "id": "f497d484-afaf-4aad-8cb1-651927f94374",
+        "name": "Validate SO Data"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "d5bdf613-bb65-41cf-8d17-3ca871358eaa",
+                "leftValue": "={{ $json.body.salesorder.line_items[0].quantity_packed }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "equals"
+                }
+              },
+              {
+                "id": "0f2d749c-be5a-43a7-81aa-aa7a7f900d44",
+                "leftValue": "={{ $json.body.salesorder.status }}",
+                "rightValue": "confirmed",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "or"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3392,
+          -272
+        ],
+        "id": "e44637fc-27a5-4155-9201-4e8208598740",
+        "name": "Check Package Prerequisites"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.body.salesorder.salesorder_id }}/status/void",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          3936,
+          -144
+        ],
+        "id": "6283fcf6-eb64-48ba-8cf9-4b1b7c7a3fd6",
+        "name": "Rollback: Void SO",
+        "retryOnFail": true,
+        "maxTries": 2,
+        "waitBetweenTries": 2000,
+        "onError": "continueErrorOutput"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.body.salesorders[0].order_status }}",
+                      "rightValue": "void",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "id": "2bfe015f-886e-410e-a6fa-5f3c5c78f27e"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "void"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "9a4a839e-94a9-47e8-aeb3-7f54e02d9b9a",
+                      "leftValue": "={{ $json.body.salesorders[0].order_status }}",
+                      "rightValue": "confirmed",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "confirmed"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "c1b2e3aa-9b22-449e-9027-0483a4d7ba3f",
+                      "leftValue": "={{ $json.body.salesorders[0].order_status }}",
+                      "rightValue": "draft",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "draft"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          2208,
+          -176
+        ],
+        "id": "2f146bbb-9bee-4f71-83c2-ffa2be2f9232",
+        "name": "Switch"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "ba67302f-5f1f-4976-9e91-fb34d770ec9f",
+                "name": "salesorder_id",
+                "value": "={{ $json.body.salesorders[0].salesorder_id }}",
+                "type": "string"
+              },
+              {
+                "id": "3cd5fbdc-ad38-470e-b377-88099e5cbcd7",
+                "name": "customer_name",
+                "value": "={{ $json.body.salesorders[0].customer_name }}",
+                "type": "string"
+              },
+              {
+                "id": "3e8e59ab-c0cf-4624-8f1c-7bd4e56499e3",
+                "name": "customer_id",
+                "value": "={{ $json.body.salesorders[0].customer_id }}",
+                "type": "string"
+              },
+              {
+                "id": "c472b14e-5b59-4e08-8103-ec4393d8e958",
+                "name": "salesorder_number",
+                "value": "={{ $json.body.salesorders[0].salesorder_number }}",
+                "type": "string"
+              },
+              {
+                "id": "38b78b2f-2e6b-4250-8057-0af2cd5b7915",
+                "name": "reference_number",
+                "value": "={{ $json.body.salesorders[0].reference_number }}",
+                "type": "string"
+              },
+              {
+                "id": "7785e9f0-cfe9-48af-bc5f-31b2d5e0f82f",
+                "name": "date",
+                "value": "={{ $json.body.salesorders[0].date }}",
+                "type": "string"
+              },
+              {
+                "id": "25198faf-971a-454b-9c1a-c1c9d3dbba62",
+                "name": "total",
+                "value": "={{ $json.body.salesorders[0].total }}",
+                "type": "number"
+              },
+              {
+                "id": "71cb6060-2884-4304-85bc-eadefb2eb47a",
+                "name": "total_invoiced_amount",
+                "value": "={{ $json.body.salesorders[0].total_invoiced_amount }}",
+                "type": "number"
+              },
+              {
+                "id": "57e23d09-0eac-4eb7-86fc-0ea26a3e28c4",
+                "name": "quantity",
+                "value": "={{ $json.body.salesorders[0].quantity }}",
+                "type": "number"
+              },
+              {
+                "id": "55779e4c-1daa-49c1-8f43-74b57fbdd7c4",
+                "name": "quantity_invoiced",
+                "value": "={{ $json.body.salesorders[0].quantity_invoiced }}",
+                "type": "number"
+              },
+              {
+                "id": "db16fef4-9b86-4983-9e8f-6142d7a508f0",
+                "name": "quantity_packed",
+                "value": "={{ $json.body.salesorders[0].quantity_packed }}",
+                "type": "number"
+              },
+              {
+                "id": "bfbe54eb-4848-41fd-9611-43f392268286",
+                "name": "quantity_shipped",
+                "value": "={{ $json.body.salesorders[0].quantity_shipped }}",
+                "type": "number"
+              },
+              {
+                "id": "dcb4609a-bc9b-4d39-a0ee-467c7f982919",
+                "name": "order_status",
+                "value": "={{ $json.body.salesorders[0].order_status }}",
+                "type": "string"
+              },
+              {
+                "id": "1e1b4013-eed8-4dd3-8902-c30845ad295d",
+                "name": "invoiced_status",
+                "value": "={{ $json.body.salesorders[0].invoiced_status }}",
+                "type": "string"
+              },
+              {
+                "id": "92f6962b-800a-4a71-b401-07f3ad2d6bf9",
+                "name": "paid_status",
+                "value": "={{ $json.body.salesorders[0].paid_status }}",
+                "type": "string"
+              },
+              {
+                "id": "8a934458-8621-45d8-8695-f3c1951e56ed",
+                "name": "shipped_status",
+                "value": "={{ $json.body.salesorders[0].shipped_status }}",
+                "type": "string"
+              },
+              {
+                "id": "ce6a06d5-0fb7-40b0-80cf-169d4a8f130f",
+                "name": "status",
+                "value": "={{ $json.body.salesorders[0].status }}",
+                "type": "string"
+              },
+              {
+                "id": "e946ea90-e015-4d85-8d39-f568f9ddc684",
+                "name": "branch_id",
+                "value": "={{ $json.body.salesorders[0].branch_id }}",
+                "type": "string"
+              },
+              {
+                "id": "575975b3-9cba-4e6b-93af-10af8bd4289c",
+                "name": "location_id",
+                "value": "={{ $json.body.salesorders[0].location_id }}",
+                "type": "string"
+              },
+              {
+                "id": "af9baa9c-87ea-490a-9ea0-24ce7990e2e8",
+                "name": "balance",
+                "value": "={{ $json.body.salesorders[0].balance }}",
+                "type": "number"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3936,
+          32
+        ],
+        "id": "d901c180-6890-4c19-91de-64bb64812e93",
+        "name": "Set SO Data"
+      },
+      {
+        "parameters": {
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $('Validate SO Data').item.json.salesorder_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('Build JSON').item.json.toJsonString() }}",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true,
+                "responseFormat": "json"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          3184,
+          -208
+        ],
+        "id": "16ac7f23-b671-4e06-9b2d-1b4639106c83",
+        "name": "Get Created SO"
+      },
+      {
+        "parameters": {
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $('Check for Existing SO').item.json.body.salesorders[0].salesorder_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true,
+                "responseFormat": "json"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          3184,
+          -400
+        ],
+        "id": "3c43a92e-b3e2-4ff3-96ee-c27d84fb12b7",
+        "name": "Get Existing SO"
       }
     ],
     "connections": {
@@ -1118,7 +1632,7 @@
         "main": [
           [
             {
-              "node": "Crypto",
+              "node": "Get row(s)",
               "type": "main",
               "index": 0
             }
@@ -1140,7 +1654,7 @@
         "main": [
           [
             {
-              "node": "Calculate Due Date",
+              "node": "Build JSON",
               "type": "main",
               "index": 0
             }
@@ -1184,7 +1698,7 @@
         "main": [
           [
             {
-              "node": "Set Endpoint",
+              "node": "Crypto",
               "type": "main",
               "index": 0
             }
@@ -1211,20 +1725,14 @@
       },
       "Calculate Due Date": {
         "main": [
-          [
-            {
-              "node": "Build JSON",
-              "type": "main",
-              "index": 0
-            }
-          ]
+          []
         ]
       },
       "Confirm Salesorder": {
         "main": [
           [
             {
-              "node": "Create package",
+              "node": "Get Created SO",
               "type": "main",
               "index": 0
             }
@@ -1290,7 +1798,7 @@
         "main": [
           [
             {
-              "node": "Create Salesorder",
+              "node": "Check for Existing SO",
               "type": "main",
               "index": 0
             }
@@ -1315,7 +1823,7 @@
         "main": [
           [
             {
-              "node": "SO Created?",
+              "node": "Validate SO Creation",
               "type": "main",
               "index": 0
             }
@@ -1435,14 +1943,55 @@
         "main": [
           [
             {
-              "node": "Get row(s)",
+              "node": "Set Endpoint",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "SO Created?": {
+      "Check for Existing SO": {
+        "main": [
+          [
+            {
+              "node": "SO Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SO Exists?": {
+        "main": [
+          [
+            {
+              "node": "Switch",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create Salesorder",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validate SO Creation": {
+        "main": [
+          [
+            {
+              "node": "Validate SO Data",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Validate SO Data": {
         "main": [
           [
             {
@@ -1450,10 +1999,66 @@
               "type": "main",
               "index": 0
             }
+          ]
+        ]
+      },
+      "Check Package Prerequisites": {
+        "main": [
+          [
+            {
+              "node": "Create package",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create package": {
+        "main": [
+          [],
+          []
+        ]
+      },
+      "Switch": {
+        "main": [
+          [],
+          [
+            {
+              "node": "Get Existing SO",
+              "type": "main",
+              "index": 0
+            }
           ],
           [
             {
-              "node": "Duplicate SO",
+              "node": "Validate SO Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set SO Data": {
+        "main": [
+          []
+        ]
+      },
+      "Get Created SO": {
+        "main": [
+          [
+            {
+              "node": "Check Package Prerequisites",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Existing SO": {
+        "main": [
+          [
+            {
+              "node": "Check Package Prerequisites",
               "type": "main",
               "index": 0
             }
@@ -1467,72 +2072,10 @@
     },
     "staticData": null,
     "meta": null,
-    "pinData": {
-      "Webhook": [
-        {
-          "json": {
-            "headers": {
-              "host": "n8n.tallypro.co.za",
-              "user-agent": "python-requests/2.32.5",
-              "content-length": "538",
-              "accept": "*/*",
-              "accept-encoding": "gzip, deflate",
-              "baggage": "sentry-trace_id=c25498e3e00246b599920642df0e6390,sentry-environment=production,sentry-release=a1ac744c79fe02a8f9aa8d6f7965e0d714879435,sentry-public_key=84bf495d467f45298f58b8e051832348",
-              "content-type": "application/json",
-              "sentry-trace": "c25498e3e00246b599920642df0e6390-a486aeb79e41ed4a",
-              "x-forwarded-for": "34.76.105.150",
-              "x-forwarded-host": "n8n.tallypro.co.za",
-              "x-forwarded-port": "443",
-              "x-forwarded-proto": "https",
-              "x-forwarded-server": "ec104f85d712",
-              "x-real-ip": "34.76.105.150",
-              "x-takealot-delivery": "73f988dd-e23d-4693-ab5a-13bfb4eb48e7",
-              "x-takealot-event": "sale_status_changed",
-              "x-takealot-signature": "NmVlYjNmODM0ZTIzY2IxMDE0MWQyMzJkNzAzYzk4M2U0YTFmMzFhMTkyZDRkMjljZDU5MzI1OTkwZjY0NGQ2YQ=="
-            },
-            "params": {
-              "seller_id": "11932"
-            },
-            "query": {},
-            "body": {
-              "sale": {
-                "order_item_id": 395612511,
-                "offer_id": 207730444,
-                "order_id": 202430445,
-                "warehouse": "JHB",
-                "warehouse_id": "JHB",
-                "sale_status_id": 2,
-                "sale_status": "Preparing for Customer",
-                "order_date": "2026-01-26T15:44:25",
-                "product_title": "DigiDoor Garage Door 4 Button Remote",
-                "takealot_url_mobi": "https://www.takealot.com/x/PLID92937409",
-                "sku": "0361Bx001",
-                "tsin": 93384324,
-                "quantity": 2,
-                "selling_price": 604,
-                "customer": "Rethabile Selebalo",
-                "customer_warehouse": "JHB"
-              },
-              "event_timestamp_utc": "2026-01-26T13:44:33.208152"
-            },
-            "webhookUrl": "https://n8n.tallypro.co.za/webhook/fa329524-5a4e-4fab-a636-cfcd3b496f4b/:seller_id",
-            "executionMode": "production"
-          },
-          "binary": {
-            "data": {
-              "data": "eyJzYWxlIjogeyJvcmRlcl9pdGVtX2lkIjogMzk1NjEyNTExLCAib2ZmZXJfaWQiOiAyMDc3MzA0NDQsICJvcmRlcl9pZCI6IDIwMjQzMDQ0NSwgIndhcmVob3VzZSI6ICJKSEIiLCAid2FyZWhvdXNlX2lkIjogIkpIQiIsICJzYWxlX3N0YXR1c19pZCI6IDIsICJzYWxlX3N0YXR1cyI6ICJQcmVwYXJpbmcgZm9yIEN1c3RvbWVyIiwgIm9yZGVyX2RhdGUiOiAiMjAyNi0wMS0yNlQxNTo0NDoyNSIsICJwcm9kdWN0X3RpdGxlIjogIkRpZ2lEb29yIEdhcmFnZSBEb29yIDQgQnV0dG9uIFJlbW90ZSIsICJ0YWtlYWxvdF91cmxfbW9iaSI6ICJodHRwczovL3d3dy50YWtlYWxvdC5jb20veC9QTElEOTI5Mzc0MDkiLCAic2t1IjogIjAzNjFCeDAwMSIsICJ0c2luIjogOTMzODQzMjQsICJxdWFudGl0eSI6IDIsICJzZWxsaW5nX3ByaWNlIjogNjA0LCAiY3VzdG9tZXIiOiAiUmV0aGFiaWxlIFNlbGViYWxvIiwgImN1c3RvbWVyX3dhcmVob3VzZSI6ICJKSEIifSwgImV2ZW50X3RpbWVzdGFtcF91dGMiOiAiMjAyNi0wMS0yNlQxMzo0NDozMy4yMDgxNTIifQ==",
-              "mimeType": "application/json"
-            }
-          },
-          "pairedItem": {
-            "item": 0
-          }
-        }
-      ]
-    },
-    "versionId": "c5ec1500-cf5a-43fb-8d14-5d2642956b53",
-    "activeVersionId": "c5ec1500-cf5a-43fb-8d14-5d2642956b53",
-    "versionCounter": 192,
+    "pinData": {},
+    "versionId": "193f73c2-c00f-4332-9731-a4828d720611",
+    "activeVersionId": "193f73c2-c00f-4332-9731-a4828d720611",
+    "versionCounter": 211,
     "triggerCount": 1,
     "shared": [
       {
@@ -1557,7 +2100,7 @@
               "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
               "projectId": "A2rkQg960Oa5Tvrh",
               "user": {
-                "updatedAt": "2026-02-01T07:29:09.000Z",
+                "updatedAt": "2026-02-03T06:46:13.000Z",
                 "createdAt": "2025-12-31T14:10:08.854Z",
                 "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
                 "email": "mark@tallypro.co.za",
@@ -1581,7 +2124,7 @@
                 },
                 "disabled": false,
                 "mfaEnabled": false,
-                "lastActiveAt": "2026-01-31",
+                "lastActiveAt": "2026-02-02",
                 "isPending": false
               }
             }
@@ -1591,9 +2134,9 @@
     ],
     "tags": [],
     "activeVersion": {
-      "updatedAt": "2026-02-01T15:10:26.000Z",
-      "createdAt": "2026-02-01T15:10:12.041Z",
-      "versionId": "c5ec1500-cf5a-43fb-8d14-5d2642956b53",
+      "updatedAt": "2026-02-03T08:18:04.000Z",
+      "createdAt": "2026-02-03T08:16:43.800Z",
+      "versionId": "193f73c2-c00f-4332-9731-a4828d720611",
       "workflowId": "XYhKungDNJV46vQF",
       "nodes": [
         {
@@ -1676,7 +2219,7 @@
         {
           "parameters": {
             "method": "POST",
-            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.body.salesorder.salesorder_id }}/status/confirmed",
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.salesorder_id }}/status/confirmed",
             "sendQuery": true,
             "queryParameters": {
               "parameters": [
@@ -1700,11 +2243,15 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2176,
-            -16
+            2960,
+            -96
           ],
           "id": "65ea9213-8821-474b-b8a6-0533fc805532",
-          "name": "Confirm Salesorder"
+          "name": "Confirm Salesorder",
+          "retryOnFail": true,
+          "maxTries": 2,
+          "waitBetweenTries": 2000,
+          "onError": "continueErrorOutput"
         },
         {
           "parameters": {
@@ -1732,7 +2279,7 @@
         {
           "parameters": {
             "mode": "raw",
-            "jsonOutput": "={\n  \"customer_id\": \"{{ $('Get row(s)').item.json.CustomerID }}\",\n  \"date\": {{ $('Webhook').item.json.body.event_timestamp_utc.slice(0, 10) }},\n  \"doc_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"order_id\": {{ $('Webhook').item.json.body.sale.order_id }},\n  \"order_item_id\": {{ $('Webhook').item.json.body.sale.order_item_id }},\n  \"reference_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"salesorder_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"is_inclusive_tax\": true,\n  \"due_date\": {{ $json.due_date }},\n  \"location_id\": \"{{ $('Get row(s)').item.json.ParentLocationID }}\",\n  \"notes\": \"Customer name: {{ $('Webhook').item.json.body.sale.customer }}\",\n  \"line_items\": [{\n    \"item_id\": \"{{ $('Get Item ID from SKU').item.json.items[0].item_id }}\",\n    \"name\": \"{{ $('Webhook').item.json.body.sale.product_title }}\",\n    \"rate\": {{ $('Webhook').item.json.body.sale.selling_price / $('Webhook').item.json.body.sale.quantity }},\n    \"quantity\": {{ $('Webhook').item.json.body.sale.quantity }},\n    \"tax_id\": \"{{ $('Get row(s)').item.json.TaxID }}\",\n    \"item_total\": {{ $('Webhook').item.json.body.sale.selling_price }},\n    \"location_id\": \"{{ $('Get row(s)').item.json.LocationID }}\"\n  }]\n }",
+            "jsonOutput": "={\n  \"customer_id\": \"{{ $('Get row(s)').item.json.CustomerID }}\",\n\"date\": \"{{ (() => {\n  const date = $('Webhook').item.json.body.event_timestamp_utc.split('T')[0];\n  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) {\n    throw new Error('Invalid date format');\n  }\n  return date;\n})() }}\",\n  \"doc_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"order_id\": {{ $('Webhook').item.json.body.sale.order_id }},\n  \"order_item_id\": {{ $('Webhook').item.json.body.sale.order_item_id }},\n  \"reference_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"salesorder_number\": \"{{ $('Webhook').item.json.body.sale.order_item_id }}(Order: {{ $('Webhook').item.json.body.sale.order_id }})\",\n  \"is_inclusive_tax\": true,\n  \"due_date\": {{ $('Webhook').item.json.body.event_timestamp_utc.slice(0, 10) }},\n  \"location_id\": \"{{ $('Get row(s)').item.json.ParentLocationID }}\",\n  \"notes\": \"Customer name: {{ $('Webhook').item.json.body.sale.customer }}\",\n  \"line_items\": [{\n    \"item_id\": \"{{ $('Get Item ID from SKU').item.json.items[0].item_id }}\",\n    \"name\": \"{{ $('Webhook').item.json.body.sale.product_title }}\",\n    \"rate\": {{ (() => {\n  const price = $('Webhook').item.json.body.sale.selling_price;\n  const qty = $('Webhook').item.json.body.sale.quantity;\n  if (qty === 0) throw new Error('Quantity cannot be zero');\n  return price / qty;\n})() }},\n    \"quantity\": {{ $('Webhook').item.json.body.sale.quantity }},\n    \"tax_id\": \"{{ $('Get row(s)').item.json.TaxID }}\",\n    \"item_total\": {{ $('Webhook').item.json.body.sale.selling_price }},\n    \"location_id\": \"{{ $('Get row(s)').item.json.LocationID }}\"\n  }]\n }",
             "options": {}
           },
           "type": "n8n-nodes-base.set",
@@ -1742,7 +2289,8 @@
             368
           ],
           "id": "d099e97d-a493-4ba0-bf3a-202815532fba",
-          "name": "Build JSON"
+          "name": "Build JSON",
+          "notes": "Added date check to see if date is valid and safe division for \"rate\" in case quantity is zero"
         },
         {
           "parameters": {
@@ -1836,7 +2384,7 @@
           "type": "n8n-nodes-base.dataTable",
           "typeVersion": 1.1,
           "position": [
-            -64,
+            -528,
             464
           ],
           "id": "b7faec4b-cd5a-44a4-9152-87aacdf90fea",
@@ -1896,12 +2444,13 @@
           "type": "n8n-nodes-base.set",
           "typeVersion": 3.4,
           "position": [
-            1056,
-            368
+            3936,
+            256
           ],
           "id": "8f9d60d1-6341-43da-8d64-3d2efb3e1852",
           "name": "Calculate Due Date",
-          "alwaysOutputData": false
+          "alwaysOutputData": false,
+          "disabled": true
         },
         {
           "parameters": {
@@ -1916,7 +2465,7 @@
                 },
                 {
                   "name": "salesorder_id",
-                  "value": "={{ $('Create Salesorder').item.json.body.salesorder.salesorder_id }}"
+                  "value": "={{ $json.body.salesorder.salesorder_id }}"
                 }
               ]
             },
@@ -1931,17 +2480,21 @@
             },
             "sendBody": true,
             "specifyBody": "json",
-            "jsonBody": "={\n  \"package_number\": \"{{ $('Create Salesorder').item.json.body.salesorder.salesorder_number }}\",\n  \"date\": \"{{ $('Create Salesorder').item.json.body.salesorder.date }}\",\n  \"line_items\": [\n    {\n      \"so_line_item_id\": \"{{ $('Create Salesorder').item.json.body.salesorder.line_items[0].line_item_id }}\",\n      \"quantity\": {{ $('Create Salesorder').item.json.body.salesorder.line_items[0].quantity }}\n    }\n  ],\n  \"notes\": \"{{ $('Create Salesorder').item.json.body.salesorder.notes }}\"\n} ",
+            "jsonBody": "={\n  \"package_number\": \"{{ $json.body.salesorder.salesorder_number }}\",\n  \"date\": \"{{ $json.body.salesorder.date }}\",\n  \"line_items\": [\n    {\n      \"so_line_item_id\": \"{{ $json.body.salesorder.line_items[0].line_item_id }}\",\n      \"quantity\": {{ $json.body.salesorder.line_items[0].quantity }}\n    }\n  ],\n  \"notes\": \"{{ $json.body.salesorder.notes }}\"\n} ",
             "options": {}
           },
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2400,
-            -16
+            3648,
+            -352
           ],
           "id": "41afaa63-5132-4ae6-afa9-83a1dd3f9472",
-          "name": "Create package"
+          "name": "Create package",
+          "retryOnFail": true,
+          "maxTries": 2,
+          "waitBetweenTries": 2000,
+          "onError": "continueErrorOutput"
         },
         {
           "parameters": {
@@ -2063,16 +2616,17 @@
             "binaryData": true,
             "type": "SHA256",
             "dataPropertyName": "HMAC",
-            "secret": "531df3f76b214a36a0f44184b9dca8a1"
+            "secret": "={{ $json.takealot_webhook_secret }}"
           },
           "type": "n8n-nodes-base.crypto",
           "typeVersion": 1,
           "position": [
-            -512,
+            -272,
             464
           ],
           "id": "e2234e8e-9921-49bd-9c16-b12e02edb77b",
-          "name": "Crypto"
+          "name": "Crypto",
+          "disabled": true
         },
         {
           "parameters": {
@@ -2282,11 +2836,15 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            1728,
-            -16
+            2208,
+            64
           ],
           "id": "4865e69f-9e68-4106-9d45-bef3ffc12efd",
-          "name": "Create Salesorder"
+          "name": "Create Salesorder",
+          "retryOnFail": true,
+          "maxTries": 2,
+          "waitBetweenTries": 2000,
+          "onError": "continueErrorOutput"
         },
         {
           "parameters": {
@@ -2634,55 +3192,12 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            -288,
+            -32,
             464
           ],
           "id": "d6f1dc40-bbde-4160-b00f-f45ae88ee304",
-          "name": "HTTP Request"
-        },
-        {
-          "parameters": {
-            "conditions": {
-              "options": {
-                "caseSensitive": true,
-                "leftValue": "",
-                "typeValidation": "strict",
-                "version": 3
-              },
-              "conditions": [
-                {
-                  "id": "43a58f31-369b-4b21-8ed0-620bb3f52cac",
-                  "leftValue": "={{ $json.statusCode }}",
-                  "rightValue": 201,
-                  "operator": {
-                    "type": "number",
-                    "operation": "equals"
-                  }
-                }
-              ],
-              "combinator": "and"
-            },
-            "options": {}
-          },
-          "type": "n8n-nodes-base.if",
-          "typeVersion": 2.3,
-          "position": [
-            1952,
-            -16
-          ],
-          "id": "65e6be3a-d72a-4ba1-9c77-918f343324d7",
-          "name": "SO Created?"
-        },
-        {
-          "parameters": {},
-          "type": "n8n-nodes-base.noOp",
-          "typeVersion": 1,
-          "position": [
-            2176,
-            176
-          ],
-          "id": "ff9c5dda-5338-4214-b8e6-a80bf36c6938",
-          "name": "Duplicate SO"
+          "name": "HTTP Request",
+          "disabled": true
         },
         {
           "parameters": {
@@ -2699,6 +3214,548 @@
           "typeVersion": 1,
           "id": "9f61b6de-7d67-4253-bd47-37b685aa75f7",
           "name": "Sticky Note"
+        },
+        {
+          "parameters": {
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "salesorder_number",
+                  "value": "={{ $('Build JSON').item.json.reference_number }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $('Build JSON').item.json.toJsonString() }}",
+            "options": {
+              "response": {
+                "response": {
+                  "fullResponse": true,
+                  "neverError": true,
+                  "responseFormat": "json"
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1744,
+            -16
+          ],
+          "id": "38f3fef2-5bff-49cc-a0ca-5b022977c81c",
+          "name": "Check for Existing SO"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "e5eb83b5-8333-475a-8184-ddc2d334528d",
+                  "leftValue": "={{ $json.body.salesorders.length }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gt"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            1952,
+            -16
+          ],
+          "id": "ab7bba60-a5f9-4c01-a8d8-dc1da002fa75",
+          "name": "SO Exists?"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "43a58f31-369b-4b21-8ed0-620bb3f52cac",
+                  "leftValue": "={{ $json.statusCode }}",
+                  "rightValue": 200,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gte"
+                  }
+                },
+                {
+                  "id": "eca26688-5dd0-425f-8936-08a78e1c7e56",
+                  "leftValue": "={{ $json.statusCode }}",
+                  "rightValue": 299,
+                  "operator": {
+                    "type": "number",
+                    "operation": "lte"
+                  }
+                },
+                {
+                  "id": "335c6485-e0ad-4a9b-9de6-94b570f4c89c",
+                  "leftValue": "={{ $json.body.salesorder.salesorder_id }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "string",
+                    "operation": "exists",
+                    "singleValue": true
+                  }
+                },
+                {
+                  "id": "df8a4a14-54b8-48a3-bf80-a5610815f6e2",
+                  "leftValue": "={{ $json.body.salesorder.line_items.length }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gt"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            2480,
+            0
+          ],
+          "id": "65e6be3a-d72a-4ba1-9c77-918f343324d7",
+          "name": "Validate SO Creation"
+        },
+        {
+          "parameters": {
+            "jsCode": "const response = $input.item.json.body.salesorder;\nconst expected = $('Build JSON').item.json;\n\n// Validate critical fields match\nconst errors = [];\n\nif (response.order_id !== expected.salesorder_id) {\n  errors.push(`Order ID mismatch: ${response.salesorder_id} vs ${expected.salesorder_id}`);\n}\n\nif (Math.abs(response.total - expected.line_items[0].item_total) > 0.01) {\n  errors.push(`Total mismatch: ${response.total} vs ${expected.line_items[0].item_total}`);\n}\n\nif (response.line_items[0].quantity !== expected.line_items[0].quantity) {\n  errors.push(`Quantity mismatch`);\n}\n\nif (errors.length > 0) {\n  throw new Error(`SO validation failed: ${errors.join(', ')}`);\n}\n\nreturn {\n  json: {\n    validated: true,\n    salesorder_id: response.salesorder_id,\n    ...response\n  }\n};"
+          },
+          "type": "n8n-nodes-base.code",
+          "typeVersion": 2,
+          "position": [
+            2704,
+            -96
+          ],
+          "id": "f497d484-afaf-4aad-8cb1-651927f94374",
+          "name": "Validate SO Data"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "d5bdf613-bb65-41cf-8d17-3ca871358eaa",
+                  "leftValue": "={{ $json.body.salesorder.line_items[0].quantity_packed }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "equals"
+                  }
+                },
+                {
+                  "id": "0f2d749c-be5a-43a7-81aa-aa7a7f900d44",
+                  "leftValue": "={{ $json.body.salesorder.status }}",
+                  "rightValue": "confirmed",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "or"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            3392,
+            -272
+          ],
+          "id": "e44637fc-27a5-4155-9201-4e8208598740",
+          "name": "Check Package Prerequisites"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.body.salesorder.salesorder_id }}/status/void",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            3936,
+            -144
+          ],
+          "id": "6283fcf6-eb64-48ba-8cf9-4b1b7c7a3fd6",
+          "name": "Rollback: Void SO",
+          "retryOnFail": true,
+          "maxTries": 2,
+          "waitBetweenTries": 2000,
+          "onError": "continueErrorOutput"
+        },
+        {
+          "parameters": {
+            "rules": {
+              "values": [
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "leftValue": "={{ $json.body.salesorders[0].order_status }}",
+                        "rightValue": "void",
+                        "operator": {
+                          "type": "string",
+                          "operation": "equals"
+                        },
+                        "id": "2bfe015f-886e-410e-a6fa-5f3c5c78f27e"
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "void"
+                },
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "id": "9a4a839e-94a9-47e8-aeb3-7f54e02d9b9a",
+                        "leftValue": "={{ $json.body.salesorders[0].order_status }}",
+                        "rightValue": "confirmed",
+                        "operator": {
+                          "type": "string",
+                          "operation": "equals"
+                        }
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "confirmed"
+                },
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "id": "c1b2e3aa-9b22-449e-9027-0483a4d7ba3f",
+                        "leftValue": "={{ $json.body.salesorders[0].order_status }}",
+                        "rightValue": "draft",
+                        "operator": {
+                          "type": "string",
+                          "operation": "equals"
+                        }
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "draft"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.switch",
+          "typeVersion": 3.4,
+          "position": [
+            2208,
+            -176
+          ],
+          "id": "2f146bbb-9bee-4f71-83c2-ffa2be2f9232",
+          "name": "Switch"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "ba67302f-5f1f-4976-9e91-fb34d770ec9f",
+                  "name": "salesorder_id",
+                  "value": "={{ $json.body.salesorders[0].salesorder_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "3cd5fbdc-ad38-470e-b377-88099e5cbcd7",
+                  "name": "customer_name",
+                  "value": "={{ $json.body.salesorders[0].customer_name }}",
+                  "type": "string"
+                },
+                {
+                  "id": "3e8e59ab-c0cf-4624-8f1c-7bd4e56499e3",
+                  "name": "customer_id",
+                  "value": "={{ $json.body.salesorders[0].customer_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "c472b14e-5b59-4e08-8103-ec4393d8e958",
+                  "name": "salesorder_number",
+                  "value": "={{ $json.body.salesorders[0].salesorder_number }}",
+                  "type": "string"
+                },
+                {
+                  "id": "38b78b2f-2e6b-4250-8057-0af2cd5b7915",
+                  "name": "reference_number",
+                  "value": "={{ $json.body.salesorders[0].reference_number }}",
+                  "type": "string"
+                },
+                {
+                  "id": "7785e9f0-cfe9-48af-bc5f-31b2d5e0f82f",
+                  "name": "date",
+                  "value": "={{ $json.body.salesorders[0].date }}",
+                  "type": "string"
+                },
+                {
+                  "id": "25198faf-971a-454b-9c1a-c1c9d3dbba62",
+                  "name": "total",
+                  "value": "={{ $json.body.salesorders[0].total }}",
+                  "type": "number"
+                },
+                {
+                  "id": "71cb6060-2884-4304-85bc-eadefb2eb47a",
+                  "name": "total_invoiced_amount",
+                  "value": "={{ $json.body.salesorders[0].total_invoiced_amount }}",
+                  "type": "number"
+                },
+                {
+                  "id": "57e23d09-0eac-4eb7-86fc-0ea26a3e28c4",
+                  "name": "quantity",
+                  "value": "={{ $json.body.salesorders[0].quantity }}",
+                  "type": "number"
+                },
+                {
+                  "id": "55779e4c-1daa-49c1-8f43-74b57fbdd7c4",
+                  "name": "quantity_invoiced",
+                  "value": "={{ $json.body.salesorders[0].quantity_invoiced }}",
+                  "type": "number"
+                },
+                {
+                  "id": "db16fef4-9b86-4983-9e8f-6142d7a508f0",
+                  "name": "quantity_packed",
+                  "value": "={{ $json.body.salesorders[0].quantity_packed }}",
+                  "type": "number"
+                },
+                {
+                  "id": "bfbe54eb-4848-41fd-9611-43f392268286",
+                  "name": "quantity_shipped",
+                  "value": "={{ $json.body.salesorders[0].quantity_shipped }}",
+                  "type": "number"
+                },
+                {
+                  "id": "dcb4609a-bc9b-4d39-a0ee-467c7f982919",
+                  "name": "order_status",
+                  "value": "={{ $json.body.salesorders[0].order_status }}",
+                  "type": "string"
+                },
+                {
+                  "id": "1e1b4013-eed8-4dd3-8902-c30845ad295d",
+                  "name": "invoiced_status",
+                  "value": "={{ $json.body.salesorders[0].invoiced_status }}",
+                  "type": "string"
+                },
+                {
+                  "id": "92f6962b-800a-4a71-b401-07f3ad2d6bf9",
+                  "name": "paid_status",
+                  "value": "={{ $json.body.salesorders[0].paid_status }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8a934458-8621-45d8-8695-f3c1951e56ed",
+                  "name": "shipped_status",
+                  "value": "={{ $json.body.salesorders[0].shipped_status }}",
+                  "type": "string"
+                },
+                {
+                  "id": "ce6a06d5-0fb7-40b0-80cf-169d4a8f130f",
+                  "name": "status",
+                  "value": "={{ $json.body.salesorders[0].status }}",
+                  "type": "string"
+                },
+                {
+                  "id": "e946ea90-e015-4d85-8d39-f568f9ddc684",
+                  "name": "branch_id",
+                  "value": "={{ $json.body.salesorders[0].branch_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "575975b3-9cba-4e6b-93af-10af8bd4289c",
+                  "name": "location_id",
+                  "value": "={{ $json.body.salesorders[0].location_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "af9baa9c-87ea-490a-9ea0-24ce7990e2e8",
+                  "name": "balance",
+                  "value": "={{ $json.body.salesorders[0].balance }}",
+                  "type": "number"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            3936,
+            32
+          ],
+          "id": "d901c180-6890-4c19-91de-64bb64812e93",
+          "name": "Set SO Data"
+        },
+        {
+          "parameters": {
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $('Validate SO Data').item.json.salesorder_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $('Build JSON').item.json.toJsonString() }}",
+            "options": {
+              "response": {
+                "response": {
+                  "fullResponse": true,
+                  "neverError": true,
+                  "responseFormat": "json"
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            3184,
+            -208
+          ],
+          "id": "16ac7f23-b671-4e06-9b2d-1b4639106c83",
+          "name": "Get Created SO"
+        },
+        {
+          "parameters": {
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $('Check for Existing SO').item.json.body.salesorders[0].salesorder_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {
+              "response": {
+                "response": {
+                  "fullResponse": true,
+                  "neverError": true,
+                  "responseFormat": "json"
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            3184,
+            -400
+          ],
+          "id": "3c43a92e-b3e2-4ff3-96ee-c27d84fb12b7",
+          "name": "Get Existing SO"
         }
       ],
       "connections": {
@@ -2706,7 +3763,7 @@
           "main": [
             [
               {
-                "node": "Crypto",
+                "node": "Get row(s)",
                 "type": "main",
                 "index": 0
               }
@@ -2728,7 +3785,7 @@
           "main": [
             [
               {
-                "node": "Calculate Due Date",
+                "node": "Build JSON",
                 "type": "main",
                 "index": 0
               }
@@ -2772,7 +3829,7 @@
           "main": [
             [
               {
-                "node": "Set Endpoint",
+                "node": "Crypto",
                 "type": "main",
                 "index": 0
               }
@@ -2799,20 +3856,14 @@
         },
         "Calculate Due Date": {
           "main": [
-            [
-              {
-                "node": "Build JSON",
-                "type": "main",
-                "index": 0
-              }
-            ]
+            []
           ]
         },
         "Confirm Salesorder": {
           "main": [
             [
               {
-                "node": "Create package",
+                "node": "Get Created SO",
                 "type": "main",
                 "index": 0
               }
@@ -2878,7 +3929,7 @@
           "main": [
             [
               {
-                "node": "Create Salesorder",
+                "node": "Check for Existing SO",
                 "type": "main",
                 "index": 0
               }
@@ -2903,7 +3954,7 @@
           "main": [
             [
               {
-                "node": "SO Created?",
+                "node": "Validate SO Creation",
                 "type": "main",
                 "index": 0
               }
@@ -3023,14 +4074,55 @@
           "main": [
             [
               {
-                "node": "Get row(s)",
+                "node": "Set Endpoint",
                 "type": "main",
                 "index": 0
               }
             ]
           ]
         },
-        "SO Created?": {
+        "Check for Existing SO": {
+          "main": [
+            [
+              {
+                "node": "SO Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "SO Exists?": {
+          "main": [
+            [
+              {
+                "node": "Switch",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Create Salesorder",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Validate SO Creation": {
+          "main": [
+            [
+              {
+                "node": "Validate SO Data",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            []
+          ]
+        },
+        "Validate SO Data": {
           "main": [
             [
               {
@@ -3038,10 +4130,66 @@
                 "type": "main",
                 "index": 0
               }
+            ]
+          ]
+        },
+        "Check Package Prerequisites": {
+          "main": [
+            [
+              {
+                "node": "Create package",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create package": {
+          "main": [
+            [],
+            []
+          ]
+        },
+        "Switch": {
+          "main": [
+            [],
+            [
+              {
+                "node": "Get Existing SO",
+                "type": "main",
+                "index": 0
+              }
             ],
             [
               {
-                "node": "Duplicate SO",
+                "node": "Validate SO Data",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Set SO Data": {
+          "main": [
+            []
+          ]
+        },
+        "Get Created SO": {
+          "main": [
+            [
+              {
+                "node": "Check Package Prerequisites",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Existing SO": {
+          "main": [
+            [
+              {
+                "node": "Check Package Prerequisites",
                 "type": "main",
                 "index": 0
               }
@@ -3050,15 +4198,15 @@
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version c5ec1500",
-      "description": "added github note",
+      "name": "Version 193f73c2",
+      "description": "Hardened SO creation branch",
       "autosaved": false,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-01T15:10:26.092Z",
-          "id": 48,
+          "createdAt": "2026-02-03T08:18:04.709Z",
+          "id": 49,
           "workflowId": "XYhKungDNJV46vQF",
-          "versionId": "c5ec1500-cf5a-43fb-8d14-5d2642956b53",
+          "versionId": "193f73c2-c00f-4332-9731-a4828d720611",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
