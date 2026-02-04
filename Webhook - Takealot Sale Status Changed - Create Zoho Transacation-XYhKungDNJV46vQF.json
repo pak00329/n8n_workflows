@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-03T10:03:59.432Z",
+    "updatedAt": "2026-02-04T14:19:10.225Z",
     "createdAt": "2026-01-01T15:28:55.444Z",
     "id": "XYhKungDNJV46vQF",
     "name": "Webhook - Takealot Sale Status Changed - Create Zoho Transacation",
@@ -19,7 +19,7 @@
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2.1,
         "position": [
-          -736,
+          -528,
           464
         ],
         "id": "fd6cf5b0-c95c-48ad-be0e-cc46d02762ec",
@@ -37,7 +37,7 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          608,
+          2016,
           368
         ],
         "id": "357e44a9-f2f4-4ec2-9f49-98a4a12e46dc",
@@ -79,7 +79,7 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          832,
+          2240,
           368
         ],
         "id": "b17cc03e-80a5-438e-a669-8bf82b27a4e8",
@@ -112,8 +112,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2960,
-          -96
+          4240,
+          -416
         ],
         "id": "65ea9213-8821-474b-b8a6-0533fc805532",
         "name": "Confirm Salesorder",
@@ -139,7 +139,7 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          160,
+          1568,
           464
         ],
         "id": "b2c36f0d-80be-4c33-97b8-128c72e7ea10",
@@ -154,7 +154,7 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          1280,
+          2480,
           368
         ],
         "id": "d099e97d-a493-4ba0-bf3a-202815532fba",
@@ -164,7 +164,7 @@
       {
         "parameters": {
           "method": "POST",
-          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.invoice.invoice_id }}/status/sent",
+          "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.invoice_id }}/status/sent",
           "sendQuery": true,
           "queryParameters": {
             "parameters": [
@@ -188,8 +188,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2624,
-          368
+          5248,
+          304
         ],
         "id": "f3b3b099-d358-4179-894f-27d95f6e8003",
         "name": "Mark Invoice as Sent"
@@ -207,7 +207,7 @@
               },
               {
                 "name": "invoice_ids",
-                "value": "={{ $('Create Invoice').item.json.invoice.invoice_id }}"
+                "value": "={{ $('Extract invoice_id').item.json.invoice_id }}"
               }
             ]
           },
@@ -225,8 +225,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2848,
-          368
+          5456,
+          304
         ],
         "id": "79ea6a67-3a85-4bc6-ba23-f675df713a7d",
         "name": "Map to Salesorder"
@@ -253,8 +253,8 @@
         "type": "n8n-nodes-base.dataTable",
         "typeVersion": 1.1,
         "position": [
-          -528,
-          464
+          -64,
+          416
         ],
         "id": "b7faec4b-cd5a-44a4-9152-87aacdf90fea",
         "name": "Get row(s)"
@@ -264,7 +264,7 @@
         "type": "n8n-nodes-base.noOp",
         "typeVersion": 1,
         "position": [
-          608,
+          2016,
           560
         ],
         "id": "12f4f9ef-1f63-47f8-9219-4c1e55029ef9",
@@ -298,7 +298,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          384,
+          1792,
           464
         ],
         "id": "56528ec2-07b7-4f83-a907-c7f4b6083fb3",
@@ -338,8 +338,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          3648,
-          -352
+          4928,
+          -672
         ],
         "id": "41afaa63-5132-4ae6-afa9-83a1dd3f9472",
         "name": "Create package",
@@ -378,7 +378,7 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          1728,
+          2928,
           368
         ],
         "id": "0ae581b6-d038-41f2-a6e7-a8c41bac503e",
@@ -397,11 +397,11 @@
               },
               {
                 "name": "salesorder_id",
-                "value": "={{ $json.packages[0].salesorder_id }}"
+                "value": "={{ $('Does Package Exist?').item.json.packages[0].salesorder_id }}"
               },
               {
                 "name": "package_ids",
-                "value": "={{ $json.packages[0].package_id }}"
+                "value": "={{ $('Does Package Exist?').item.json.packages[0].package_id }}"
               }
             ]
           },
@@ -422,8 +422,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          1952,
-          368
+          3888,
+          432
         ],
         "id": "84e2f9c6-91b2-4ca6-b1aa-1ab285b2b1ae",
         "name": "Create Shipment",
@@ -456,29 +456,11 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2176,
-          368
+          4288,
+          448
         ],
         "id": "d4917ca1-51c5-4630-958c-c954508d2eb1",
         "name": "Mark as Delivered"
-      },
-      {
-        "parameters": {
-          "action": "hmac",
-          "binaryData": true,
-          "type": "SHA256",
-          "dataPropertyName": "HMAC",
-          "secret": "={{ $json.takealot_webhook_secret }}"
-        },
-        "type": "n8n-nodes-base.crypto",
-        "typeVersion": 1,
-        "position": [
-          -272,
-          464
-        ],
-        "id": "e2234e8e-9921-49bd-9c16-b12e02edb77b",
-        "name": "Crypto",
-        "disabled": true
       },
       {
         "parameters": {
@@ -514,8 +496,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2848,
-          848
+          4048,
+          1776
         ],
         "id": "fe4f06f8-f8cc-4800-b122-85ec14082b3c",
         "name": "Create Sales Return"
@@ -554,8 +536,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          3072,
-          848
+          4272,
+          1776
         ],
         "id": "66680dc4-1e04-44bc-8510-730943cf0196",
         "name": "Receive Sales Return",
@@ -644,7 +626,7 @@
         "type": "n8n-nodes-base.switch",
         "typeVersion": 3.4,
         "position": [
-          1504,
+          2704,
           352
         ],
         "id": "67bd83cd-1721-4f03-9645-fc5dd5255d70",
@@ -688,8 +670,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2208,
-          64
+          3488,
+          -256
         ],
         "id": "4865e69f-9e68-4106-9d45-bef3ffc12efd",
         "name": "Create Salesorder",
@@ -728,8 +710,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2400,
-          368
+          4864,
+          400
         ],
         "id": "909bcb86-660e-4120-9cf7-6770ef2159bb",
         "name": "Create Invoice"
@@ -764,8 +746,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          3296,
-          848
+          4496,
+          1776
         ],
         "id": "f3e281dc-3e61-4e91-8564-fed313c409d8",
         "name": "Create Credit Note"
@@ -800,8 +782,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          1728,
-          656
+          2864,
+          1584
         ],
         "id": "0d226bf8-19fa-4be5-9ad9-04fef58a6f98",
         "name": "Get Original Sales Order Number",
@@ -833,8 +815,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2176,
-          560
+          3376,
+          1488
         ],
         "id": "8a9a8728-c201-4016-8ff9-0a1f720692fb",
         "name": "Get SO Details"
@@ -867,8 +849,8 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          1952,
-          656
+          3152,
+          1584
         ],
         "id": "468a7244-2a8d-45e0-8411-a2104cb4e7c0",
         "name": "Found Original Sales Order"
@@ -878,8 +860,8 @@
         "type": "n8n-nodes-base.noOp",
         "typeVersion": 1,
         "position": [
-          2176,
-          752
+          3376,
+          1680
         ],
         "id": "2f140d0c-4e54-42d5-bfc3-6a2cbfc33159",
         "name": "No Operation, do nothing1"
@@ -917,8 +899,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2400,
-          560
+          3600,
+          1488
         ],
         "id": "a7c86499-84b5-48f0-adfc-3ecdce8f409f",
         "name": "Check for Existing SR"
@@ -950,8 +932,8 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          2624,
-          560
+          3824,
+          1488
         ],
         "id": "af670c31-9da6-40f4-808b-eb82c44f4559",
         "name": "SR Exists"
@@ -983,8 +965,8 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          2848,
-          560
+          4048,
+          1488
         ],
         "id": "bc8780ca-7b8c-48ea-8f55-7e1849d5b5d9",
         "name": "Available for return"
@@ -994,8 +976,8 @@
         "type": "n8n-nodes-base.noOp",
         "typeVersion": 1,
         "position": [
-          3072,
-          656
+          4272,
+          1584
         ],
         "id": "a28f0175-9702-4305-9f7e-6660f4906cfc",
         "name": "No Operation, do nothing2"
@@ -1030,37 +1012,22 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          3072,
-          464
+          4272,
+          1424
         ],
         "id": "4029a5c9-4946-4254-9616-044f2dac24d3",
         "name": "Update SR"
       },
       {
         "parameters": {
-          "url": "=https://httpbin.dev/base64/encode/{{ encodeURIComponent($json.HMAC) }}",
-          "options": {}
-        },
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.3,
-        "position": [
-          -32,
-          464
-        ],
-        "id": "d6f1dc40-bbde-4160-b00f-f45ae88ee304",
-        "name": "HTTP Request",
-        "disabled": true
-      },
-      {
-        "parameters": {
           "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=XYhKungDNJV46vQF) to commit change ",
           "height": 140,
-          "width": 440,
+          "width": 1224,
           "color": 5
         },
         "type": "n8n-nodes-base.stickyNote",
         "position": [
-          -736,
+          -528,
           240
         ],
         "typeVersion": 1,
@@ -1108,8 +1075,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          1744,
-          -16
+          3024,
+          -336
         ],
         "id": "38f3fef2-5bff-49cc-a0ca-5b022977c81c",
         "name": "Check for Existing SO"
@@ -1141,8 +1108,8 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          1952,
-          -16
+          3232,
+          -336
         ],
         "id": "ab7bba60-a5f9-4c01-a8d8-dc1da002fa75",
         "name": "SO Exists?"
@@ -1202,8 +1169,8 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          2480,
-          0
+          3760,
+          -320
         ],
         "id": "65e6be3a-d72a-4ba1-9c77-918f343324d7",
         "name": "Validate SO Creation"
@@ -1215,8 +1182,8 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          2704,
-          -96
+          3984,
+          -416
         ],
         "id": "f497d484-afaf-4aad-8cb1-651927f94374",
         "name": "Validate SO Data"
@@ -1257,8 +1224,8 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          3392,
-          -272
+          4672,
+          -592
         ],
         "id": "e44637fc-27a5-4155-9201-4e8208598740",
         "name": "Check Package Prerequisites"
@@ -1346,8 +1313,8 @@
         "type": "n8n-nodes-base.switch",
         "typeVersion": 3.4,
         "position": [
-          2208,
-          -176
+          3488,
+          -496
         ],
         "id": "2f146bbb-9bee-4f71-83c2-ffa2be2f9232",
         "name": "Switch"
@@ -1389,8 +1356,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          3184,
-          -208
+          4464,
+          -528
         ],
         "id": "16ac7f23-b671-4e06-9b2d-1b4639106c83",
         "name": "Get Created SO"
@@ -1429,8 +1396,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          3184,
-          -400
+          4464,
+          -720
         ],
         "id": "3c43a92e-b3e2-4ff3-96ee-c27d84fb12b7",
         "name": "Get Existing SO"
@@ -1500,8 +1467,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          2672,
-          192
+          3952,
+          -128
         ],
         "id": "1e614a3c-48e5-48f6-8e7b-fb9ed139da97",
         "name": "Log Entry - Failed SO Create"
@@ -1571,8 +1538,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          3216,
-          -16
+          4496,
+          -336
         ],
         "id": "733c646d-82f1-4444-8fb3-89c974ddd0aa",
         "name": "Log Entry - SO Confirm Fail"
@@ -1642,8 +1609,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          3648,
-          -144
+          4928,
+          -464
         ],
         "id": "104e58b1-0392-4fb9-b4e3-d9fbf69f2b15",
         "name": "Log Entry - Package Prerequisites failed"
@@ -1713,8 +1680,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          2880,
-          80
+          4160,
+          -240
         ],
         "id": "0e21a2ab-1f0d-49e6-a936-1c9e0bcffeac",
         "name": "Log Entry - Invalid SO"
@@ -1784,8 +1751,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          2432,
-          -320
+          3680,
+          -688
         ],
         "id": "9c9d6f02-6e27-4fdb-ad75-c998b96beac4",
         "name": "Log Entry - SO = Void"
@@ -1855,8 +1822,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          3856,
-          -304
+          5136,
+          -624
         ],
         "id": "9afc2845-9d12-41f0-92e5-f009ed90bdcd",
         "name": "Log Entry - Create Package failed"
@@ -1926,8 +1893,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          3872,
-          -496
+          5152,
+          -816
         ],
         "id": "4616373a-f409-4da9-a2a3-7ff658ca3b93",
         "name": "Log Entry - Success"
@@ -1944,8 +1911,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          4304,
-          48
+          5584,
+          -272
         ],
         "id": "008e76ba-56f5-4546-8302-500be80a254d",
         "name": "Log Result to Backendless"
@@ -1962,11 +1929,1047 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          2656,
-          -512
+          3856,
+          -688
         ],
         "id": "2e2c2aff-7590-4113-b5cb-e4792d68cfc7",
         "name": "Log Event to Backendless"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "76b9b3c3-dc42-4b56-bbf0-0597eb51f0db",
+                "leftValue": "={{ $json.packages }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "array",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "0471f1e8-acdf-4e45-8444-7864bff5acf5",
+                "leftValue": "={{ $json.packages.length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3136,
+          368
+        ],
+        "id": "02e0b3d9-b0e0-40b8-a03f-fb4d12fb2066",
+        "name": "Does Package Exist?"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "6e609447-105e-4d44-bb7c-c5e5d3f0a814",
+                "leftValue": "={{ $json.packages[0].shipment_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3632,
+          352
+        ],
+        "id": "9556bb66-3043-4610-9c2e-e2ef5eeba0b3",
+        "name": "Shipment Exists?"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/shipmentorders/{{ $json.packages[0].shipment_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          3888,
+          256
+        ],
+        "id": "8dd1c10f-d1d6-4db0-9a4e-049993140cfa",
+        "name": "Get Shipment",
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "ea4e921e-d36f-4924-b2a0-c3cda01edc1f",
+                "leftValue": "={{ $json.shipmentorder.shipment_status }}",
+                "rightValue": "delivered",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          4080,
+          352
+        ],
+        "id": "496286c7-3a20-46b7-bc0d-af89ca748e0e",
+        "name": "Is Shipment Delivered?"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/invoices",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "reference_number",
+                "value": "={{ $('Build JSON').item.json.reference_number }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          4448,
+          304
+        ],
+        "id": "a7140acf-f907-4460-a8d6-3ee011e10c0a",
+        "name": "Get Invoices",
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "f4b81d75-0bc3-4522-a63f-a59ab360ab14",
+                "leftValue": "={{ $json.invoices }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "array",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          4640,
+          304
+        ],
+        "id": "4e28249e-11fb-42d6-8399-f0e15b1f213b",
+        "name": "Invoice Exists?"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/invoices/{{ $json.invoices[0].invoice_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "reference_number",
+                "value": "={{ $('Build JSON').item.json.reference_number }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          4864,
+          224
+        ],
+        "id": "6813f473-3c57-45b4-bf2f-8790151ee0c1",
+        "name": "Get Invoice",
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "5ae8b968-ab68-43a5-aa4b-0bbfa593b95a",
+                "name": "invoice_id",
+                "value": "={{ $json.invoice.invoice_id }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          5040,
+          304
+        ],
+        "id": "2af26e17-2f69-4f78-8328-965fbce2daae",
+        "name": "Extract invoice_id"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "30bbedd7-b6cd-4b64-b74f-fccebfd37345",
+                "leftValue": "={{ $json.statusCode }}",
+                "rightValue": 200,
+                "operator": {
+                  "type": "number",
+                  "operation": "gte"
+                }
+              },
+              {
+                "id": "4682e40e-606c-4aeb-812f-ae0cf3b4ca4f",
+                "leftValue": "={{ $json.statusCode }}",
+                "rightValue": 299,
+                "operator": {
+                  "type": "number",
+                  "operation": "gte"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3104,
+          960
+        ],
+        "id": "09409971-2188-4b37-858a-e70982de3fb6",
+        "name": "If"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://n8n.tallypro.co.za/webhook/fa329524-5a4e-4fab-a636-cfcd3b496f4b/{{ $('Webhook').item.json.params.seller_id }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "x-takealot-event",
+                "value": "sale_status_changed"
+              },
+              {
+                "name": "x-n8n-self-heal",
+                "value": "true"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({\n  sale: {\n    order_item_id: $('Webhook').item.json.body.sale.order_item_id,\n    offer_id: $('Webhook').item.json.body.sale.offer_id,\n    order_id: $('Webhook').item.json.body.sale.order_id,\n    warehouse: $('Webhook').item.json.body.sale.warehouse,\n    warehouse_id: $('Webhook').item.json.body.sale.warehouse_id,\n    sale_status_id: 2,\n    sale_status: 'Preparing for Customer',\n    order_date: $('Webhook').item.json.body.sale.order_date,\n    product_title: $('Webhook').item.json.body.sale.product_title,\n    takealot_url_mobi: $('Webhook').item.json.body.sale.takealot_url_mobi,\n    sku: $('Webhook').item.json.body.sale.sku,\n    tsin: $('Webhook').item.json.body.sale.tsin,\n    quantity: $('Webhook').item.json.body.sale.quantity,\n    selling_price: $('Webhook').item.json.body.sale.selling_price,\n    customer: $('Webhook').item.json.body.sale.customer,\n    customer_warehouse: $('Webhook').item.json.body.sale.customer_warehouse\n  },\n  event_timestamp_utc: $('Webhook').item.json.body.event_timestamp_utc\n}) }}",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2912,
+          1040
+        ],
+        "id": "a618e5c0-d9a9-4d6a-b923-9af3d08a4506",
+        "name": "Recursive call"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          3360,
+          880
+        ],
+        "id": "95440ee9-3f8a-44c8-adaf-7454f735350d",
+        "name": "Wait 5 sec",
+        "webhookId": "5930ab40-b44d-49ac-a930-83ec5e5eac09"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "No Package",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "self-heal",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Attempting self-heal",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2544,
+          624
+        ],
+        "id": "26f443f3-ca56-40cb-9204-8da336c6bf7f",
+        "name": "Log Entry - Self-Heal start"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2720,
+          624
+        ],
+        "id": "1878cd5e-e271-44b3-a1e4-e9587fb5f56f",
+        "name": "Log status to Backendless"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "create_so",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "error",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Self-heal failed",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2768,
+          848
+        ],
+        "id": "eb854239-1f5b-4615-9180-79642a916da7",
+        "name": "Log Entry - Failed Recursion"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2944,
+          736
+        ],
+        "id": "30150c74-ca61-42ca-a57d-088a1201dae3",
+        "name": "Log Recursion fail to Backendless"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "e4d97c1f-6562-4117-945b-a6ff0b4e2131",
+                "leftValue": "={{ $('Webhook').item.json.headers[\"x-n8n-self-heal\"] }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2544,
+          864
+        ],
+        "id": "03aac066-e2d6-446f-bd68-dd074e9b9afa",
+        "name": "Prevent infinite loop"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/packages",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "=organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              },
+              {
+                "name": "search_text",
+                "value": "={{ $('Build JSON').item.json.doc_number }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          3584,
+          864
+        ],
+        "id": "3ac6a3e6-2a6c-40a1-9cff-421af5bdd1da",
+        "name": "Get Package1"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "76b9b3c3-dc42-4b56-bbf0-0597eb51f0db",
+                "leftValue": "={{ $json.packages }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "array",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "0471f1e8-acdf-4e45-8444-7864bff5acf5",
+                "leftValue": "={{ $json.packages.length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3360,
+          624
+        ],
+        "id": "b041bee5-366d-414e-9f3c-275e82fe4e29",
+        "name": "Does Package Exist?1"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "Recursion",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "success",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Self Heal worked",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          4112,
+          608
+        ],
+        "id": "6b224f1c-f0e8-4220-9e9e-74f219a44c76",
+        "name": "Log Entry - Self-Heal start1"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "Recursion",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "error",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "Self Heal failed",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3776,
+          832
+        ],
+        "id": "e58ad088-1b71-4bd2-b3d4-d584a36ed223",
+        "name": "Log Entry - Self-Heal start2"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          4432,
+          704
+        ],
+        "id": "320b4b3c-3f50-4c24-ad12-41e457da22e9",
+        "name": "Log result"
+      },
+      {
+        "parameters": {
+          "url": "=https://httpbin.dev/base64/encode/{{ encodeURIComponent($json.HMAC) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1056,
+          464
+        ],
+        "id": "d6f1dc40-bbde-4160-b00f-f45ae88ee304",
+        "name": "HTTP Request"
+      },
+      {
+        "parameters": {
+          "action": "hmac",
+          "binaryData": true,
+          "binaryPropertyName": "={{ $('Merge').item.binary.data }}",
+          "type": "SHA256",
+          "dataPropertyName": "HMAC",
+          "secret": "={{ $json.takealot_webhook_secret }}"
+        },
+        "type": "n8n-nodes-base.crypto",
+        "typeVersion": 1,
+        "position": [
+          768,
+          464
+        ],
+        "id": "e2234e8e-9921-49bd-9c16-b12e02edb77b",
+        "name": "Crypto"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          496,
+          592
+        ],
+        "id": "e0e55edd-6656-4cd1-b86f-e3b0b359929d",
+        "name": "Merge"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "22b3ebc9-54ae-4669-9b5b-5694dba9bf0a",
+                "leftValue": "={{ $json.data }}",
+                "rightValue": "={{ $('Webhook').item.json.headers['x-takealot-signature'] }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1264,
+          464
+        ],
+        "id": "9d89f32f-7932-41c1-a364-6a00b1785e60",
+        "name": "Check HMAC"
+      },
+      {
+        "parameters": {
+          "operation": "toText",
+          "sourceProperty": "=data",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.convertToFile",
+        "typeVersion": 1.1,
+        "position": [
+          160,
+          576
+        ],
+        "id": "36f5be25-010b-462c-b264-bf18e4f34ffe",
+        "name": "Convert to File"
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "={{ { \"data\": \"https://n8n.tallypro.co.za/webhook/fa329524-5a4e-4fab-a636-cfcd3b496f4b/\" + $('Webhook').item.json.params.seller_id + JSON.stringify($('Webhook').item.json.body).split('\":').join('\": ').split(',\"').join(', \"').split(':{').join(': {').split('},').join('},') } }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -64,
+          576
+        ],
+        "id": "5ad7d4e9-c725-4271-9cf0-202596bbe3db",
+        "name": "Edit Fields"
+      },
+      {
+        "parameters": {
+          "operation": "fromJson",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.extractFromFile",
+        "typeVersion": 1.1,
+        "position": [
+          -288,
+          576
+        ],
+        "id": "953db65f-857b-43a2-a16c-4f434c1fad55",
+        "name": "Extract from File",
+        "disabled": true
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                "name": "execution_id",
+                "value": "={{ $execution.id }}",
+                "type": "string"
+              },
+              {
+                "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                "name": "workflow_name",
+                "value": "Takealot Status Change Webhook",
+                "type": "string"
+              },
+              {
+                "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                "name": "seller_id",
+                "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                "type": "string"
+              },
+              {
+                "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                "name": "order_item_id",
+                "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                "name": "stage",
+                "value": "hmac_verify",
+                "type": "string"
+              },
+              {
+                "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                "name": "status",
+                "value": "error",
+                "type": "string"
+              },
+              {
+                "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                "name": "message",
+                "value": "HMAC signature does not match",
+                "type": "string"
+              },
+              {
+                "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                "name": "details",
+                "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1248,
+          736
+        ],
+        "id": "23aa6ae0-9c3a-4f31-adfc-c81cce5e19c4",
+        "name": "Log Entry - SO = Void1"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1424,
+          736
+        ],
+        "id": "abc760fd-2422-4556-b04e-5dfc219643cf",
+        "name": "Log HMAC failure"
       }
     ],
     "connections": {
@@ -1975,6 +2978,11 @@
           [
             {
               "node": "Get row(s)",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Extract from File",
               "type": "main",
               "index": 0
             }
@@ -2040,7 +3048,7 @@
         "main": [
           [
             {
-              "node": "Crypto",
+              "node": "Merge",
               "type": "main",
               "index": 0
             }
@@ -2087,7 +3095,7 @@
         "main": [
           [
             {
-              "node": "Create Shipment",
+              "node": "Does Package Exist?",
               "type": "main",
               "index": 0
             }
@@ -2098,7 +3106,7 @@
         "main": [
           [
             {
-              "node": "Mark as Delivered",
+              "node": "Is Shipment Delivered?",
               "type": "main",
               "index": 0
             }
@@ -2109,18 +3117,7 @@
         "main": [
           [
             {
-              "node": "Create Invoice",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Crypto": {
-        "main": [
-          [
-            {
-              "node": "HTTP Request",
+              "node": "Get Invoices",
               "type": "main",
               "index": 0
             }
@@ -2185,7 +3182,7 @@
         "main": [
           [
             {
-              "node": "Mark Invoice as Sent",
+              "node": "Extract invoice_id",
               "type": "main",
               "index": 0
             }
@@ -2284,17 +3281,6 @@
           [
             {
               "node": "No Operation, do nothing2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "HTTP Request": {
-        "main": [
-          [
-            {
-              "node": "Set Endpoint",
               "type": "main",
               "index": 0
             }
@@ -2518,6 +3504,357 @@
             }
           ]
         ]
+      },
+      "Does Package Exist?": {
+        "main": [
+          [
+            {
+              "node": "Shipment Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Shipment Exists?": {
+        "main": [
+          [
+            {
+              "node": "Get Shipment",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create Shipment",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Shipment Delivered?": {
+        "main": [
+          [
+            {
+              "node": "Get Invoices",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Mark as Delivered",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Shipment": {
+        "main": [
+          [
+            {
+              "node": "Is Shipment Delivered?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Invoices": {
+        "main": [
+          [
+            {
+              "node": "Invoice Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Invoice Exists?": {
+        "main": [
+          [
+            {
+              "node": "Get Invoice",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create Invoice",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Invoice": {
+        "main": [
+          [
+            {
+              "node": "Extract invoice_id",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract invoice_id": {
+        "main": [
+          [
+            {
+              "node": "Mark Invoice as Sent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Recursive call": {
+        "main": [
+          [
+            {
+              "node": "If",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If": {
+        "main": [
+          [
+            {
+              "node": "Wait 5 sec",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - Self-Heal start": {
+        "main": [
+          [
+            {
+              "node": "Log status to Backendless",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log status to Backendless": {
+        "main": [
+          [
+            {
+              "node": "Prevent infinite loop",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - Failed Recursion": {
+        "main": [
+          [
+            {
+              "node": "Log Recursion fail to Backendless",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prevent infinite loop": {
+        "main": [
+          [
+            {
+              "node": "Log Entry - Failed Recursion",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Recursive call",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait 5 sec": {
+        "main": [
+          [
+            {
+              "node": "Get Package1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Package1": {
+        "main": [
+          [
+            {
+              "node": "Does Package Exist?1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Does Package Exist?1": {
+        "main": [
+          [
+            {
+              "node": "Log Entry - Self-Heal start1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log Entry - Self-Heal start2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - Self-Heal start2": {
+        "main": [
+          [
+            {
+              "node": "Log result",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - Self-Heal start1": {
+        "main": [
+          [
+            {
+              "node": "Log result",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "Check HMAC",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Crypto": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "Crypto",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check HMAC": {
+        "main": [
+          [
+            {
+              "node": "Set Endpoint",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log Entry - SO = Void1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Convert to File": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "node": "Convert to File",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract from File": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Entry - SO = Void1": {
+        "main": [
+          [
+            {
+              "node": "Log HMAC failure",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log HMAC failure": {
+        "main": [
+          [
+            {
+              "node": "Set Endpoint",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "settings": {
@@ -2526,10 +3863,75 @@
     },
     "staticData": null,
     "meta": null,
-    "pinData": {},
-    "versionId": "20186417-1651-46ae-8075-ad4df1abf0c1",
-    "activeVersionId": "20186417-1651-46ae-8075-ad4df1abf0c1",
-    "versionCounter": 230,
+    "pinData": {
+      "Webhook": [
+        {
+          "json": {
+            "headers": {
+              "host": "n8n.tallypro.co.za",
+              "user-agent": "python-requests/2.32.5",
+              "content-length": "648",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate",
+              "baggage": "sentry-trace_id=c25498e3e00246b599920642df0e6390,sentry-environment=production,sentry-release=a1ac744c79fe02a8f9aa8d6f7965e0d714879435,sentry-public_key=84bf495d467f45298f58b8e051832348",
+              "content-type": "application/json",
+              "sentry-trace": "c25498e3e00246b599920642df0e6390-a486aeb79e41ed4a",
+              "x-forwarded-for": "34.76.105.150",
+              "x-forwarded-host": "n8n.tallypro.co.za",
+              "x-forwarded-port": "443",
+              "x-forwarded-proto": "https",
+              "x-forwarded-server": "ec104f85d712",
+              "x-real-ip": "34.76.105.150",
+              "x-takealot-delivery": "117a9215-a5a4-48f8-bb55-9c2142614d6d",
+              "x-takealot-event": "sale_status_changed",
+              "x-takealot-signature": "NTVkMTA1MDU1MGU5MGRhZGIwYWMzZjk3MzAzMGVlYmE5MTg5ODIzMGE0MzYwODkyNmY2MDE2OWE5NWU0NDc0Yw=="
+            },
+            "params": {
+              "seller_id": "11932"
+            },
+            "query": {},
+            "body": {
+              "sale": {
+                "order_item_id": 397271143,
+                "offer_id": 202967177,
+                "order_id": 203160140,
+                "warehouse": "CPT",
+                "warehouse_id": "CPT",
+                "sale_status_id": 6,
+                "sale_status": "Draft Shipment",
+                "order_date": "2026-02-02T21:52:02",
+                "product_title": "Deed Box for Safety Deposit Boxes and Bank Vaults",
+                "takealot_url_mobi": "https://www.takealot.com/x/PLID91484504",
+                "sku": "0272Ax001",
+                "tsin": 91701053,
+                "quantity": 1,
+                "selling_price": 699,
+                "customer": "Michael Pole",
+                "shipment_name": "PO-11932-03/02/2026-CPT-1-DEED",
+                "shipment_id": 7484623,
+                "leadtime_order_item_id": 41222449,
+                "customer_warehouse": "CPT"
+              },
+              "event_timestamp_utc": "2026-02-03T16:35:05.568095"
+            },
+            "webhookUrl": "https://n8n.tallypro.co.za/webhook/fa329524-5a4e-4fab-a636-cfcd3b496f4b/:seller_id",
+            "executionMode": "production"
+          },
+          "binary": {
+            "data": {
+              "data": "eyJzYWxlIjogeyJvcmRlcl9pdGVtX2lkIjogMzk3MjcxMTQzLCAib2ZmZXJfaWQiOiAyMDI5NjcxNzcsICJvcmRlcl9pZCI6IDIwMzE2MDE0MCwgIndhcmVob3VzZSI6ICJDUFQiLCAid2FyZWhvdXNlX2lkIjogIkNQVCIsICJzYWxlX3N0YXR1c19pZCI6IDYsICJzYWxlX3N0YXR1cyI6ICJEcmFmdCBTaGlwbWVudCIsICJvcmRlcl9kYXRlIjogIjIwMjYtMDItMDJUMjE6NTI6MDIiLCAicHJvZHVjdF90aXRsZSI6ICJEZWVkIEJveCBmb3IgU2FmZXR5IERlcG9zaXQgQm94ZXMgYW5kIEJhbmsgVmF1bHRzIiwgInRha2VhbG90X3VybF9tb2JpIjogImh0dHBzOi8vd3d3LnRha2VhbG90LmNvbS94L1BMSUQ5MTQ4NDUwNCIsICJza3UiOiAiMDI3MkF4MDAxIiwgInRzaW4iOiA5MTcwMTA1MywgInF1YW50aXR5IjogMSwgInNlbGxpbmdfcHJpY2UiOiA2OTksICJjdXN0b21lciI6ICJNaWNoYWVsIFBvbGUiLCAic2hpcG1lbnRfbmFtZSI6ICJQTy0xMTkzMi0wMy8wMi8yMDI2LUNQVC0xLURFRUQiLCAic2hpcG1lbnRfaWQiOiA3NDg0NjIzLCAibGVhZHRpbWVfb3JkZXJfaXRlbV9pZCI6IDQxMjIyNDQ5LCAiY3VzdG9tZXJfd2FyZWhvdXNlIjogIkNQVCJ9LCAiZXZlbnRfdGltZXN0YW1wX3V0YyI6ICIyMDI2LTAyLTAzVDE2OjM1OjA1LjU2ODA5NSJ9",
+              "mimeType": "application/json"
+            }
+          },
+          "pairedItem": {
+            "item": 0
+          }
+        }
+      ]
+    },
+    "versionId": "01bd4c92-1e70-405b-b086-81c8c994cc59",
+    "activeVersionId": "01bd4c92-1e70-405b-b086-81c8c994cc59",
+    "versionCounter": 272,
     "triggerCount": 1,
     "shared": [
       {
@@ -2554,7 +3956,7 @@
               "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
               "projectId": "A2rkQg960Oa5Tvrh",
               "user": {
-                "updatedAt": "2026-02-03T06:46:13.000Z",
+                "updatedAt": "2026-02-04T06:49:45.000Z",
                 "createdAt": "2025-12-31T14:10:08.854Z",
                 "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
                 "email": "mark@tallypro.co.za",
@@ -2578,7 +3980,7 @@
                 },
                 "disabled": false,
                 "mfaEnabled": false,
-                "lastActiveAt": "2026-02-02",
+                "lastActiveAt": "2026-02-03",
                 "isPending": false
               }
             }
@@ -2588,9 +3990,9 @@
     ],
     "tags": [],
     "activeVersion": {
-      "updatedAt": "2026-02-03T10:04:02.000Z",
-      "createdAt": "2026-02-03T10:03:59.435Z",
-      "versionId": "20186417-1651-46ae-8075-ad4df1abf0c1",
+      "updatedAt": "2026-02-04T14:19:17.000Z",
+      "createdAt": "2026-02-04T14:19:10.228Z",
+      "versionId": "01bd4c92-1e70-405b-b086-81c8c994cc59",
       "workflowId": "XYhKungDNJV46vQF",
       "nodes": [
         {
@@ -2604,7 +4006,7 @@
           "type": "n8n-nodes-base.webhook",
           "typeVersion": 2.1,
           "position": [
-            -736,
+            -528,
             464
           ],
           "id": "fd6cf5b0-c95c-48ad-be0e-cc46d02762ec",
@@ -2622,7 +4024,7 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            608,
+            2016,
             368
           ],
           "id": "357e44a9-f2f4-4ec2-9f49-98a4a12e46dc",
@@ -2664,7 +4066,7 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            832,
+            2240,
             368
           ],
           "id": "b17cc03e-80a5-438e-a669-8bf82b27a4e8",
@@ -2697,8 +4099,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2960,
-            -96
+            4240,
+            -416
           ],
           "id": "65ea9213-8821-474b-b8a6-0533fc805532",
           "name": "Confirm Salesorder",
@@ -2724,7 +4126,7 @@
           "type": "n8n-nodes-base.set",
           "typeVersion": 3.4,
           "position": [
-            160,
+            1568,
             464
           ],
           "id": "b2c36f0d-80be-4c33-97b8-128c72e7ea10",
@@ -2739,7 +4141,7 @@
           "type": "n8n-nodes-base.set",
           "typeVersion": 3.4,
           "position": [
-            1280,
+            2480,
             368
           ],
           "id": "d099e97d-a493-4ba0-bf3a-202815532fba",
@@ -2749,7 +4151,7 @@
         {
           "parameters": {
             "method": "POST",
-            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.invoice.invoice_id }}/status/sent",
+            "url": "={{ $('Set Endpoint').item.json.zoho_endpoint }}/{{ $json.invoice_id }}/status/sent",
             "sendQuery": true,
             "queryParameters": {
               "parameters": [
@@ -2773,8 +4175,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2624,
-            368
+            5248,
+            304
           ],
           "id": "f3b3b099-d358-4179-894f-27d95f6e8003",
           "name": "Mark Invoice as Sent"
@@ -2792,7 +4194,7 @@
                 },
                 {
                   "name": "invoice_ids",
-                  "value": "={{ $('Create Invoice').item.json.invoice.invoice_id }}"
+                  "value": "={{ $('Extract invoice_id').item.json.invoice_id }}"
                 }
               ]
             },
@@ -2810,8 +4212,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2848,
-            368
+            5456,
+            304
           ],
           "id": "79ea6a67-3a85-4bc6-ba23-f675df713a7d",
           "name": "Map to Salesorder"
@@ -2838,8 +4240,8 @@
           "type": "n8n-nodes-base.dataTable",
           "typeVersion": 1.1,
           "position": [
-            -528,
-            464
+            -64,
+            416
           ],
           "id": "b7faec4b-cd5a-44a4-9152-87aacdf90fea",
           "name": "Get row(s)"
@@ -2849,7 +4251,7 @@
           "type": "n8n-nodes-base.noOp",
           "typeVersion": 1,
           "position": [
-            608,
+            2016,
             560
           ],
           "id": "12f4f9ef-1f63-47f8-9219-4c1e55029ef9",
@@ -2883,7 +4285,7 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            384,
+            1792,
             464
           ],
           "id": "56528ec2-07b7-4f83-a907-c7f4b6083fb3",
@@ -2923,8 +4325,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            3648,
-            -352
+            4928,
+            -672
           ],
           "id": "41afaa63-5132-4ae6-afa9-83a1dd3f9472",
           "name": "Create package",
@@ -2963,7 +4365,7 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            1728,
+            2928,
             368
           ],
           "id": "0ae581b6-d038-41f2-a6e7-a8c41bac503e",
@@ -2982,11 +4384,11 @@
                 },
                 {
                   "name": "salesorder_id",
-                  "value": "={{ $json.packages[0].salesorder_id }}"
+                  "value": "={{ $('Does Package Exist?').item.json.packages[0].salesorder_id }}"
                 },
                 {
                   "name": "package_ids",
-                  "value": "={{ $json.packages[0].package_id }}"
+                  "value": "={{ $('Does Package Exist?').item.json.packages[0].package_id }}"
                 }
               ]
             },
@@ -3007,8 +4409,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            1952,
-            368
+            3888,
+            432
           ],
           "id": "84e2f9c6-91b2-4ca6-b1aa-1ab285b2b1ae",
           "name": "Create Shipment",
@@ -3041,29 +4443,11 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2176,
-            368
+            4288,
+            448
           ],
           "id": "d4917ca1-51c5-4630-958c-c954508d2eb1",
           "name": "Mark as Delivered"
-        },
-        {
-          "parameters": {
-            "action": "hmac",
-            "binaryData": true,
-            "type": "SHA256",
-            "dataPropertyName": "HMAC",
-            "secret": "={{ $json.takealot_webhook_secret }}"
-          },
-          "type": "n8n-nodes-base.crypto",
-          "typeVersion": 1,
-          "position": [
-            -272,
-            464
-          ],
-          "id": "e2234e8e-9921-49bd-9c16-b12e02edb77b",
-          "name": "Crypto",
-          "disabled": true
         },
         {
           "parameters": {
@@ -3099,8 +4483,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2848,
-            848
+            4048,
+            1776
           ],
           "id": "fe4f06f8-f8cc-4800-b122-85ec14082b3c",
           "name": "Create Sales Return"
@@ -3139,8 +4523,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            3072,
-            848
+            4272,
+            1776
           ],
           "id": "66680dc4-1e04-44bc-8510-730943cf0196",
           "name": "Receive Sales Return",
@@ -3229,7 +4613,7 @@
           "type": "n8n-nodes-base.switch",
           "typeVersion": 3.4,
           "position": [
-            1504,
+            2704,
             352
           ],
           "id": "67bd83cd-1721-4f03-9645-fc5dd5255d70",
@@ -3273,8 +4657,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2208,
-            64
+            3488,
+            -256
           ],
           "id": "4865e69f-9e68-4106-9d45-bef3ffc12efd",
           "name": "Create Salesorder",
@@ -3313,8 +4697,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2400,
-            368
+            4864,
+            400
           ],
           "id": "909bcb86-660e-4120-9cf7-6770ef2159bb",
           "name": "Create Invoice"
@@ -3349,8 +4733,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            3296,
-            848
+            4496,
+            1776
           ],
           "id": "f3e281dc-3e61-4e91-8564-fed313c409d8",
           "name": "Create Credit Note"
@@ -3385,8 +4769,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            1728,
-            656
+            2864,
+            1584
           ],
           "id": "0d226bf8-19fa-4be5-9ad9-04fef58a6f98",
           "name": "Get Original Sales Order Number",
@@ -3418,8 +4802,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2176,
-            560
+            3376,
+            1488
           ],
           "id": "8a9a8728-c201-4016-8ff9-0a1f720692fb",
           "name": "Get SO Details"
@@ -3452,8 +4836,8 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            1952,
-            656
+            3152,
+            1584
           ],
           "id": "468a7244-2a8d-45e0-8411-a2104cb4e7c0",
           "name": "Found Original Sales Order"
@@ -3463,8 +4847,8 @@
           "type": "n8n-nodes-base.noOp",
           "typeVersion": 1,
           "position": [
-            2176,
-            752
+            3376,
+            1680
           ],
           "id": "2f140d0c-4e54-42d5-bfc3-6a2cbfc33159",
           "name": "No Operation, do nothing1"
@@ -3502,8 +4886,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2400,
-            560
+            3600,
+            1488
           ],
           "id": "a7c86499-84b5-48f0-adfc-3ecdce8f409f",
           "name": "Check for Existing SR"
@@ -3535,8 +4919,8 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            2624,
-            560
+            3824,
+            1488
           ],
           "id": "af670c31-9da6-40f4-808b-eb82c44f4559",
           "name": "SR Exists"
@@ -3568,8 +4952,8 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            2848,
-            560
+            4048,
+            1488
           ],
           "id": "bc8780ca-7b8c-48ea-8f55-7e1849d5b5d9",
           "name": "Available for return"
@@ -3579,8 +4963,8 @@
           "type": "n8n-nodes-base.noOp",
           "typeVersion": 1,
           "position": [
-            3072,
-            656
+            4272,
+            1584
           ],
           "id": "a28f0175-9702-4305-9f7e-6660f4906cfc",
           "name": "No Operation, do nothing2"
@@ -3615,37 +4999,22 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            3072,
-            464
+            4272,
+            1424
           ],
           "id": "4029a5c9-4946-4254-9616-044f2dac24d3",
           "name": "Update SR"
         },
         {
           "parameters": {
-            "url": "=https://httpbin.dev/base64/encode/{{ encodeURIComponent($json.HMAC) }}",
-            "options": {}
-          },
-          "type": "n8n-nodes-base.httpRequest",
-          "typeVersion": 4.3,
-          "position": [
-            -32,
-            464
-          ],
-          "id": "d6f1dc40-bbde-4160-b00f-f45ae88ee304",
-          "name": "HTTP Request",
-          "disabled": true
-        },
-        {
-          "parameters": {
             "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=XYhKungDNJV46vQF) to commit change ",
             "height": 140,
-            "width": 440,
+            "width": 1224,
             "color": 5
           },
           "type": "n8n-nodes-base.stickyNote",
           "position": [
-            -736,
+            -528,
             240
           ],
           "typeVersion": 1,
@@ -3693,8 +5062,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            1744,
-            -16
+            3024,
+            -336
           ],
           "id": "38f3fef2-5bff-49cc-a0ca-5b022977c81c",
           "name": "Check for Existing SO"
@@ -3726,8 +5095,8 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            1952,
-            -16
+            3232,
+            -336
           ],
           "id": "ab7bba60-a5f9-4c01-a8d8-dc1da002fa75",
           "name": "SO Exists?"
@@ -3787,8 +5156,8 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            2480,
-            0
+            3760,
+            -320
           ],
           "id": "65e6be3a-d72a-4ba1-9c77-918f343324d7",
           "name": "Validate SO Creation"
@@ -3800,8 +5169,8 @@
           "type": "n8n-nodes-base.code",
           "typeVersion": 2,
           "position": [
-            2704,
-            -96
+            3984,
+            -416
           ],
           "id": "f497d484-afaf-4aad-8cb1-651927f94374",
           "name": "Validate SO Data"
@@ -3842,8 +5211,8 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            3392,
-            -272
+            4672,
+            -592
           ],
           "id": "e44637fc-27a5-4155-9201-4e8208598740",
           "name": "Check Package Prerequisites"
@@ -3931,8 +5300,8 @@
           "type": "n8n-nodes-base.switch",
           "typeVersion": 3.4,
           "position": [
-            2208,
-            -176
+            3488,
+            -496
           ],
           "id": "2f146bbb-9bee-4f71-83c2-ffa2be2f9232",
           "name": "Switch"
@@ -3974,8 +5343,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            3184,
-            -208
+            4464,
+            -528
           ],
           "id": "16ac7f23-b671-4e06-9b2d-1b4639106c83",
           "name": "Get Created SO"
@@ -4014,8 +5383,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            3184,
-            -400
+            4464,
+            -720
           ],
           "id": "3c43a92e-b3e2-4ff3-96ee-c27d84fb12b7",
           "name": "Get Existing SO"
@@ -4085,8 +5454,8 @@
           "type": "n8n-nodes-base.set",
           "typeVersion": 3.4,
           "position": [
-            2672,
-            192
+            3952,
+            -128
           ],
           "id": "1e614a3c-48e5-48f6-8e7b-fb9ed139da97",
           "name": "Log Entry - Failed SO Create"
@@ -4156,8 +5525,8 @@
           "type": "n8n-nodes-base.set",
           "typeVersion": 3.4,
           "position": [
-            3216,
-            -16
+            4496,
+            -336
           ],
           "id": "733c646d-82f1-4444-8fb3-89c974ddd0aa",
           "name": "Log Entry - SO Confirm Fail"
@@ -4227,8 +5596,8 @@
           "type": "n8n-nodes-base.set",
           "typeVersion": 3.4,
           "position": [
-            3648,
-            -144
+            4928,
+            -464
           ],
           "id": "104e58b1-0392-4fb9-b4e3-d9fbf69f2b15",
           "name": "Log Entry - Package Prerequisites failed"
@@ -4298,8 +5667,8 @@
           "type": "n8n-nodes-base.set",
           "typeVersion": 3.4,
           "position": [
-            2880,
-            80
+            4160,
+            -240
           ],
           "id": "0e21a2ab-1f0d-49e6-a936-1c9e0bcffeac",
           "name": "Log Entry - Invalid SO"
@@ -4369,8 +5738,8 @@
           "type": "n8n-nodes-base.set",
           "typeVersion": 3.4,
           "position": [
-            2432,
-            -320
+            3680,
+            -688
           ],
           "id": "9c9d6f02-6e27-4fdb-ad75-c998b96beac4",
           "name": "Log Entry - SO = Void"
@@ -4440,8 +5809,8 @@
           "type": "n8n-nodes-base.set",
           "typeVersion": 3.4,
           "position": [
-            3856,
-            -304
+            5136,
+            -624
           ],
           "id": "9afc2845-9d12-41f0-92e5-f009ed90bdcd",
           "name": "Log Entry - Create Package failed"
@@ -4511,8 +5880,8 @@
           "type": "n8n-nodes-base.set",
           "typeVersion": 3.4,
           "position": [
-            3872,
-            -496
+            5152,
+            -816
           ],
           "id": "4616373a-f409-4da9-a2a3-7ff658ca3b93",
           "name": "Log Entry - Success"
@@ -4529,8 +5898,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            4304,
-            48
+            5584,
+            -272
           ],
           "id": "008e76ba-56f5-4546-8302-500be80a254d",
           "name": "Log Result to Backendless"
@@ -4547,11 +5916,1047 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            2656,
-            -512
+            3856,
+            -688
           ],
           "id": "2e2c2aff-7590-4113-b5cb-e4792d68cfc7",
           "name": "Log Event to Backendless"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "76b9b3c3-dc42-4b56-bbf0-0597eb51f0db",
+                  "leftValue": "={{ $json.packages }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "array",
+                    "operation": "exists",
+                    "singleValue": true
+                  }
+                },
+                {
+                  "id": "0471f1e8-acdf-4e45-8444-7864bff5acf5",
+                  "leftValue": "={{ $json.packages.length }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gt"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            3136,
+            368
+          ],
+          "id": "02e0b3d9-b0e0-40b8-a03f-fb4d12fb2066",
+          "name": "Does Package Exist?"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "6e609447-105e-4d44-bb7c-c5e5d3f0a814",
+                  "leftValue": "={{ $json.packages[0].shipment_id }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEmpty",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            3632,
+            352
+          ],
+          "id": "9556bb66-3043-4610-9c2e-e2ef5eeba0b3",
+          "name": "Shipment Exists?"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/shipmentorders/{{ $json.packages[0].shipment_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            3888,
+            256
+          ],
+          "id": "8dd1c10f-d1d6-4db0-9a4e-049993140cfa",
+          "name": "Get Shipment",
+          "onError": "continueRegularOutput"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "ea4e921e-d36f-4924-b2a0-c3cda01edc1f",
+                  "leftValue": "={{ $json.shipmentorder.shipment_status }}",
+                  "rightValue": "delivered",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            4080,
+            352
+          ],
+          "id": "496286c7-3a20-46b7-bc0d-af89ca748e0e",
+          "name": "Is Shipment Delivered?"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/invoices",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "reference_number",
+                  "value": "={{ $('Build JSON').item.json.reference_number }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            4448,
+            304
+          ],
+          "id": "a7140acf-f907-4460-a8d6-3ee011e10c0a",
+          "name": "Get Invoices",
+          "onError": "continueRegularOutput"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "f4b81d75-0bc3-4522-a63f-a59ab360ab14",
+                  "leftValue": "={{ $json.invoices }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "array",
+                    "operation": "notEmpty",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            4640,
+            304
+          ],
+          "id": "4e28249e-11fb-42d6-8399-f0e15b1f213b",
+          "name": "Invoice Exists?"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/invoices/{{ $json.invoices[0].invoice_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "reference_number",
+                  "value": "={{ $('Build JSON').item.json.reference_number }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            4864,
+            224
+          ],
+          "id": "6813f473-3c57-45b4-bf2f-8790151ee0c1",
+          "name": "Get Invoice",
+          "onError": "continueRegularOutput"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "5ae8b968-ab68-43a5-aa4b-0bbfa593b95a",
+                  "name": "invoice_id",
+                  "value": "={{ $json.invoice.invoice_id }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            5040,
+            304
+          ],
+          "id": "2af26e17-2f69-4f78-8328-965fbce2daae",
+          "name": "Extract invoice_id"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "30bbedd7-b6cd-4b64-b74f-fccebfd37345",
+                  "leftValue": "={{ $json.statusCode }}",
+                  "rightValue": 200,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gte"
+                  }
+                },
+                {
+                  "id": "4682e40e-606c-4aeb-812f-ae0cf3b4ca4f",
+                  "leftValue": "={{ $json.statusCode }}",
+                  "rightValue": 299,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gte"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            3104,
+            960
+          ],
+          "id": "09409971-2188-4b37-858a-e70982de3fb6",
+          "name": "If"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://n8n.tallypro.co.za/webhook/fa329524-5a4e-4fab-a636-cfcd3b496f4b/{{ $('Webhook').item.json.params.seller_id }}",
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "name": "x-takealot-event",
+                  "value": "sale_status_changed"
+                },
+                {
+                  "name": "x-n8n-self-heal",
+                  "value": "true"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ JSON.stringify({\n  sale: {\n    order_item_id: $('Webhook').item.json.body.sale.order_item_id,\n    offer_id: $('Webhook').item.json.body.sale.offer_id,\n    order_id: $('Webhook').item.json.body.sale.order_id,\n    warehouse: $('Webhook').item.json.body.sale.warehouse,\n    warehouse_id: $('Webhook').item.json.body.sale.warehouse_id,\n    sale_status_id: 2,\n    sale_status: 'Preparing for Customer',\n    order_date: $('Webhook').item.json.body.sale.order_date,\n    product_title: $('Webhook').item.json.body.sale.product_title,\n    takealot_url_mobi: $('Webhook').item.json.body.sale.takealot_url_mobi,\n    sku: $('Webhook').item.json.body.sale.sku,\n    tsin: $('Webhook').item.json.body.sale.tsin,\n    quantity: $('Webhook').item.json.body.sale.quantity,\n    selling_price: $('Webhook').item.json.body.sale.selling_price,\n    customer: $('Webhook').item.json.body.sale.customer,\n    customer_warehouse: $('Webhook').item.json.body.sale.customer_warehouse\n  },\n  event_timestamp_utc: $('Webhook').item.json.body.event_timestamp_utc\n}) }}",
+            "options": {
+              "response": {
+                "response": {
+                  "fullResponse": true,
+                  "neverError": true
+                }
+              },
+              "timeout": 30000
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2912,
+            1040
+          ],
+          "id": "a618e5c0-d9a9-4d6a-b923-9af3d08a4506",
+          "name": "Recursive call"
+        },
+        {
+          "parameters": {},
+          "type": "n8n-nodes-base.wait",
+          "typeVersion": 1.1,
+          "position": [
+            3360,
+            880
+          ],
+          "id": "95440ee9-3f8a-44c8-adaf-7454f735350d",
+          "name": "Wait 5 sec",
+          "webhookId": "5930ab40-b44d-49ac-a930-83ec5e5eac09"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "No Package",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "self-heal",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Attempting self-heal",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            2544,
+            624
+          ],
+          "id": "26f443f3-ca56-40cb-9204-8da336c6bf7f",
+          "name": "Log Entry - Self-Heal start"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $json }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2720,
+            624
+          ],
+          "id": "1878cd5e-e271-44b3-a1e4-e9587fb5f56f",
+          "name": "Log status to Backendless"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "create_so",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "error",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Self-heal failed",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            2768,
+            848
+          ],
+          "id": "eb854239-1f5b-4615-9180-79642a916da7",
+          "name": "Log Entry - Failed Recursion"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $json }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2944,
+            736
+          ],
+          "id": "30150c74-ca61-42ca-a57d-088a1201dae3",
+          "name": "Log Recursion fail to Backendless"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "e4d97c1f-6562-4117-945b-a6ff0b4e2131",
+                  "leftValue": "={{ $('Webhook').item.json.headers[\"x-n8n-self-heal\"] }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "string",
+                    "operation": "exists",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            2544,
+            864
+          ],
+          "id": "03aac066-e2d6-446f-bd68-dd074e9b9afa",
+          "name": "Prevent infinite loop"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/packages",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "=organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "search_text",
+                  "value": "={{ $('Build JSON').item.json.doc_number }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            3584,
+            864
+          ],
+          "id": "3ac6a3e6-2a6c-40a1-9cff-421af5bdd1da",
+          "name": "Get Package1"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "76b9b3c3-dc42-4b56-bbf0-0597eb51f0db",
+                  "leftValue": "={{ $json.packages }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "array",
+                    "operation": "exists",
+                    "singleValue": true
+                  }
+                },
+                {
+                  "id": "0471f1e8-acdf-4e45-8444-7864bff5acf5",
+                  "leftValue": "={{ $json.packages.length }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gt"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            3360,
+            624
+          ],
+          "id": "b041bee5-366d-414e-9f3c-275e82fe4e29",
+          "name": "Does Package Exist?1"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "Recursion",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "success",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Self Heal worked",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            4112,
+            608
+          ],
+          "id": "6b224f1c-f0e8-4220-9e9e-74f219a44c76",
+          "name": "Log Entry - Self-Heal start1"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "Recursion",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "error",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "Self Heal failed",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            3776,
+            832
+          ],
+          "id": "e58ad088-1b71-4bd2-b3d4-d584a36ed223",
+          "name": "Log Entry - Self-Heal start2"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $json }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            4432,
+            704
+          ],
+          "id": "320b4b3c-3f50-4c24-ad12-41e457da22e9",
+          "name": "Log result"
+        },
+        {
+          "parameters": {
+            "url": "=https://httpbin.dev/base64/encode/{{ encodeURIComponent($json.HMAC) }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1056,
+            464
+          ],
+          "id": "d6f1dc40-bbde-4160-b00f-f45ae88ee304",
+          "name": "HTTP Request"
+        },
+        {
+          "parameters": {
+            "action": "hmac",
+            "binaryData": true,
+            "binaryPropertyName": "={{ $('Merge').item.binary.data }}",
+            "type": "SHA256",
+            "dataPropertyName": "HMAC",
+            "secret": "={{ $json.takealot_webhook_secret }}"
+          },
+          "type": "n8n-nodes-base.crypto",
+          "typeVersion": 1,
+          "position": [
+            768,
+            464
+          ],
+          "id": "e2234e8e-9921-49bd-9c16-b12e02edb77b",
+          "name": "Crypto"
+        },
+        {
+          "parameters": {
+            "mode": "combine",
+            "combineBy": "combineByPosition",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.merge",
+          "typeVersion": 3.2,
+          "position": [
+            496,
+            592
+          ],
+          "id": "e0e55edd-6656-4cd1-b86f-e3b0b359929d",
+          "name": "Merge"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "22b3ebc9-54ae-4669-9b5b-5694dba9bf0a",
+                  "leftValue": "={{ $json.data }}",
+                  "rightValue": "={{ $('Webhook').item.json.headers['x-takealot-signature'] }}",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            1264,
+            464
+          ],
+          "id": "9d89f32f-7932-41c1-a364-6a00b1785e60",
+          "name": "Check HMAC"
+        },
+        {
+          "parameters": {
+            "operation": "toText",
+            "sourceProperty": "=data",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.convertToFile",
+          "typeVersion": 1.1,
+          "position": [
+            160,
+            576
+          ],
+          "id": "36f5be25-010b-462c-b264-bf18e4f34ffe",
+          "name": "Convert to File"
+        },
+        {
+          "parameters": {
+            "mode": "raw",
+            "jsonOutput": "={{ { \"data\": \"https://n8n.tallypro.co.za/webhook/fa329524-5a4e-4fab-a636-cfcd3b496f4b/\" + $('Webhook').item.json.params.seller_id + JSON.stringify($('Webhook').item.json.body).split('\":').join('\": ').split(',\"').join(', \"').split(':{').join(': {').split('},').join('},') } }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            -64,
+            576
+          ],
+          "id": "5ad7d4e9-c725-4271-9cf0-202596bbe3db",
+          "name": "Edit Fields"
+        },
+        {
+          "parameters": {
+            "operation": "fromJson",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.extractFromFile",
+          "typeVersion": 1.1,
+          "position": [
+            -288,
+            576
+          ],
+          "id": "953db65f-857b-43a2-a16c-4f434c1fad55",
+          "name": "Extract from File",
+          "disabled": true
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "1ced0d19-28eb-4e5d-b556-2e046c9c5e5d",
+                  "name": "timestamp",
+                  "value": "={{ new Date().toISOString() }}",
+                  "type": "string"
+                },
+                {
+                  "id": "4e64f3c8-d974-4fae-9ebd-bb45214d4be1",
+                  "name": "execution_id",
+                  "value": "={{ $execution.id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "8702cca0-98d2-4e2d-8e19-acd328a74ef3",
+                  "name": "workflow_name",
+                  "value": "Takealot Status Change Webhook",
+                  "type": "string"
+                },
+                {
+                  "id": "5670fd65-139e-44c3-97f2-6e187f07b4ac",
+                  "name": "seller_id",
+                  "value": "={{ $('Webhook').item.json.params.seller_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "eaab8a22-445b-4150-9070-f79194a1f828",
+                  "name": "order_item_id",
+                  "value": "={{ $('Webhook').item.json.body.sale.order_item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "44c6ebce-ef9a-4a89-84d7-517054a0052c",
+                  "name": "stage",
+                  "value": "hmac_verify",
+                  "type": "string"
+                },
+                {
+                  "id": "27aa2e80-1b7a-46ef-ad91-4b5603efd30d",
+                  "name": "status",
+                  "value": "error",
+                  "type": "string"
+                },
+                {
+                  "id": "34ee7c18-dcec-4d4c-80ca-b14d6a4da038",
+                  "name": "message",
+                  "value": "HMAC signature does not match",
+                  "type": "string"
+                },
+                {
+                  "id": "0cdf2735-de3c-4c6f-b0f7-7f10664800dc",
+                  "name": "details",
+                  "value": "={{ $('Webhook').item.json.toJsonString() }}",
+                  "type": "object"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            1248,
+            736
+          ],
+          "id": "23aa6ae0-9c3a-4f31-adfc-c81cce5e19c4",
+          "name": "Log Entry - SO = Void1"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://urbanetrains.backendless.app/api/data/n8n-status-change-webhook-workflow-logs",
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ $json }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1424,
+            736
+          ],
+          "id": "abc760fd-2422-4556-b04e-5dfc219643cf",
+          "name": "Log HMAC failure"
         }
       ],
       "connections": {
@@ -4560,6 +6965,11 @@
             [
               {
                 "node": "Get row(s)",
+                "type": "main",
+                "index": 0
+              },
+              {
+                "node": "Extract from File",
                 "type": "main",
                 "index": 0
               }
@@ -4625,7 +7035,7 @@
           "main": [
             [
               {
-                "node": "Crypto",
+                "node": "Merge",
                 "type": "main",
                 "index": 0
               }
@@ -4672,7 +7082,7 @@
           "main": [
             [
               {
-                "node": "Create Shipment",
+                "node": "Does Package Exist?",
                 "type": "main",
                 "index": 0
               }
@@ -4683,7 +7093,7 @@
           "main": [
             [
               {
-                "node": "Mark as Delivered",
+                "node": "Is Shipment Delivered?",
                 "type": "main",
                 "index": 0
               }
@@ -4694,18 +7104,7 @@
           "main": [
             [
               {
-                "node": "Create Invoice",
-                "type": "main",
-                "index": 0
-              }
-            ]
-          ]
-        },
-        "Crypto": {
-          "main": [
-            [
-              {
-                "node": "HTTP Request",
+                "node": "Get Invoices",
                 "type": "main",
                 "index": 0
               }
@@ -4770,7 +7169,7 @@
           "main": [
             [
               {
-                "node": "Mark Invoice as Sent",
+                "node": "Extract invoice_id",
                 "type": "main",
                 "index": 0
               }
@@ -4869,17 +7268,6 @@
             [
               {
                 "node": "No Operation, do nothing2",
-                "type": "main",
-                "index": 0
-              }
-            ]
-          ]
-        },
-        "HTTP Request": {
-          "main": [
-            [
-              {
-                "node": "Set Endpoint",
                 "type": "main",
                 "index": 0
               }
@@ -5103,18 +7491,369 @@
               }
             ]
           ]
+        },
+        "Does Package Exist?": {
+          "main": [
+            [
+              {
+                "node": "Shipment Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            []
+          ]
+        },
+        "Shipment Exists?": {
+          "main": [
+            [
+              {
+                "node": "Get Shipment",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Create Shipment",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Is Shipment Delivered?": {
+          "main": [
+            [
+              {
+                "node": "Get Invoices",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Mark as Delivered",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Shipment": {
+          "main": [
+            [
+              {
+                "node": "Is Shipment Delivered?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Invoices": {
+          "main": [
+            [
+              {
+                "node": "Invoice Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Invoice Exists?": {
+          "main": [
+            [
+              {
+                "node": "Get Invoice",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Create Invoice",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Invoice": {
+          "main": [
+            [
+              {
+                "node": "Extract invoice_id",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Extract invoice_id": {
+          "main": [
+            [
+              {
+                "node": "Mark Invoice as Sent",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Recursive call": {
+          "main": [
+            [
+              {
+                "node": "If",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "If": {
+          "main": [
+            [
+              {
+                "node": "Wait 5 sec",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - Self-Heal start": {
+          "main": [
+            [
+              {
+                "node": "Log status to Backendless",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log status to Backendless": {
+          "main": [
+            [
+              {
+                "node": "Prevent infinite loop",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - Failed Recursion": {
+          "main": [
+            [
+              {
+                "node": "Log Recursion fail to Backendless",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Prevent infinite loop": {
+          "main": [
+            [
+              {
+                "node": "Log Entry - Failed Recursion",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Recursive call",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Wait 5 sec": {
+          "main": [
+            [
+              {
+                "node": "Get Package1",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Package1": {
+          "main": [
+            [
+              {
+                "node": "Does Package Exist?1",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Does Package Exist?1": {
+          "main": [
+            [
+              {
+                "node": "Log Entry - Self-Heal start1",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Log Entry - Self-Heal start2",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - Self-Heal start2": {
+          "main": [
+            [
+              {
+                "node": "Log result",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - Self-Heal start1": {
+          "main": [
+            [
+              {
+                "node": "Log result",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "HTTP Request": {
+          "main": [
+            [
+              {
+                "node": "Check HMAC",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Crypto": {
+          "main": [
+            [
+              {
+                "node": "HTTP Request",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Merge": {
+          "main": [
+            [
+              {
+                "node": "Crypto",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Check HMAC": {
+          "main": [
+            [
+              {
+                "node": "Set Endpoint",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Log Entry - SO = Void1",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Convert to File": {
+          "main": [
+            [
+              {
+                "node": "Merge",
+                "type": "main",
+                "index": 1
+              }
+            ]
+          ]
+        },
+        "Edit Fields": {
+          "main": [
+            [
+              {
+                "node": "Convert to File",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Extract from File": {
+          "main": [
+            [
+              {
+                "node": "Edit Fields",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Entry - SO = Void1": {
+          "main": [
+            [
+              {
+                "node": "Log HMAC failure",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log HMAC failure": {
+          "main": [
+            [
+              {
+                "node": "Set Endpoint",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version 20186417",
+      "name": "Version 01bd4c92",
       "description": "",
       "autosaved": false,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-03T10:04:02.391Z",
-          "id": 52,
+          "createdAt": "2026-02-04T14:19:17.067Z",
+          "id": 55,
           "workflowId": "XYhKungDNJV46vQF",
-          "versionId": "20186417-1651-46ae-8075-ad4df1abf0c1",
+          "versionId": "01bd4c92-1e70-405b-b086-81c8c994cc59",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
