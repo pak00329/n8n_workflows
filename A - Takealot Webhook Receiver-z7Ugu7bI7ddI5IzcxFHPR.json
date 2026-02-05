@@ -1,0 +1,904 @@
+[
+  {
+    "updatedAt": "2026-02-05T10:48:25.014Z",
+    "createdAt": "2026-02-05T08:51:22.988Z",
+    "id": "z7Ugu7bI7ddI5IzcxFHPR",
+    "name": "A - Takealot Webhook Receiver",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "takealot-webhook/:seller_id",
+          "responseMode": "responseNode",
+          "options": {
+            "rawBody": true
+          }
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1072,
+          240
+        ],
+        "id": "95c0f315-629f-4e57-8e87-5d26e97cc665",
+        "name": "Webhook",
+        "webhookId": "takealot-state-machine"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.SellerID }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "string",
+                  "operation": "exists",
+                  "singleValue": true
+                },
+                "id": "cbafa4ed-cb82-4d5f-840b-e6a7c378d1c9"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -640,
+          240
+        ],
+        "id": "ff03c902-9783-4b81-ae56-5618d4998784",
+        "name": "Seller Exists?"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={ \"error\": \"Unknown seller\", \"seller_id\": \"{{ $('Webhook').item.json.params.seller_id }}\" }",
+          "options": {
+            "responseCode": 404
+          }
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          -432,
+          368
+        ],
+        "id": "1d2bd8f9-0a53-4edb-b89b-7e71e4052cdd",
+        "name": "404 Unknown Seller"
+      },
+      {
+        "parameters": {
+          "jsCode": "const webhook = $('Webhook').item.json;\nconst sale = webhook.body.sale;\nconst eventDate = webhook.body.event_timestamp_utc.split('T')[0];\n\nreturn {\n  json: {\n    idempotency_key: `${webhook.params.seller_id}_${sale.order_item_id}_${sale.sale_status_id}_${eventDate}`,\n    order_item_id: sale.order_item_id,\n    order_id: sale.order_id,\n    seller_id: webhook.params.seller_id,\n    sale_status_id: sale.sale_status_id,\n    sale_status: sale.sale_status,\n    sku: sale.sku,\n    tsin: sale.tsin,\n    product_title: sale.product_title,\n    quantity: sale.quantity,\n    selling_price: sale.selling_price,\n    customer: sale.customer,\n    warehouse: sale.warehouse,\n    warehouse_id: sale.warehouse_id || null,\n    event_timestamp_utc: webhook.body.event_timestamp_utc\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -432,
+          128
+        ],
+        "id": "696e0240-96d1-4e07-9cac-0a046972b84a",
+        "name": "Build Event Object",
+        "alwaysOutputData": false
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT id FROM order_events WHERE idempotency_key = '{{ $json.idempotency_key }}' LIMIT 1",
+          "options": {
+            "queryReplacement": "="
+          }
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          -208,
+          128
+        ],
+        "id": "c0ca3962-3287-41d9-91e2-c4a28f02dfbf",
+        "name": "Check Duplicate",
+        "alwaysOutputData": true,
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.isEmpty() }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                },
+                "id": "2eb3cbcf-3b9c-4117-b950-2af76fa27a07"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -16,
+          128
+        ],
+        "id": "01f3395b-bff7-47e9-94f3-9ecf0e93a285",
+        "name": "Is New?"
+      },
+      {
+        "parameters": {
+          "table": "order_events",
+          "dataMode": "defineBelow",
+          "valuesToSend": {
+            "values": [
+              {
+                "column": "idempotency_key",
+                "value": "={{ $('Build Event Object').item.json.idempotency_key }}"
+              },
+              {
+                "column": "order_item_id",
+                "value": "={{ $('Build Event Object').item.json.order_item_id }}"
+              },
+              {
+                "column": "order_id",
+                "value": "={{ $('Build Event Object').item.json.order_id }}"
+              },
+              {
+                "column": "seller_id",
+                "value": "={{ $('Build Event Object').item.json.seller_id }}"
+              },
+              {
+                "column": "sale_status_id",
+                "value": "={{ $('Build Event Object').item.json.sale_status_id }}"
+              },
+              {
+                "column": "sale_status",
+                "value": "={{ $('Build Event Object').item.json.sale_status }}"
+              },
+              {
+                "column": "sku",
+                "value": "={{ $('Build Event Object').item.json.sku }}"
+              },
+              {
+                "column": "tsin",
+                "value": "={{ $('Build Event Object').item.json.tsin }}"
+              },
+              {
+                "column": "product_title",
+                "value": "={{ $('Build Event Object').item.json.product_title }}"
+              },
+              {
+                "column": "quantity",
+                "value": "={{ $('Build Event Object').item.json.quantity }}"
+              },
+              {
+                "column": "selling_price",
+                "value": "={{ $('Build Event Object').item.json.selling_price }}"
+              },
+              {
+                "column": "customer",
+                "value": "={{ $('Build Event Object').item.json.customer }}"
+              },
+              {
+                "column": "warehouse",
+                "value": "={{ $('Build Event Object').item.json.warehouse }}"
+              },
+              {
+                "column": "warehouse_id",
+                "value": "={{ $('Build Event Object').item.json.warehouse_id }}"
+              },
+              {
+                "column": "event_timestamp_utc",
+                "value": "={{ $('Build Event Object').item.json.event_timestamp_utc }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          208,
+          0
+        ],
+        "id": "665a37b5-4c97-43b5-9498-79eb078fddd5",
+        "name": "Insert Event",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={ \"status\": \"accepted\", \"idempotency_key\": \"{{ $('Build Event Object').item.json.idempotency_key }}\" }",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          432,
+          0
+        ],
+        "id": "9bacf46e-0302-413f-93e0-6e377be7bd31",
+        "name": "200 Accepted"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={ \"status\": \"duplicate\", \"idempotency_key\": \"{{ $('Build Event Object').item.json.idempotency_key }}\" }",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          208,
+          240
+        ],
+        "id": "5383bce7-69c3-428c-93ff-37ae9a8750c2",
+        "name": "200 Duplicate"
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "P2idoCVDSQnCITNY",
+            "mode": "list",
+            "cachedResultName": "zoho_info",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "SellerID",
+                "keyValue": "={{ $json.params.seller_id }}"
+              },
+              {
+                "keyName": "active",
+                "condition": "isTrue"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          -864,
+          240
+        ],
+        "id": "09485e1a-7b9e-4670-b0e3-566780f7392c",
+        "name": "Get row(s)",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=z7Ugu7bI7ddI5IzcxFHPR) to commit change to GitHub",
+          "height": 140,
+          "width": 424,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -1072,
+          64
+        ],
+        "typeVersion": 1,
+        "id": "555ff80b-3b07-48e4-a615-bbbaa356cef5",
+        "name": "Sticky Note"
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Get row(s)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Seller Exists?": {
+        "main": [
+          [
+            {
+              "node": "Build Event Object",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "404 Unknown Seller",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Event Object": {
+        "main": [
+          [
+            {
+              "node": "Check Duplicate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Duplicate": {
+        "main": [
+          [
+            {
+              "node": "Is New?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is New?": {
+        "main": [
+          [
+            {
+              "node": "Insert Event",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "200 Duplicate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Insert Event": {
+        "main": [
+          [
+            {
+              "node": "200 Accepted",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get row(s)": {
+        "main": [
+          [
+            {
+              "node": "Seller Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "pinData": {},
+    "versionId": "0303e3c8-89d8-4aaf-8027-372d45c49258",
+    "activeVersionId": "0303e3c8-89d8-4aaf-8027-372d45c49258",
+    "versionCounter": 7,
+    "triggerCount": 1,
+    "shared": [
+      {
+        "updatedAt": "2026-02-05T08:51:23.007Z",
+        "createdAt": "2026-02-05T08:51:23.007Z",
+        "role": "workflow:owner",
+        "workflowId": "z7Ugu7bI7ddI5IzcxFHPR",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-05T07:36:10.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-02-04",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [],
+    "activeVersion": {
+      "updatedAt": "2026-02-05T10:48:35.000Z",
+      "createdAt": "2026-02-05T10:48:25.016Z",
+      "versionId": "0303e3c8-89d8-4aaf-8027-372d45c49258",
+      "workflowId": "z7Ugu7bI7ddI5IzcxFHPR",
+      "nodes": [
+        {
+          "parameters": {
+            "httpMethod": "POST",
+            "path": "takealot-webhook/:seller_id",
+            "responseMode": "responseNode",
+            "options": {
+              "rawBody": true
+            }
+          },
+          "type": "n8n-nodes-base.webhook",
+          "typeVersion": 2.1,
+          "position": [
+            -1072,
+            240
+          ],
+          "id": "95c0f315-629f-4e57-8e87-5d26e97cc665",
+          "name": "Webhook",
+          "webhookId": "takealot-state-machine"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "leftValue": "={{ $json.SellerID }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "string",
+                    "operation": "exists",
+                    "singleValue": true
+                  },
+                  "id": "cbafa4ed-cb82-4d5f-840b-e6a7c378d1c9"
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -640,
+            240
+          ],
+          "id": "ff03c902-9783-4b81-ae56-5618d4998784",
+          "name": "Seller Exists?"
+        },
+        {
+          "parameters": {
+            "respondWith": "json",
+            "responseBody": "={ \"error\": \"Unknown seller\", \"seller_id\": \"{{ $('Webhook').item.json.params.seller_id }}\" }",
+            "options": {
+              "responseCode": 404
+            }
+          },
+          "type": "n8n-nodes-base.respondToWebhook",
+          "typeVersion": 1.1,
+          "position": [
+            -432,
+            368
+          ],
+          "id": "1d2bd8f9-0a53-4edb-b89b-7e71e4052cdd",
+          "name": "404 Unknown Seller"
+        },
+        {
+          "parameters": {
+            "jsCode": "const webhook = $('Webhook').item.json;\nconst sale = webhook.body.sale;\nconst eventDate = webhook.body.event_timestamp_utc.split('T')[0];\n\nreturn {\n  json: {\n    idempotency_key: `${webhook.params.seller_id}_${sale.order_item_id}_${sale.sale_status_id}_${eventDate}`,\n    order_item_id: sale.order_item_id,\n    order_id: sale.order_id,\n    seller_id: webhook.params.seller_id,\n    sale_status_id: sale.sale_status_id,\n    sale_status: sale.sale_status,\n    sku: sale.sku,\n    tsin: sale.tsin,\n    product_title: sale.product_title,\n    quantity: sale.quantity,\n    selling_price: sale.selling_price,\n    customer: sale.customer,\n    warehouse: sale.warehouse,\n    warehouse_id: sale.warehouse_id || null,\n    event_timestamp_utc: webhook.body.event_timestamp_utc\n  }\n};"
+          },
+          "type": "n8n-nodes-base.code",
+          "typeVersion": 2,
+          "position": [
+            -432,
+            128
+          ],
+          "id": "696e0240-96d1-4e07-9cac-0a046972b84a",
+          "name": "Build Event Object",
+          "alwaysOutputData": false
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "SELECT id FROM order_events WHERE idempotency_key = '{{ $json.idempotency_key }}' LIMIT 1",
+            "options": {
+              "queryReplacement": "="
+            }
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            -208,
+            128
+          ],
+          "id": "c0ca3962-3287-41d9-91e2-c4a28f02dfbf",
+          "name": "Check Duplicate",
+          "alwaysOutputData": true,
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "leftValue": "={{ $json.isEmpty() }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "boolean",
+                    "operation": "true",
+                    "singleValue": true
+                  },
+                  "id": "2eb3cbcf-3b9c-4117-b950-2af76fa27a07"
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -16,
+            128
+          ],
+          "id": "01f3395b-bff7-47e9-94f3-9ecf0e93a285",
+          "name": "Is New?"
+        },
+        {
+          "parameters": {
+            "table": "order_events",
+            "dataMode": "defineBelow",
+            "valuesToSend": {
+              "values": [
+                {
+                  "column": "idempotency_key",
+                  "value": "={{ $('Build Event Object').item.json.idempotency_key }}"
+                },
+                {
+                  "column": "order_item_id",
+                  "value": "={{ $('Build Event Object').item.json.order_item_id }}"
+                },
+                {
+                  "column": "order_id",
+                  "value": "={{ $('Build Event Object').item.json.order_id }}"
+                },
+                {
+                  "column": "seller_id",
+                  "value": "={{ $('Build Event Object').item.json.seller_id }}"
+                },
+                {
+                  "column": "sale_status_id",
+                  "value": "={{ $('Build Event Object').item.json.sale_status_id }}"
+                },
+                {
+                  "column": "sale_status",
+                  "value": "={{ $('Build Event Object').item.json.sale_status }}"
+                },
+                {
+                  "column": "sku",
+                  "value": "={{ $('Build Event Object').item.json.sku }}"
+                },
+                {
+                  "column": "tsin",
+                  "value": "={{ $('Build Event Object').item.json.tsin }}"
+                },
+                {
+                  "column": "product_title",
+                  "value": "={{ $('Build Event Object').item.json.product_title }}"
+                },
+                {
+                  "column": "quantity",
+                  "value": "={{ $('Build Event Object').item.json.quantity }}"
+                },
+                {
+                  "column": "selling_price",
+                  "value": "={{ $('Build Event Object').item.json.selling_price }}"
+                },
+                {
+                  "column": "customer",
+                  "value": "={{ $('Build Event Object').item.json.customer }}"
+                },
+                {
+                  "column": "warehouse",
+                  "value": "={{ $('Build Event Object').item.json.warehouse }}"
+                },
+                {
+                  "column": "warehouse_id",
+                  "value": "={{ $('Build Event Object').item.json.warehouse_id }}"
+                },
+                {
+                  "column": "event_timestamp_utc",
+                  "value": "={{ $('Build Event Object').item.json.event_timestamp_utc }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            208,
+            0
+          ],
+          "id": "665a37b5-4c97-43b5-9498-79eb078fddd5",
+          "name": "Insert Event",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "respondWith": "json",
+            "responseBody": "={ \"status\": \"accepted\", \"idempotency_key\": \"{{ $('Build Event Object').item.json.idempotency_key }}\" }",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.respondToWebhook",
+          "typeVersion": 1.1,
+          "position": [
+            432,
+            0
+          ],
+          "id": "9bacf46e-0302-413f-93e0-6e377be7bd31",
+          "name": "200 Accepted"
+        },
+        {
+          "parameters": {
+            "respondWith": "json",
+            "responseBody": "={ \"status\": \"duplicate\", \"idempotency_key\": \"{{ $('Build Event Object').item.json.idempotency_key }}\" }",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.respondToWebhook",
+          "typeVersion": 1.1,
+          "position": [
+            208,
+            240
+          ],
+          "id": "5383bce7-69c3-428c-93ff-37ae9a8750c2",
+          "name": "200 Duplicate"
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "P2idoCVDSQnCITNY",
+              "mode": "list",
+              "cachedResultName": "zoho_info",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+            },
+            "matchType": "allConditions",
+            "filters": {
+              "conditions": [
+                {
+                  "keyName": "SellerID",
+                  "keyValue": "={{ $json.params.seller_id }}"
+                },
+                {
+                  "keyName": "active",
+                  "condition": "isTrue"
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            -864,
+            240
+          ],
+          "id": "09485e1a-7b9e-4670-b0e3-566780f7392c",
+          "name": "Get row(s)",
+          "alwaysOutputData": true
+        },
+        {
+          "parameters": {
+            "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=z7Ugu7bI7ddI5IzcxFHPR) to commit change to GitHub",
+            "height": 140,
+            "width": 424,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            -1072,
+            64
+          ],
+          "typeVersion": 1,
+          "id": "555ff80b-3b07-48e4-a615-bbbaa356cef5",
+          "name": "Sticky Note"
+        }
+      ],
+      "connections": {
+        "Webhook": {
+          "main": [
+            [
+              {
+                "node": "Get row(s)",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Seller Exists?": {
+          "main": [
+            [
+              {
+                "node": "Build Event Object",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "404 Unknown Seller",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Build Event Object": {
+          "main": [
+            [
+              {
+                "node": "Check Duplicate",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Check Duplicate": {
+          "main": [
+            [
+              {
+                "node": "Is New?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Is New?": {
+          "main": [
+            [
+              {
+                "node": "Insert Event",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "200 Duplicate",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Insert Event": {
+          "main": [
+            [
+              {
+                "node": "200 Accepted",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get row(s)": {
+          "main": [
+            [
+              {
+                "node": "Seller Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version 0303e3c8",
+      "description": "Initial",
+      "autosaved": false,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-05T10:48:35.093Z",
+          "id": 58,
+          "workflowId": "z7Ugu7bI7ddI5IzcxFHPR",
+          "versionId": "0303e3c8-89d8-4aaf-8027-372d45c49258",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
