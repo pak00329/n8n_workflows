@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-05T10:48:25.014Z",
+    "updatedAt": "2026-02-05T11:08:19.621Z",
     "createdAt": "2026-02-05T08:51:22.988Z",
     "id": "z7Ugu7bI7ddI5IzcxFHPR",
     "name": "A - Takealot Webhook Receiver",
@@ -21,7 +21,7 @@
         "typeVersion": 2.1,
         "position": [
           -1072,
-          240
+          224
         ],
         "id": "95c0f315-629f-4e57-8e87-5d26e97cc665",
         "name": "Webhook",
@@ -38,7 +38,7 @@
             },
             "conditions": [
               {
-                "leftValue": "={{ $json.SellerID }}",
+                "leftValue": "={{ $('Get row(s)').item.json.SellerID }}",
                 "rightValue": 0,
                 "operator": {
                   "type": "string",
@@ -55,8 +55,8 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          -640,
-          240
+          448,
+          224
         ],
         "id": "ff03c902-9783-4b81-ae56-5618d4998784",
         "name": "Seller Exists?"
@@ -72,8 +72,8 @@
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1.1,
         "position": [
-          -432,
-          368
+          752,
+          320
         ],
         "id": "1d2bd8f9-0a53-4edb-b89b-7e71e4052cdd",
         "name": "404 Unknown Seller"
@@ -85,7 +85,7 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          -432,
+          752,
           128
         ],
         "id": "696e0240-96d1-4e07-9cac-0a046972b84a",
@@ -103,7 +103,7 @@
         "type": "n8n-nodes-base.mySql",
         "typeVersion": 2.4,
         "position": [
-          -208,
+          976,
           128
         ],
         "id": "c0ca3962-3287-41d9-91e2-c4a28f02dfbf",
@@ -144,7 +144,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          -16,
+          1168,
           128
         ],
         "id": "01f3395b-bff7-47e9-94f3-9ecf0e93a285",
@@ -223,7 +223,7 @@
         "type": "n8n-nodes-base.mySql",
         "typeVersion": 2.4,
         "position": [
-          208,
+          1392,
           0
         ],
         "id": "665a37b5-4c97-43b5-9498-79eb078fddd5",
@@ -244,7 +244,7 @@
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1.1,
         "position": [
-          432,
+          1616,
           0
         ],
         "id": "9bacf46e-0302-413f-93e0-6e377be7bd31",
@@ -259,7 +259,7 @@
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1.1,
         "position": [
-          208,
+          1392,
           240
         ],
         "id": "5383bce7-69c3-428c-93ff-37ae9a8750c2",
@@ -292,8 +292,8 @@
         "type": "n8n-nodes-base.dataTable",
         "typeVersion": 1.1,
         "position": [
-          -864,
-          240
+          -752,
+          224
         ],
         "id": "09485e1a-7b9e-4670-b0e3-566780f7392c",
         "name": "Get row(s)",
@@ -314,6 +314,133 @@
         "typeVersion": 1,
         "id": "555ff80b-3b07-48e4-a615-bbbaa356cef5",
         "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "={{ { \"data\": \"https://n8n.tallypro.co.za/webhook/fa329524-5a4e-4fab-a636-cfcd3b496f4b/\" + $('Webhook').item.json.params.seller_id + JSON.stringify($('Webhook').item.json.body).split('\":').join('\": ').split(',\"').join(', \"').split(':{').join(': {').split('},').join('},') } }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -848,
+          368
+        ],
+        "id": "f1164780-a480-48e0-81a5-041ad137bb49",
+        "name": "Edit Fields"
+      },
+      {
+        "parameters": {
+          "operation": "toText",
+          "sourceProperty": "=data",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.convertToFile",
+        "typeVersion": 1.1,
+        "position": [
+          -640,
+          368
+        ],
+        "id": "1a1ba40c-b195-499d-935e-b75f7a80e193",
+        "name": "Convert to File"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          -448,
+          240
+        ],
+        "id": "fad80ef1-7e4c-4b43-b619-608cd3f1843b",
+        "name": "Merge"
+      },
+      {
+        "parameters": {
+          "action": "hmac",
+          "binaryData": true,
+          "binaryPropertyName": "={{ $('Merge').item.binary.data }}",
+          "type": "SHA256",
+          "dataPropertyName": "HMAC",
+          "secret": "={{ $json.takealot_webhook_secret }}"
+        },
+        "type": "n8n-nodes-base.crypto",
+        "typeVersion": 1,
+        "position": [
+          -272,
+          240
+        ],
+        "id": "eda19468-56bb-4045-8164-d1ed62368f6e",
+        "name": "Crypto"
+      },
+      {
+        "parameters": {
+          "url": "=https://httpbin.dev/base64/encode/{{ encodeURIComponent($json.HMAC) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -96,
+          240
+        ],
+        "id": "4fef089c-48c7-4318-8011-f0e37b44ecf3",
+        "name": "HTTP Request"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "22b3ebc9-54ae-4669-9b5b-5694dba9bf0a",
+                "leftValue": "={{ $json.data }}",
+                "rightValue": "={{ $('Webhook').item.json.headers['x-takealot-signature'] }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          96,
+          240
+        ],
+        "id": "338b9d66-9afb-4051-bbec-987527e8b7ec",
+        "name": "Check HMAC"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={ \"error\": \"Invalid signature error\" }",
+          "options": {
+            "responseCode": 404
+          }
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          304,
+          384
+        ],
+        "id": "2566c594-f0e7-4492-a28d-2b1845f2b6c4",
+        "name": "404 Failed Signature"
       }
     ],
     "connections": {
@@ -322,6 +449,11 @@
           [
             {
               "node": "Get row(s)",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Edit Fields",
               "type": "main",
               "index": 0
             }
@@ -401,7 +533,80 @@
         "main": [
           [
             {
+              "node": "Merge",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "node": "Convert to File",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Convert to File": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "Crypto",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Crypto": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "Check HMAC",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check HMAC": {
+        "main": [
+          [
+            {
               "node": "Seller Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "404 Failed Signature",
               "type": "main",
               "index": 0
             }
@@ -418,9 +623,9 @@
       "templateCredsSetupCompleted": true
     },
     "pinData": {},
-    "versionId": "0303e3c8-89d8-4aaf-8027-372d45c49258",
-    "activeVersionId": "0303e3c8-89d8-4aaf-8027-372d45c49258",
-    "versionCounter": 7,
+    "versionId": "d945e70d-99db-4c9d-b3d6-ed808ce747c4",
+    "activeVersionId": "bfdf7203-83da-407b-9ceb-e26f91ff0b1c",
+    "versionCounter": 11,
     "triggerCount": 1,
     "shared": [
       {
@@ -479,9 +684,9 @@
     ],
     "tags": [],
     "activeVersion": {
-      "updatedAt": "2026-02-05T10:48:35.000Z",
-      "createdAt": "2026-02-05T10:48:25.016Z",
-      "versionId": "0303e3c8-89d8-4aaf-8027-372d45c49258",
+      "updatedAt": "2026-02-05T10:58:58.000Z",
+      "createdAt": "2026-02-05T10:58:49.157Z",
+      "versionId": "bfdf7203-83da-407b-9ceb-e26f91ff0b1c",
       "workflowId": "z7Ugu7bI7ddI5IzcxFHPR",
       "nodes": [
         {
@@ -497,7 +702,7 @@
           "typeVersion": 2.1,
           "position": [
             -1072,
-            240
+            224
           ],
           "id": "95c0f315-629f-4e57-8e87-5d26e97cc665",
           "name": "Webhook",
@@ -514,7 +719,7 @@
               },
               "conditions": [
                 {
-                  "leftValue": "={{ $json.SellerID }}",
+                  "leftValue": "={{ $('Get row(s)').item.json.SellerID }}",
                   "rightValue": 0,
                   "operator": {
                     "type": "string",
@@ -531,8 +736,8 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            -640,
-            240
+            448,
+            224
           ],
           "id": "ff03c902-9783-4b81-ae56-5618d4998784",
           "name": "Seller Exists?"
@@ -548,8 +753,8 @@
           "type": "n8n-nodes-base.respondToWebhook",
           "typeVersion": 1.1,
           "position": [
-            -432,
-            368
+            752,
+            320
           ],
           "id": "1d2bd8f9-0a53-4edb-b89b-7e71e4052cdd",
           "name": "404 Unknown Seller"
@@ -561,7 +766,7 @@
           "type": "n8n-nodes-base.code",
           "typeVersion": 2,
           "position": [
-            -432,
+            752,
             128
           ],
           "id": "696e0240-96d1-4e07-9cac-0a046972b84a",
@@ -579,7 +784,7 @@
           "type": "n8n-nodes-base.mySql",
           "typeVersion": 2.4,
           "position": [
-            -208,
+            976,
             128
           ],
           "id": "c0ca3962-3287-41d9-91e2-c4a28f02dfbf",
@@ -620,7 +825,7 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            -16,
+            1168,
             128
           ],
           "id": "01f3395b-bff7-47e9-94f3-9ecf0e93a285",
@@ -699,7 +904,7 @@
           "type": "n8n-nodes-base.mySql",
           "typeVersion": 2.4,
           "position": [
-            208,
+            1392,
             0
           ],
           "id": "665a37b5-4c97-43b5-9498-79eb078fddd5",
@@ -720,7 +925,7 @@
           "type": "n8n-nodes-base.respondToWebhook",
           "typeVersion": 1.1,
           "position": [
-            432,
+            1616,
             0
           ],
           "id": "9bacf46e-0302-413f-93e0-6e377be7bd31",
@@ -735,7 +940,7 @@
           "type": "n8n-nodes-base.respondToWebhook",
           "typeVersion": 1.1,
           "position": [
-            208,
+            1392,
             240
           ],
           "id": "5383bce7-69c3-428c-93ff-37ae9a8750c2",
@@ -768,8 +973,8 @@
           "type": "n8n-nodes-base.dataTable",
           "typeVersion": 1.1,
           "position": [
-            -864,
-            240
+            -752,
+            224
           ],
           "id": "09485e1a-7b9e-4670-b0e3-566780f7392c",
           "name": "Get row(s)",
@@ -790,6 +995,133 @@
           "typeVersion": 1,
           "id": "555ff80b-3b07-48e4-a615-bbbaa356cef5",
           "name": "Sticky Note"
+        },
+        {
+          "parameters": {
+            "mode": "raw",
+            "jsonOutput": "={{ { \"data\": \"https://n8n.tallypro.co.za/webhook/fa329524-5a4e-4fab-a636-cfcd3b496f4b/\" + $('Webhook').item.json.params.seller_id + JSON.stringify($('Webhook').item.json.body).split('\":').join('\": ').split(',\"').join(', \"').split(':{').join(': {').split('},').join('},') } }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            -848,
+            368
+          ],
+          "id": "f1164780-a480-48e0-81a5-041ad137bb49",
+          "name": "Edit Fields"
+        },
+        {
+          "parameters": {
+            "operation": "toText",
+            "sourceProperty": "=data",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.convertToFile",
+          "typeVersion": 1.1,
+          "position": [
+            -640,
+            368
+          ],
+          "id": "1a1ba40c-b195-499d-935e-b75f7a80e193",
+          "name": "Convert to File"
+        },
+        {
+          "parameters": {
+            "mode": "combine",
+            "combineBy": "combineByPosition",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.merge",
+          "typeVersion": 3.2,
+          "position": [
+            -448,
+            240
+          ],
+          "id": "fad80ef1-7e4c-4b43-b619-608cd3f1843b",
+          "name": "Merge"
+        },
+        {
+          "parameters": {
+            "action": "hmac",
+            "binaryData": true,
+            "binaryPropertyName": "={{ $('Merge').item.binary.data }}",
+            "type": "SHA256",
+            "dataPropertyName": "HMAC",
+            "secret": "={{ $json.takealot_webhook_secret }}"
+          },
+          "type": "n8n-nodes-base.crypto",
+          "typeVersion": 1,
+          "position": [
+            -272,
+            240
+          ],
+          "id": "eda19468-56bb-4045-8164-d1ed62368f6e",
+          "name": "Crypto"
+        },
+        {
+          "parameters": {
+            "url": "=https://httpbin.dev/base64/encode/{{ encodeURIComponent($json.HMAC) }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -96,
+            240
+          ],
+          "id": "4fef089c-48c7-4318-8011-f0e37b44ecf3",
+          "name": "HTTP Request"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "22b3ebc9-54ae-4669-9b5b-5694dba9bf0a",
+                  "leftValue": "={{ $json.data }}",
+                  "rightValue": "={{ $('Webhook').item.json.headers['x-takealot-signature'] }}",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            96,
+            240
+          ],
+          "id": "338b9d66-9afb-4051-bbec-987527e8b7ec",
+          "name": "Check HMAC"
+        },
+        {
+          "parameters": {
+            "respondWith": "json",
+            "responseBody": "={ \"error\": \"Invalid\", \"Signature Error\" }",
+            "options": {
+              "responseCode": 404
+            }
+          },
+          "type": "n8n-nodes-base.respondToWebhook",
+          "typeVersion": 1.1,
+          "position": [
+            304,
+            384
+          ],
+          "id": "2566c594-f0e7-4492-a28d-2b1845f2b6c4",
+          "name": "404 Failed Signature"
         }
       ],
       "connections": {
@@ -798,6 +1130,11 @@
             [
               {
                 "node": "Get row(s)",
+                "type": "main",
+                "index": 0
+              },
+              {
+                "node": "Edit Fields",
                 "type": "main",
                 "index": 0
               }
@@ -877,7 +1214,80 @@
           "main": [
             [
               {
+                "node": "Merge",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Edit Fields": {
+          "main": [
+            [
+              {
+                "node": "Convert to File",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Convert to File": {
+          "main": [
+            [
+              {
+                "node": "Merge",
+                "type": "main",
+                "index": 1
+              }
+            ]
+          ]
+        },
+        "Merge": {
+          "main": [
+            [
+              {
+                "node": "Crypto",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Crypto": {
+          "main": [
+            [
+              {
+                "node": "HTTP Request",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "HTTP Request": {
+          "main": [
+            [
+              {
+                "node": "Check HMAC",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Check HMAC": {
+          "main": [
+            [
+              {
                 "node": "Seller Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "404 Failed Signature",
                 "type": "main",
                 "index": 0
               }
@@ -886,15 +1296,15 @@
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version 0303e3c8",
-      "description": "Initial",
+      "name": "Version bfdf7203",
+      "description": "Added HMAC",
       "autosaved": false,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-05T10:48:35.093Z",
-          "id": 58,
+          "createdAt": "2026-02-05T10:58:58.512Z",
+          "id": 59,
           "workflowId": "z7Ugu7bI7ddI5IzcxFHPR",
-          "versionId": "0303e3c8-89d8-4aaf-8027-372d45c49258",
+          "versionId": "bfdf7203-83da-407b-9ceb-e26f91ff0b1c",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
