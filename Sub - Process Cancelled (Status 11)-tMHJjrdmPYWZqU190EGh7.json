@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-09T13:21:14.177Z",
+    "updatedAt": "2026-02-09T14:39:59.301Z",
     "createdAt": "2026-02-09T12:45:17.499Z",
     "id": "tMHJjrdmPYWZqU190EGh7",
     "name": "Sub - Process Cancelled (Status 11)",
@@ -45,30 +45,39 @@
       {
         "parameters": {
           "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
             "conditions": [
               {
-                "leftValue": "={{ $json[0]?.current_stage }}",
+                "leftValue": "={{ $json.current_stage }}",
                 "rightValue": "pending",
                 "operator": {
                   "type": "string",
                   "operation": "notEquals"
-                }
+                },
+                "id": "6897104d-7f04-40f1-b21c-c5e2a3777c64"
               },
               {
-                "leftValue": "={{ $json[0]?.current_stage }}",
+                "leftValue": "={{ $json.current_stage }}",
                 "rightValue": "cancelled",
                 "operator": {
                   "type": "string",
                   "operation": "notEquals"
-                }
+                },
+                "id": "3b2301e7-1dcc-48dd-a164-6dc5b4fb06c7"
               },
               {
-                "leftValue": "={{ $json[0]?.current_stage }}",
+                "leftValue": "={{ $json.current_stage }}",
                 "rightValue": "returned",
                 "operator": {
                   "type": "string",
                   "operation": "notEquals"
-                }
+                },
+                "id": "2c537ea6-e163-4470-ab74-a0a483e2e8af"
               }
             ],
             "combinator": "and"
@@ -610,10 +619,59 @@
     "meta": {
       "templateCredsSetupCompleted": true
     },
-    "pinData": {},
-    "versionId": "9b38c6ad-837e-4622-87c2-cb13f451ddc3",
-    "activeVersionId": "9b38c6ad-837e-4622-87c2-cb13f451ddc3",
-    "versionCounter": 9,
+    "pinData": {
+      "Called by Parent": [
+        {
+          "json": {
+            "id": 46,
+            "idempotency_key": "123456_333_11_2026-02-07",
+            "order_item_id": 333,
+            "order_id": 2,
+            "seller_id": "123456",
+            "sale_status_id": 11,
+            "sale_status": "Cancelled by customer",
+            "sku": "0447Ax001",
+            "tsin": "59058497",
+            "product_title": "Sandbox-Item 1",
+            "quantity": 1,
+            "selling_price": "1.00",
+            "customer": "Postman Test",
+            "warehouse": "JHB",
+            "warehouse_id": 0,
+            "event_timestamp_utc": "2026-02-07 04:37:56",
+            "received_at": "2026-02-09 16:24:22",
+            "status": "pending",
+            "locked_at": null,
+            "locked_by": null,
+            "attempt_count": 0,
+            "max_attempts": 5,
+            "last_attempt_at": null,
+            "next_retry_at": null,
+            "last_error": null,
+            "is_synthetic": 0,
+            "synthesis_reason": null,
+            "source_event_id": null,
+            "completed_at": "2026-02-09 16:27:26",
+            "processing_duration_ms": null,
+            "current_stage": "invoiced",
+            "zoho_salesorder_id": "8538454000000118001",
+            "zoho_package_id": "8538454000000115052",
+            "zoho_shipment_id": "8538454000000117017",
+            "zoho_invoice_id": "8538454000000116036",
+            "prerequisitesMet": true,
+            "missingStatus": null,
+            "needsSynthesis": false,
+            "targetStage": "cancelled"
+          },
+          "pairedItem": {
+            "item": 0
+          }
+        }
+      ]
+    },
+    "versionId": "e165956f-df3a-43a9-9b02-07a641f54540",
+    "activeVersionId": "e165956f-df3a-43a9-9b02-07a641f54540",
+    "versionCounter": 12,
     "triggerCount": 0,
     "shared": [
       {
@@ -672,9 +730,9 @@
     ],
     "tags": [],
     "activeVersion": {
-      "updatedAt": "2026-02-09T13:21:20.000Z",
-      "createdAt": "2026-02-09T13:21:14.181Z",
-      "versionId": "9b38c6ad-837e-4622-87c2-cb13f451ddc3",
+      "updatedAt": "2026-02-09T14:40:02.000Z",
+      "createdAt": "2026-02-09T14:39:59.303Z",
+      "versionId": "e165956f-df3a-43a9-9b02-07a641f54540",
       "workflowId": "tMHJjrdmPYWZqU190EGh7",
       "nodes": [
         {
@@ -714,30 +772,39 @@
         {
           "parameters": {
             "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
               "conditions": [
                 {
-                  "leftValue": "={{ $json[0]?.current_stage }}",
+                  "leftValue": "={{ $json.current_stage }}",
                   "rightValue": "pending",
                   "operator": {
                     "type": "string",
                     "operation": "notEquals"
-                  }
+                  },
+                  "id": "6897104d-7f04-40f1-b21c-c5e2a3777c64"
                 },
                 {
-                  "leftValue": "={{ $json[0]?.current_stage }}",
+                  "leftValue": "={{ $json.current_stage }}",
                   "rightValue": "cancelled",
                   "operator": {
                     "type": "string",
                     "operation": "notEquals"
-                  }
+                  },
+                  "id": "3b2301e7-1dcc-48dd-a164-6dc5b4fb06c7"
                 },
                 {
-                  "leftValue": "={{ $json[0]?.current_stage }}",
+                  "leftValue": "={{ $json.current_stage }}",
                   "rightValue": "returned",
                   "operator": {
                     "type": "string",
                     "operation": "notEquals"
-                  }
+                  },
+                  "id": "2c537ea6-e163-4470-ab74-a0a483e2e8af"
                 }
               ],
               "combinator": "and"
@@ -1272,15 +1339,15 @@
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version 9b38c6ad",
+      "name": "Version e165956f",
       "description": "",
       "autosaved": false,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-09T13:21:20.989Z",
-          "id": 75,
+          "createdAt": "2026-02-09T14:40:02.429Z",
+          "id": 78,
           "workflowId": "tMHJjrdmPYWZqU190EGh7",
-          "versionId": "9b38c6ad-837e-4622-87c2-cb13f451ddc3",
+          "versionId": "e165956f-df3a-43a9-9b02-07a641f54540",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
