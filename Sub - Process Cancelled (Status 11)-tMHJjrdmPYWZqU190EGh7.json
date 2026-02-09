@@ -1,0 +1,1274 @@
+[
+  {
+    "updatedAt": "2026-02-09T13:17:14.186Z",
+    "createdAt": "2026-02-09T12:45:17.499Z",
+    "id": "tMHJjrdmPYWZqU190EGh7",
+    "name": "Sub - Process Cancelled (Status 11)",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -2208,
+          304
+        ],
+        "id": "5f980d1f-4531-4ecc-9106-eb7bbde1d313",
+        "name": "Called by Parent"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT * FROM order_state WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }} LIMIT 1",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          -1760,
+          304
+        ],
+        "id": "91dbebfb-dcd6-4090-809c-d64867e736de",
+        "name": "Get Order State",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "conditions": [
+              {
+                "leftValue": "={{ $json[0]?.current_stage }}",
+                "rightValue": "pending",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              },
+              {
+                "leftValue": "={{ $json[0]?.current_stage }}",
+                "rightValue": "cancelled",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              },
+              {
+                "leftValue": "={{ $json[0]?.current_stage }}",
+                "rightValue": "returned",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -1536,
+          304
+        ],
+        "id": "a59f4675-9f54-46e2-8e3e-ad07d7af523a",
+        "name": "Needs Voiding?"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://accounts.zoho.com/oauth/v2/token",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpCustomAuth",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -1328,
+          208
+        ],
+        "id": "862e166b-aa7d-44e9-88e8-67219f80c26c",
+        "name": "Get Zoho Token",
+        "credentials": {
+          "httpCustomAuth": {
+            "id": "9SvOEsYF9SjtHbhQ",
+            "name": "Zoho_Access_Token"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "conditions": [
+              {
+                "leftValue": "={{ $('Get Order State').first().json[0]?.zoho_invoice_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -1104,
+          208
+        ],
+        "id": "c4e1eb6f-eab8-4ed4-9b67-6b40f5b7c5c8",
+        "name": "Has Invoice?"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.zohoapis.com/inventory/v1/invoices/{{ $('Get Order State').first().json[0].zoho_invoice_id }}/status/void",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -880,
+          112
+        ],
+        "id": "734bf473-21d1-4121-a60e-9b51f7cc69db",
+        "name": "Void Invoice"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "conditions": [
+              {
+                "leftValue": "={{ $('Get Order State').first().json[0]?.zoho_salesorder_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -656,
+          208
+        ],
+        "id": "2aa9e457-6478-4e0e-910d-bd1343b3b3b7",
+        "name": "Has Sales Order?"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').first().json[0].zoho_salesorder_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -448,
+          112
+        ],
+        "id": "ee615567-b2b1-4399-b1ac-ff7ca8220ced",
+        "name": "Get SO Current Status"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "conditions": [
+              {
+                "leftValue": "={{ $json.salesorder?.status }}",
+                "rightValue": "void",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -224,
+          112
+        ],
+        "id": "eab264b2-fb18-419b-9e46-a1bf9dd6870f",
+        "name": "SO Not Already Void?"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').first().json[0].zoho_salesorder_id }}/status/void",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          0,
+          0
+        ],
+        "id": "bfe3c900-d620-4394-abf1-2e07824903cc",
+        "name": "Void Sales Order"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE order_state SET current_stage = 'cancelled', zoho_salesorder_status = 'void', zoho_invoice_status = CASE WHEN zoho_invoice_id IS NOT NULL THEN 'void' ELSE zoho_invoice_status END WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          224,
+          208
+        ],
+        "id": "e5335925-66b2-4037-9bc1-f563727a26a7",
+        "name": "Update Order State",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO processing_log (event_id, order_item_id, seller_id, execution_id, workflow_name, stage, status, message) VALUES ({{ $('Called by Parent').item.json.id }}, {{ $('Called by Parent').item.json.order_item_id }}, '{{ $('Called by Parent').item.json.seller_id }}', '{{ $execution.id }}', 'Process Cancelled', 'cancelled', 'success', 'Voided transactions for order')",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          448,
+          208
+        ],
+        "id": "31fa9cbb-81bc-483c-b070-da39ebe54e40",
+        "name": "Log Success",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE order_state SET current_stage = 'cancelled' WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          -1328,
+          400
+        ],
+        "id": "bf955ad9-5cae-40e7-aa36-ecc2ba6208e5",
+        "name": "Update State (Nothing to Void)",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO processing_log (event_id, order_item_id, seller_id, execution_id, workflow_name, stage, status, message) VALUES ({{ $('Called by Parent').item.json.id }}, {{ $('Called by Parent').item.json.order_item_id }}, '{{ $('Called by Parent').item.json.seller_id }}', '{{ $execution.id }}', 'Process Cancelled', 'cancelled', 'success', 'No transactions to void - order was pending/already cancelled/returned')",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          -1104,
+          400
+        ],
+        "id": "e454c3a2-09da-48e4-97af-a0554875d5cf",
+        "name": "Log Nothing to Void",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "P2idoCVDSQnCITNY",
+            "mode": "list",
+            "cachedResultName": "zoho_info",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+          },
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "SellerID",
+                "keyValue": "={{ $json.seller_id }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          -1984,
+          304
+        ],
+        "id": "139abe69-0658-4c78-bb7a-7949d9b4dc8d",
+        "name": "Get Active Sellers"
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=tMHJjrdmPYWZqU190EGh7) to commit change ",
+          "height": 140,
+          "width": 408,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -2048,
+          128
+        ],
+        "typeVersion": 1,
+        "id": "5019d7a4-c90c-419d-a094-3e000a841f7d",
+        "name": "Sticky Note"
+      }
+    ],
+    "connections": {
+      "Called by Parent": {
+        "main": [
+          [
+            {
+              "node": "Get Active Sellers",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Order State": {
+        "main": [
+          [
+            {
+              "node": "Needs Voiding?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Needs Voiding?": {
+        "main": [
+          [
+            {
+              "node": "Get Zoho Token",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Update State (Nothing to Void)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update State (Nothing to Void)": {
+        "main": [
+          [
+            {
+              "node": "Log Nothing to Void",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Zoho Token": {
+        "main": [
+          [
+            {
+              "node": "Has Invoice?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Invoice?": {
+        "main": [
+          [
+            {
+              "node": "Void Invoice",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Has Sales Order?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Void Invoice": {
+        "main": [
+          [
+            {
+              "node": "Has Sales Order?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Sales Order?": {
+        "main": [
+          [
+            {
+              "node": "Get SO Current Status",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Update Order State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get SO Current Status": {
+        "main": [
+          [
+            {
+              "node": "SO Not Already Void?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SO Not Already Void?": {
+        "main": [
+          [
+            {
+              "node": "Void Sales Order",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Update Order State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Void Sales Order": {
+        "main": [
+          [
+            {
+              "node": "Update Order State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Order State": {
+        "main": [
+          [
+            {
+              "node": "Log Success",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Active Sellers": {
+        "main": [
+          [
+            {
+              "node": "Get Order State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "pinData": {},
+    "versionId": "7445b348-8b8f-491d-9c6a-7ba3525dad68",
+    "activeVersionId": "c967896a-13b1-47e3-a9d8-77e8c41525c7",
+    "versionCounter": 6,
+    "triggerCount": 0,
+    "shared": [
+      {
+        "updatedAt": "2026-02-09T12:45:17.544Z",
+        "createdAt": "2026-02-09T12:45:17.544Z",
+        "role": "workflow:owner",
+        "workflowId": "tMHJjrdmPYWZqU190EGh7",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-09T06:37:56.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-02-08",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [],
+    "activeVersion": {
+      "updatedAt": "2026-02-09T13:14:15.000Z",
+      "createdAt": "2026-02-09T13:14:03.680Z",
+      "versionId": "c967896a-13b1-47e3-a9d8-77e8c41525c7",
+      "workflowId": "tMHJjrdmPYWZqU190EGh7",
+      "nodes": [
+        {
+          "parameters": {
+            "inputSource": "passthrough"
+          },
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "typeVersion": 1.1,
+          "position": [
+            -2208,
+            304
+          ],
+          "id": "5f980d1f-4531-4ecc-9106-eb7bbde1d313",
+          "name": "Called by Parent"
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "SELECT * FROM order_state WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }} LIMIT 1",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            -1760,
+            304
+          ],
+          "id": "91dbebfb-dcd6-4090-809c-d64867e736de",
+          "name": "Get Order State",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "conditions": [
+                {
+                  "leftValue": "={{ $json[0]?.current_stage }}",
+                  "rightValue": "pending",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEquals"
+                  }
+                },
+                {
+                  "leftValue": "={{ $json[0]?.current_stage }}",
+                  "rightValue": "cancelled",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEquals"
+                  }
+                },
+                {
+                  "leftValue": "={{ $json[0]?.current_stage }}",
+                  "rightValue": "returned",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEquals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -1536,
+            304
+          ],
+          "id": "a59f4675-9f54-46e2-8e3e-ad07d7af523a",
+          "name": "Needs Voiding?"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://accounts.zoho.com/oauth/v2/token",
+            "authentication": "genericCredentialType",
+            "genericAuthType": "httpCustomAuth",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -1328,
+            208
+          ],
+          "id": "862e166b-aa7d-44e9-88e8-67219f80c26c",
+          "name": "Get Zoho Token",
+          "credentials": {
+            "httpCustomAuth": {
+              "id": "9SvOEsYF9SjtHbhQ",
+              "name": "Zoho_Access_Token"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "conditions": [
+                {
+                  "leftValue": "={{ $('Get Order State').first().json[0]?.zoho_invoice_id }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEmpty",
+                    "singleValue": true
+                  }
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -1104,
+            208
+          ],
+          "id": "c4e1eb6f-eab8-4ed4-9b67-6b40f5b7c5c8",
+          "name": "Has Invoice?"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://www.zohoapis.com/inventory/v1/invoices/{{ $('Get Order State').first().json[0].zoho_invoice_id }}/status/void",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {
+              "response": {
+                "response": {
+                  "neverError": true
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -880,
+            112
+          ],
+          "id": "734bf473-21d1-4121-a60e-9b51f7cc69db",
+          "name": "Void Invoice"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "conditions": [
+                {
+                  "leftValue": "={{ $('Get Order State').first().json[0]?.zoho_salesorder_id }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEmpty",
+                    "singleValue": true
+                  }
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -656,
+            208
+          ],
+          "id": "2aa9e457-6478-4e0e-910d-bd1343b3b3b7",
+          "name": "Has Sales Order?"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').first().json[0].zoho_salesorder_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {
+              "response": {
+                "response": {
+                  "neverError": true
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -448,
+            112
+          ],
+          "id": "ee615567-b2b1-4399-b1ac-ff7ca8220ced",
+          "name": "Get SO Current Status"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "conditions": [
+                {
+                  "leftValue": "={{ $json.salesorder?.status }}",
+                  "rightValue": "void",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEquals"
+                  }
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -224,
+            112
+          ],
+          "id": "eab264b2-fb18-419b-9e46-a1bf9dd6870f",
+          "name": "SO Not Already Void?"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').first().json[0].zoho_salesorder_id }}/status/void",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {
+              "response": {
+                "response": {
+                  "neverError": true
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            0,
+            0
+          ],
+          "id": "bfe3c900-d620-4394-abf1-2e07824903cc",
+          "name": "Void Sales Order"
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "UPDATE order_state SET current_stage = 'cancelled', zoho_salesorder_status = 'void', zoho_invoice_status = CASE WHEN zoho_invoice_id IS NOT NULL THEN 'void' ELSE zoho_invoice_status END WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            224,
+            208
+          ],
+          "id": "e5335925-66b2-4037-9bc1-f563727a26a7",
+          "name": "Update Order State",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "INSERT INTO processing_log (event_id, order_item_id, seller_id, execution_id, workflow_name, stage, status, message) VALUES ({{ $('Called by Parent').item.json.id }}, {{ $('Called by Parent').item.json.order_item_id }}, '{{ $('Called by Parent').item.json.seller_id }}', '{{ $execution.id }}', 'Process Cancelled', 'cancelled', 'success', 'Voided transactions for order')",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            448,
+            208
+          ],
+          "id": "31fa9cbb-81bc-483c-b070-da39ebe54e40",
+          "name": "Log Success",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "UPDATE order_state SET current_stage = 'cancelled' WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            -1328,
+            400
+          ],
+          "id": "bf955ad9-5cae-40e7-aa36-ecc2ba6208e5",
+          "name": "Update State (Nothing to Void)",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "INSERT INTO processing_log (event_id, order_item_id, seller_id, execution_id, workflow_name, stage, status, message) VALUES ({{ $('Called by Parent').item.json.id }}, {{ $('Called by Parent').item.json.order_item_id }}, '{{ $('Called by Parent').item.json.seller_id }}', '{{ $execution.id }}', 'Process Cancelled', 'cancelled', 'success', 'No transactions to void - order was pending/already cancelled/returned')",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            -1104,
+            400
+          ],
+          "id": "e454c3a2-09da-48e4-97af-a0554875d5cf",
+          "name": "Log Nothing to Void",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "P2idoCVDSQnCITNY",
+              "mode": "list",
+              "cachedResultName": "zoho_info",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+            },
+            "filters": {
+              "conditions": [
+                {
+                  "keyName": "SellerID",
+                  "keyValue": "={{ $json.seller_id }}"
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            -1984,
+            304
+          ],
+          "id": "139abe69-0658-4c78-bb7a-7949d9b4dc8d",
+          "name": "Get Active Sellers"
+        }
+      ],
+      "connections": {
+        "Called by Parent": {
+          "main": [
+            [
+              {
+                "node": "Get Active Sellers",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Order State": {
+          "main": [
+            [
+              {
+                "node": "Needs Voiding?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Needs Voiding?": {
+          "main": [
+            [
+              {
+                "node": "Get Zoho Token",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Update State (Nothing to Void)",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Update State (Nothing to Void)": {
+          "main": [
+            [
+              {
+                "node": "Log Nothing to Void",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Zoho Token": {
+          "main": [
+            [
+              {
+                "node": "Has Invoice?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Has Invoice?": {
+          "main": [
+            [
+              {
+                "node": "Void Invoice",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Has Sales Order?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Void Invoice": {
+          "main": [
+            [
+              {
+                "node": "Has Sales Order?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Has Sales Order?": {
+          "main": [
+            [
+              {
+                "node": "Get SO Current Status",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Update Order State",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get SO Current Status": {
+          "main": [
+            [
+              {
+                "node": "SO Not Already Void?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "SO Not Already Void?": {
+          "main": [
+            [
+              {
+                "node": "Void Sales Order",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Update Order State",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Void Sales Order": {
+          "main": [
+            [
+              {
+                "node": "Update Order State",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Update Order State": {
+          "main": [
+            [
+              {
+                "node": "Log Success",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Active Sellers": {
+          "main": [
+            [
+              {
+                "node": "Get Order State",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version c967896a",
+      "description": "Initial commit",
+      "autosaved": false,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-09T13:14:15.005Z",
+          "id": 73,
+          "workflowId": "tMHJjrdmPYWZqU190EGh7",
+          "versionId": "c967896a-13b1-47e3-a9d8-77e8c41525c7",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
