@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-09T13:17:14.186Z",
+    "updatedAt": "2026-02-09T13:21:14.177Z",
     "createdAt": "2026-02-09T12:45:17.499Z",
     "id": "tMHJjrdmPYWZqU190EGh7",
     "name": "Sub - Process Cancelled (Status 11)",
@@ -142,7 +142,7 @@
             "parameters": [
               {
                 "name": "organization_id",
-                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
               }
             ]
           },
@@ -206,7 +206,7 @@
             "parameters": [
               {
                 "name": "organization_id",
-                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
               }
             ]
           },
@@ -270,7 +270,7 @@
             "parameters": [
               {
                 "name": "organization_id",
-                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
               }
             ]
           },
@@ -386,6 +386,22 @@
       },
       {
         "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=tMHJjrdmPYWZqU190EGh7) to commit change ",
+          "height": 140,
+          "width": 408,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -2048,
+          128
+        ],
+        "typeVersion": 1,
+        "id": "5019d7a4-c90c-419d-a094-3e000a841f7d",
+        "name": "Sticky Note"
+      },
+      {
+        "parameters": {
           "operation": "get",
           "dataTableId": {
             "__rl": true,
@@ -410,23 +426,7 @@
           304
         ],
         "id": "139abe69-0658-4c78-bb7a-7949d9b4dc8d",
-        "name": "Get Active Sellers"
-      },
-      {
-        "parameters": {
-          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=tMHJjrdmPYWZqU190EGh7) to commit change ",
-          "height": 140,
-          "width": 408,
-          "color": 5
-        },
-        "type": "n8n-nodes-base.stickyNote",
-        "position": [
-          -2048,
-          128
-        ],
-        "typeVersion": 1,
-        "id": "5019d7a4-c90c-419d-a094-3e000a841f7d",
-        "name": "Sticky Note"
+        "name": "Get Seller Config"
       }
     ],
     "connections": {
@@ -434,7 +434,7 @@
         "main": [
           [
             {
-              "node": "Get Active Sellers",
+              "node": "Get Seller Config",
               "type": "main",
               "index": 0
             }
@@ -590,7 +590,7 @@
           ]
         ]
       },
-      "Get Active Sellers": {
+      "Get Seller Config": {
         "main": [
           [
             {
@@ -611,9 +611,9 @@
       "templateCredsSetupCompleted": true
     },
     "pinData": {},
-    "versionId": "7445b348-8b8f-491d-9c6a-7ba3525dad68",
-    "activeVersionId": "c967896a-13b1-47e3-a9d8-77e8c41525c7",
-    "versionCounter": 6,
+    "versionId": "9b38c6ad-837e-4622-87c2-cb13f451ddc3",
+    "activeVersionId": "9b38c6ad-837e-4622-87c2-cb13f451ddc3",
+    "versionCounter": 9,
     "triggerCount": 0,
     "shared": [
       {
@@ -672,9 +672,9 @@
     ],
     "tags": [],
     "activeVersion": {
-      "updatedAt": "2026-02-09T13:14:15.000Z",
-      "createdAt": "2026-02-09T13:14:03.680Z",
-      "versionId": "c967896a-13b1-47e3-a9d8-77e8c41525c7",
+      "updatedAt": "2026-02-09T13:21:20.000Z",
+      "createdAt": "2026-02-09T13:21:14.181Z",
+      "versionId": "9b38c6ad-837e-4622-87c2-cb13f451ddc3",
       "workflowId": "tMHJjrdmPYWZqU190EGh7",
       "nodes": [
         {
@@ -811,7 +811,7 @@
               "parameters": [
                 {
                   "name": "organization_id",
-                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
                 }
               ]
             },
@@ -875,7 +875,7 @@
               "parameters": [
                 {
                   "name": "organization_id",
-                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
                 }
               ]
             },
@@ -939,7 +939,7 @@
               "parameters": [
                 {
                   "name": "organization_id",
-                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
                 }
               ]
             },
@@ -1055,6 +1055,22 @@
         },
         {
           "parameters": {
+            "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=tMHJjrdmPYWZqU190EGh7) to commit change ",
+            "height": 140,
+            "width": 408,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            -2048,
+            128
+          ],
+          "typeVersion": 1,
+          "id": "5019d7a4-c90c-419d-a094-3e000a841f7d",
+          "name": "Sticky Note"
+        },
+        {
+          "parameters": {
             "operation": "get",
             "dataTableId": {
               "__rl": true,
@@ -1079,7 +1095,7 @@
             304
           ],
           "id": "139abe69-0658-4c78-bb7a-7949d9b4dc8d",
-          "name": "Get Active Sellers"
+          "name": "Get Seller Config"
         }
       ],
       "connections": {
@@ -1087,7 +1103,7 @@
           "main": [
             [
               {
-                "node": "Get Active Sellers",
+                "node": "Get Seller Config",
                 "type": "main",
                 "index": 0
               }
@@ -1243,7 +1259,7 @@
             ]
           ]
         },
-        "Get Active Sellers": {
+        "Get Seller Config": {
           "main": [
             [
               {
@@ -1256,15 +1272,15 @@
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version c967896a",
-      "description": "Initial commit",
+      "name": "Version 9b38c6ad",
+      "description": "",
       "autosaved": false,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-09T13:14:15.005Z",
-          "id": 73,
+          "createdAt": "2026-02-09T13:21:20.989Z",
+          "id": 75,
           "workflowId": "tMHJjrdmPYWZqU190EGh7",
-          "versionId": "c967896a-13b1-47e3-a9d8-77e8c41525c7",
+          "versionId": "9b38c6ad-837e-4622-87c2-cb13f451ddc3",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
