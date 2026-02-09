@@ -1,0 +1,1782 @@
+[
+  {
+    "updatedAt": "2026-02-09T15:03:00.392Z",
+    "createdAt": "2026-02-05T11:11:23.943Z",
+    "id": "4hR1URBUTBGvd3MxOG_YG",
+    "name": "B - Event Processor (State Machine)",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT e.*, s.current_stage, s.zoho_salesorder_id, s.zoho_package_id, s.zoho_shipment_id, s.zoho_invoice_id\n  FROM order_events e\n  LEFT JOIN order_state s \n  ON e.order_item_id = s.order_item_id\n  WHERE e.seller_id = \"{{ $json.SellerID }}\"\n  AND e.status = 'pending'  \n  AND (e.next_retry_at IS NULL OR e.next_retry_at <= NOW())\n  AND (e.locked_at IS NULL OR e.locked_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE))\n  ORDER BY e.sale_status_id ASC, e.received_at ASC\n  LIMIT 10",
+          "options": {
+            "queryReplacement": "="
+          }
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          -1088,
+          192
+        ],
+        "id": "e9c33cce-59f1-43d0-8121-85957f1ee70e",
+        "name": "Get Pending Events",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.idempotency_key }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "string",
+                  "operation": "exists",
+                  "singleValue": true
+                },
+                "id": "1b6d62a3-e606-4dd9-ae0f-8928cfe87141"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -656,
+          192
+        ],
+        "id": "170fa3bc-d7c5-46e1-b3ec-cde979b60178",
+        "name": "Has Events?"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const event = $input.item.json;\nconst STAGE_REQUIREMENTS = {\n  2: { targetStage: 'packaged', requiredStage: null },\n  3: { targetStage: 'invoiced', requiredStage: 'packaged' },\n  11: { targetStage: 'cancelled', requiredStage: null },\n  19: { targetStage: 'returned', requiredStage: 'invoiced' }\n};\nconst STAGE_ORDER = ['pending', 'confirmed', 'packaged', 'shipped', 'invoiced', 'returned'];\n\nconst requirement = STAGE_REQUIREMENTS[event.sale_status_id];\nconst currentStage = event.current_stage || 'pending';\nconst currentIndex = STAGE_ORDER.indexOf(currentStage);\nconst requiredIndex = requirement.requiredStage ? STAGE_ORDER.indexOf(requirement.requiredStage) : -1;\n\nlet prerequisitesMet = true;\nlet missingStatus = null;\n\nif (requirement.requiredStage && currentIndex < requiredIndex) {\n  prerequisitesMet = false;\n  // Determine which status is missing\n  if (event.sale_status_id === 3 && !event.zoho_package_id) {\n    missingStatus = 2;\n  } else if (event.sale_status_id === 19) {\n    if (!event.zoho_package_id) missingStatus = 2;\n    else if (!event.zoho_invoice_id) missingStatus = 3;\n  }\n}\n\nreturn {\n  json: {\n    ...event,\n    prerequisitesMet,\n    missingStatus,\n    needsSynthesis: !prerequisitesMet && missingStatus !== null,\n    targetStage: requirement.targetStage\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -432,
+          192
+        ],
+        "id": "bb6579c2-2459-4d94-95c0-a16c99f4d705",
+        "name": "Check Prerequisites"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.needsSynthesis }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "equals"
+                },
+                "id": "fe28f666-3777-4c1a-a2bf-1ee393d1dfa8"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -208,
+          192
+        ],
+        "id": "6663fa45-f0cc-4c40-9b1c-5666e2a6355b",
+        "name": "Needs Synthesis?"
+      },
+      {
+        "parameters": {
+          "jsCode": "const event = $('Check Prerequisites').item.json;\nconst takealotData = $input.item.json.sale || $input.item.json;\nconst missingStatus = event.missingStatus;\n\nconst statusNames = { 2: 'Preparing for Customer', 3: 'Shipped to Customer' };\nconst eventDate = new Date(event.event_timestamp_utc);\neventDate.setSeconds(eventDate.getSeconds() - missingStatus); // Ensure order\n\nconst syntheticEvent = {\n  idempotency_key: `${event.seller_id}_${event.order_item_id}_${missingStatus}_${event.event_timestamp_utc.split('T')[0]}_synthetic`,\n  order_item_id: event.order_item_id,\n  order_id: event.order_id,\n  seller_id: event.seller_id,\n  sale_status_id: missingStatus,\n  sale_status: statusNames[missingStatus] + ' (Synthetic)',\n  sku: takealotData.sku || event.sku,\n  tsin: takealotData.tsin || event.tsin,\n  product_title: takealotData.product_title || event.product_title,\n  quantity: takealotData.quantity || event.quantity,\n  selling_price: takealotData.selling_price || event.selling_price,\n  customer: takealotData.customer_name || event.customer,\n  warehouse: event.warehouse,\n  warehouse_id: event.warehouse_id,\n  event_timestamp_utc: eventDate.toISOString(),\n  is_synthetic: true,\n  synthesis_reason: `Missing webhook - synthesized from status ${event.sale_status_id} event`,\n  source_event_id: event.id\n};\n\nreturn { json: syntheticEvent };"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          16,
+          0
+        ],
+        "id": "6ea664ce-634b-4b20-b03f-1192175c6f77",
+        "name": "Build Synthetic Event"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT IGNORE INTO order_events (idempotency_key, order_item_id, order_id, seller_id, sale_status_id, sale_status, sku, tsin, product_title, quantity, selling_price, customer, warehouse, warehouse_id, event_timestamp_utc, is_synthetic, synthesis_reason, source_event_id)\nVALUES ('{{ $json.idempotency_key }}', {{ $json.order_item_id }}, {{ $json.order_id }}, '{{ $json.seller_id }}', {{ $json.sale_status_id }}, '{{ $json.sale_status }}', '{{ $json.sku }}', '{{ $json.tsin }}', '{{ $json.product_title }}', {{ $json.quantity }}, {{ $json.selling_price }}, '{{ $json.customer }}', '{{ $json.warehouse }}', {{ $json.warehouse_id || 'NULL' }}, '{{ $json.event_timestamp_utc }}', {{ $json.is_synthetic }}, '{{ $json.synthesis_reason }}', {{ $json.source_event_id }})",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          240,
+          0
+        ],
+        "id": "5fcd43b2-bca9-4f06-a7eb-b45139c6860e",
+        "name": "Insert Synthetic Event",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.prerequisitesMet }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "equals"
+                },
+                "id": "0303d631-dfea-47e0-9db4-f4e871b5eca1"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          16,
+          288
+        ],
+        "id": "b7fed569-77cf-405c-85ae-e0ae09c71828",
+        "name": "Can Process?"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE order_events SET status = 'processing', locked_at = NOW(), locked_by = '{{ $execution.id }}' WHERE id = {{ $('Check Prerequisites').item.json.id }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          240,
+          192
+        ],
+        "id": "eb5e8814-3462-49ff-a1ad-ce79000d573f",
+        "name": "Lock Event",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $('Check Prerequisites').item.json.sale_status_id }}",
+                      "rightValue": 2,
+                      "operator": {
+                        "type": "number",
+                        "operation": "equals"
+                      },
+                      "id": "ab3178db-69d8-4d8a-baab-30c0b636d07c"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Preparing"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $('Check Prerequisites').item.json.sale_status_id }}",
+                      "rightValue": 3,
+                      "operator": {
+                        "type": "number",
+                        "operation": "equals"
+                      },
+                      "id": "818cc77e-9684-4e75-837e-ee9ee7c3855e"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Shipped"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $('Check Prerequisites').item.json.sale_status_id }}",
+                      "rightValue": 19,
+                      "operator": {
+                        "type": "number",
+                        "operation": "equals"
+                      },
+                      "id": "2f0b3725-1b6b-47fa-bb1d-fb43972f739b"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Credit"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "3efaffae-efb3-4087-88e3-5df4a8e0b517",
+                      "leftValue": "={{ $('Check Prerequisites').item.json.sale_status_id }}",
+                      "rightValue": 11,
+                      "operator": {
+                        "type": "number",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Cancelled"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          704,
+          224
+        ],
+        "id": "f54e5fdc-1c0a-435e-993c-2880be2ddfad",
+        "name": "Route by Status"
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "2K81Hbg5OdfWp_lvno5ro",
+            "mode": "list",
+            "cachedResultUrl": "/workflow/2K81Hbg5OdfWp_lvno5ro",
+            "cachedResultName": "Sub - Process Preparing (Status 2)"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {},
+            "matchingColumns": [],
+            "schema": [],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          928,
+          -32
+        ],
+        "id": "b4da9b23-b884-4b7f-bfd9-806e658503df",
+        "name": "Process Preparing"
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "l2vJCuCGn4LmTxud55MQN",
+            "mode": "list",
+            "cachedResultUrl": "/workflow/l2vJCuCGn4LmTxud55MQN",
+            "cachedResultName": "Sub - Process Shipped (Status 3)"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {},
+            "matchingColumns": [],
+            "schema": [],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          928,
+          160
+        ],
+        "id": "db5eeb99-73f4-4b98-b580-e339bcfc4bc1",
+        "name": "Process Shipped"
+      },
+      {
+        "parameters": {
+          "workflowId": "={{ $vars.WORKFLOW_ID_RETURNED }}",
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {}
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          928,
+          352
+        ],
+        "id": "f56f1243-cc66-46cd-93f5-b068e2397c13",
+        "name": "Process Returned"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE order_events SET status = 'completed', completed_at = NOW(), locked_at = NULL, locked_by = NULL WHERE id = {{ $('Check Prerequisites').item.json.id }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          1152,
+          256
+        ],
+        "id": "60bae6c3-758a-48cf-b004-adad55d44a50",
+        "name": "Mark Complete",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE order_events SET attempt_count = attempt_count + 1, last_attempt_at = NOW(), next_retry_at = DATE_ADD(NOW(), INTERVAL POW(2, LEAST(attempt_count + 1, 6)) MINUTE), status = 'pending', locked_at = NULL WHERE id = {{ $('Check Prerequisites').item.json.id }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          240,
+          384
+        ],
+        "id": "324ecc7e-1801-41b3-8945-b9a7bf297716",
+        "name": "Schedule Retry",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "P2idoCVDSQnCITNY",
+            "mode": "list",
+            "cachedResultName": "zoho_info",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+          },
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "active",
+                "condition": "isTrue"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          -1312,
+          192
+        ],
+        "id": "6aea4004-3b82-4102-a1e8-e9989e4ab30b",
+        "name": "Get Active Sellers"
+      },
+      {
+        "parameters": {
+          "mode": "chooseBranch",
+          "useDataOfInput": 2
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          496,
+          256
+        ],
+        "id": "761244b8-2b9f-4561-8aa8-f1c0ab1c551e",
+        "name": "Merge"
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes",
+                "minutesInterval": 10
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -1536,
+          192
+        ],
+        "id": "572890fd-9a8c-47d4-baba-63e8c44706d2",
+        "name": "Every 10 Minutes"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ [2, 3, 11, 19].includes($json.sale_status_id) }}",
+                      "rightValue": "=",
+                      "operator": {
+                        "type": "boolean",
+                        "operation": "true",
+                        "singleValue": true
+                      },
+                      "id": "c7c77ce0-a69e-4f35-bd6e-3525fce14e5b"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Process"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "5a7f5b92-bc55-4381-8e32-55a0abc78487",
+                      "leftValue": "={{ [2, 3, 11, 19].includes($json.sale_status_id) }}",
+                      "rightValue": "",
+                      "operator": {
+                        "type": "boolean",
+                        "operation": "false",
+                        "singleValue": true
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Skip"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          -880,
+          192
+        ],
+        "id": "2b9a5a36-4f79-4c35-b4d5-b7803662a539",
+        "name": "Valide sale status"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE order_events SET status = 'completed', completed_at = NOW(), locked_at = NULL, locked_by = NULL WHERE id = {{ $json.id }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          -656,
+          384
+        ],
+        "id": "d8ed92fc-0172-4574-a428-b68b497ffc82",
+        "name": "Mark Invalid as Complete",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "tMHJjrdmPYWZqU190EGh7",
+            "mode": "list",
+            "cachedResultUrl": "/workflow/tMHJjrdmPYWZqU190EGh7",
+            "cachedResultName": "Sub - Process Cancelled (Status 11)"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {},
+            "matchingColumns": [],
+            "schema": [],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          928,
+          544
+        ],
+        "id": "a3316284-5fcc-4106-8471-0a1adfdb3f57",
+        "name": "Process Cancelled"
+      }
+    ],
+    "connections": {
+      "Get Pending Events": {
+        "main": [
+          [
+            {
+              "node": "Valide sale status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Events?": {
+        "main": [
+          [
+            {
+              "node": "Check Prerequisites",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Check Prerequisites": {
+        "main": [
+          [
+            {
+              "node": "Needs Synthesis?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Needs Synthesis?": {
+        "main": [
+          [
+            {
+              "node": "Build Synthetic Event",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Can Process?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Synthetic Event": {
+        "main": [
+          [
+            {
+              "node": "Insert Synthetic Event",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Insert Synthetic Event": {
+        "main": [
+          []
+        ]
+      },
+      "Can Process?": {
+        "main": [
+          [
+            {
+              "node": "Lock Event",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ],
+          [
+            {
+              "node": "Schedule Retry",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Lock Event": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route by Status": {
+        "main": [
+          [
+            {
+              "node": "Process Preparing",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Process Shipped",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Process Returned",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Process Cancelled",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process Preparing": {
+        "main": [
+          [
+            {
+              "node": "Mark Complete",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process Shipped": {
+        "main": [
+          [
+            {
+              "node": "Mark Complete",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process Returned": {
+        "main": [
+          [
+            {
+              "node": "Mark Complete",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark Complete": {
+        "main": [
+          []
+        ]
+      },
+      "Schedule Retry": {
+        "main": [
+          []
+        ]
+      },
+      "Get Active Sellers": {
+        "main": [
+          [
+            {
+              "node": "Get Pending Events",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "Route by Status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Every 10 Minutes": {
+        "main": [
+          [
+            {
+              "node": "Get Active Sellers",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Valide sale status": {
+        "main": [
+          [
+            {
+              "node": "Has Events?",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Mark Invalid as Complete",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process Cancelled": {
+        "main": [
+          [
+            {
+              "node": "Mark Complete",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "pinData": {},
+    "versionId": "7871f52a-ea15-40f7-93c0-52225967e85c",
+    "activeVersionId": "056c3de5-a885-49a3-96e8-df3c2999a09e",
+    "versionCounter": 41,
+    "triggerCount": 1,
+    "shared": [
+      {
+        "updatedAt": "2026-02-05T11:11:23.949Z",
+        "createdAt": "2026-02-05T11:11:23.949Z",
+        "role": "workflow:owner",
+        "workflowId": "4hR1URBUTBGvd3MxOG_YG",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-09T06:37:56.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-02-08",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [],
+    "activeVersion": {
+      "updatedAt": "2026-02-09T13:27:33.000Z",
+      "createdAt": "2026-02-09T13:27:27.251Z",
+      "versionId": "056c3de5-a885-49a3-96e8-df3c2999a09e",
+      "workflowId": "4hR1URBUTBGvd3MxOG_YG",
+      "nodes": [
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "SELECT e.*, s.current_stage, s.zoho_salesorder_id, s.zoho_package_id, s.zoho_shipment_id, s.zoho_invoice_id\n  FROM order_events e\n  LEFT JOIN order_state s \n  ON e.order_item_id = s.order_item_id\n  WHERE e.seller_id = \"{{ $json.SellerID }}\"\n  AND e.status = 'pending'  \n  AND (e.next_retry_at IS NULL OR e.next_retry_at <= NOW())\n  AND (e.locked_at IS NULL OR e.locked_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE))\n  ORDER BY e.sale_status_id ASC, e.received_at ASC\n  LIMIT 10",
+            "options": {
+              "queryReplacement": "="
+            }
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            -1088,
+            192
+          ],
+          "id": "e9c33cce-59f1-43d0-8121-85957f1ee70e",
+          "name": "Get Pending Events",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "leftValue": "={{ $json.idempotency_key }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "string",
+                    "operation": "exists",
+                    "singleValue": true
+                  },
+                  "id": "1b6d62a3-e606-4dd9-ae0f-8928cfe87141"
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -656,
+            192
+          ],
+          "id": "170fa3bc-d7c5-46e1-b3ec-cde979b60178",
+          "name": "Has Events?"
+        },
+        {
+          "parameters": {
+            "mode": "runOnceForEachItem",
+            "jsCode": "const event = $input.item.json;\nconst STAGE_REQUIREMENTS = {\n  2: { targetStage: 'packaged', requiredStage: null },\n  3: { targetStage: 'invoiced', requiredStage: 'packaged' },\n  11: { targetStage: 'cancelled', requiredStage: null },\n  19: { targetStage: 'returned', requiredStage: 'invoiced' }\n};\nconst STAGE_ORDER = ['pending', 'confirmed', 'packaged', 'shipped', 'invoiced', 'returned'];\n\nconst requirement = STAGE_REQUIREMENTS[event.sale_status_id];\nconst currentStage = event.current_stage || 'pending';\nconst currentIndex = STAGE_ORDER.indexOf(currentStage);\nconst requiredIndex = requirement.requiredStage ? STAGE_ORDER.indexOf(requirement.requiredStage) : -1;\n\nlet prerequisitesMet = true;\nlet missingStatus = null;\n\nif (requirement.requiredStage && currentIndex < requiredIndex) {\n  prerequisitesMet = false;\n  // Determine which status is missing\n  if (event.sale_status_id === 3 && !event.zoho_package_id) {\n    missingStatus = 2;\n  } else if (event.sale_status_id === 19) {\n    if (!event.zoho_package_id) missingStatus = 2;\n    else if (!event.zoho_invoice_id) missingStatus = 3;\n  }\n}\n\nreturn {\n  json: {\n    ...event,\n    prerequisitesMet,\n    missingStatus,\n    needsSynthesis: !prerequisitesMet && missingStatus !== null,\n    targetStage: requirement.targetStage\n  }\n};"
+          },
+          "type": "n8n-nodes-base.code",
+          "typeVersion": 2,
+          "position": [
+            -432,
+            192
+          ],
+          "id": "bb6579c2-2459-4d94-95c0-a16c99f4d705",
+          "name": "Check Prerequisites"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "leftValue": "={{ $json.needsSynthesis }}",
+                  "rightValue": true,
+                  "operator": {
+                    "type": "boolean",
+                    "operation": "equals"
+                  },
+                  "id": "fe28f666-3777-4c1a-a2bf-1ee393d1dfa8"
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -208,
+            192
+          ],
+          "id": "6663fa45-f0cc-4c40-9b1c-5666e2a6355b",
+          "name": "Needs Synthesis?"
+        },
+        {
+          "parameters": {
+            "jsCode": "const event = $('Check Prerequisites').item.json;\nconst takealotData = $input.item.json.sale || $input.item.json;\nconst missingStatus = event.missingStatus;\n\nconst statusNames = { 2: 'Preparing for Customer', 3: 'Shipped to Customer' };\nconst eventDate = new Date(event.event_timestamp_utc);\neventDate.setSeconds(eventDate.getSeconds() - missingStatus); // Ensure order\n\nconst syntheticEvent = {\n  idempotency_key: `${event.seller_id}_${event.order_item_id}_${missingStatus}_${event.event_timestamp_utc.split('T')[0]}_synthetic`,\n  order_item_id: event.order_item_id,\n  order_id: event.order_id,\n  seller_id: event.seller_id,\n  sale_status_id: missingStatus,\n  sale_status: statusNames[missingStatus] + ' (Synthetic)',\n  sku: takealotData.sku || event.sku,\n  tsin: takealotData.tsin || event.tsin,\n  product_title: takealotData.product_title || event.product_title,\n  quantity: takealotData.quantity || event.quantity,\n  selling_price: takealotData.selling_price || event.selling_price,\n  customer: takealotData.customer_name || event.customer,\n  warehouse: event.warehouse,\n  warehouse_id: event.warehouse_id,\n  event_timestamp_utc: eventDate.toISOString(),\n  is_synthetic: true,\n  synthesis_reason: `Missing webhook - synthesized from status ${event.sale_status_id} event`,\n  source_event_id: event.id\n};\n\nreturn { json: syntheticEvent };"
+          },
+          "type": "n8n-nodes-base.code",
+          "typeVersion": 2,
+          "position": [
+            16,
+            0
+          ],
+          "id": "6ea664ce-634b-4b20-b03f-1192175c6f77",
+          "name": "Build Synthetic Event"
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "INSERT IGNORE INTO order_events (idempotency_key, order_item_id, order_id, seller_id, sale_status_id, sale_status, sku, tsin, product_title, quantity, selling_price, customer, warehouse, warehouse_id, event_timestamp_utc, is_synthetic, synthesis_reason, source_event_id)\nVALUES ('{{ $json.idempotency_key }}', {{ $json.order_item_id }}, {{ $json.order_id }}, '{{ $json.seller_id }}', {{ $json.sale_status_id }}, '{{ $json.sale_status }}', '{{ $json.sku }}', '{{ $json.tsin }}', '{{ $json.product_title }}', {{ $json.quantity }}, {{ $json.selling_price }}, '{{ $json.customer }}', '{{ $json.warehouse }}', {{ $json.warehouse_id || 'NULL' }}, '{{ $json.event_timestamp_utc }}', {{ $json.is_synthetic }}, '{{ $json.synthesis_reason }}', {{ $json.source_event_id }})",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            240,
+            0
+          ],
+          "id": "5fcd43b2-bca9-4f06-a7eb-b45139c6860e",
+          "name": "Insert Synthetic Event",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "leftValue": "={{ $json.prerequisitesMet }}",
+                  "rightValue": true,
+                  "operator": {
+                    "type": "boolean",
+                    "operation": "equals"
+                  },
+                  "id": "0303d631-dfea-47e0-9db4-f4e871b5eca1"
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            16,
+            288
+          ],
+          "id": "b7fed569-77cf-405c-85ae-e0ae09c71828",
+          "name": "Can Process?"
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "UPDATE order_events SET status = 'processing', locked_at = NOW(), locked_by = '{{ $execution.id }}' WHERE id = {{ $('Check Prerequisites').item.json.id }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            240,
+            192
+          ],
+          "id": "eb5e8814-3462-49ff-a1ad-ce79000d573f",
+          "name": "Lock Event",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "rules": {
+              "values": [
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "leftValue": "={{ $('Check Prerequisites').item.json.sale_status_id }}",
+                        "rightValue": 2,
+                        "operator": {
+                          "type": "number",
+                          "operation": "equals"
+                        },
+                        "id": "ab3178db-69d8-4d8a-baab-30c0b636d07c"
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "Preparing"
+                },
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "leftValue": "={{ $('Check Prerequisites').item.json.sale_status_id }}",
+                        "rightValue": 3,
+                        "operator": {
+                          "type": "number",
+                          "operation": "equals"
+                        },
+                        "id": "818cc77e-9684-4e75-837e-ee9ee7c3855e"
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "Shipped"
+                },
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "leftValue": "={{ $('Check Prerequisites').item.json.sale_status_id }}",
+                        "rightValue": 19,
+                        "operator": {
+                          "type": "number",
+                          "operation": "equals"
+                        },
+                        "id": "2f0b3725-1b6b-47fa-bb1d-fb43972f739b"
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "Credit"
+                },
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "id": "3efaffae-efb3-4087-88e3-5df4a8e0b517",
+                        "leftValue": "={{ $('Check Prerequisites').item.json.sale_status_id }}",
+                        "rightValue": 11,
+                        "operator": {
+                          "type": "number",
+                          "operation": "equals"
+                        }
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "Cancelled"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.switch",
+          "typeVersion": 3.4,
+          "position": [
+            704,
+            224
+          ],
+          "id": "f54e5fdc-1c0a-435e-993c-2880be2ddfad",
+          "name": "Route by Status"
+        },
+        {
+          "parameters": {
+            "workflowId": {
+              "__rl": true,
+              "value": "2K81Hbg5OdfWp_lvno5ro",
+              "mode": "list",
+              "cachedResultUrl": "/workflow/2K81Hbg5OdfWp_lvno5ro",
+              "cachedResultName": "Sub - Process Preparing (Status 2)"
+            },
+            "workflowInputs": {
+              "mappingMode": "defineBelow",
+              "value": {},
+              "matchingColumns": [],
+              "schema": [],
+              "attemptToConvertTypes": false,
+              "convertFieldsToString": true
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.executeWorkflow",
+          "typeVersion": 1.2,
+          "position": [
+            928,
+            -32
+          ],
+          "id": "b4da9b23-b884-4b7f-bfd9-806e658503df",
+          "name": "Process Preparing"
+        },
+        {
+          "parameters": {
+            "workflowId": {
+              "__rl": true,
+              "value": "l2vJCuCGn4LmTxud55MQN",
+              "mode": "list",
+              "cachedResultUrl": "/workflow/l2vJCuCGn4LmTxud55MQN",
+              "cachedResultName": "Sub - Process Shipped (Status 3)"
+            },
+            "workflowInputs": {
+              "mappingMode": "defineBelow",
+              "value": {},
+              "matchingColumns": [],
+              "schema": [],
+              "attemptToConvertTypes": false,
+              "convertFieldsToString": true
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.executeWorkflow",
+          "typeVersion": 1.2,
+          "position": [
+            928,
+            160
+          ],
+          "id": "db5eeb99-73f4-4b98-b580-e339bcfc4bc1",
+          "name": "Process Shipped"
+        },
+        {
+          "parameters": {
+            "workflowId": "={{ $vars.WORKFLOW_ID_RETURNED }}",
+            "workflowInputs": {
+              "mappingMode": "defineBelow",
+              "value": {}
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.executeWorkflow",
+          "typeVersion": 1.2,
+          "position": [
+            928,
+            352
+          ],
+          "id": "f56f1243-cc66-46cd-93f5-b068e2397c13",
+          "name": "Process Returned"
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "UPDATE order_events SET status = 'completed', completed_at = NOW(), locked_at = NULL, locked_by = NULL WHERE id = {{ $('Check Prerequisites').item.json.id }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            1152,
+            256
+          ],
+          "id": "60bae6c3-758a-48cf-b004-adad55d44a50",
+          "name": "Mark Complete",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "UPDATE order_events SET attempt_count = attempt_count + 1, last_attempt_at = NOW(), next_retry_at = DATE_ADD(NOW(), INTERVAL POW(2, LEAST(attempt_count + 1, 6)) MINUTE), status = 'pending', locked_at = NULL WHERE id = {{ $('Check Prerequisites').item.json.id }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            240,
+            384
+          ],
+          "id": "324ecc7e-1801-41b3-8945-b9a7bf297716",
+          "name": "Schedule Retry",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "P2idoCVDSQnCITNY",
+              "mode": "list",
+              "cachedResultName": "zoho_info",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+            },
+            "filters": {
+              "conditions": [
+                {
+                  "keyName": "active",
+                  "condition": "isTrue"
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            -1312,
+            192
+          ],
+          "id": "6aea4004-3b82-4102-a1e8-e9989e4ab30b",
+          "name": "Get Active Sellers"
+        },
+        {
+          "parameters": {
+            "mode": "chooseBranch",
+            "useDataOfInput": 2
+          },
+          "type": "n8n-nodes-base.merge",
+          "typeVersion": 3.2,
+          "position": [
+            496,
+            256
+          ],
+          "id": "761244b8-2b9f-4561-8aa8-f1c0ab1c551e",
+          "name": "Merge"
+        },
+        {
+          "parameters": {
+            "rule": {
+              "interval": [
+                {
+                  "field": "minutes",
+                  "minutesInterval": 10
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "typeVersion": 1.2,
+          "position": [
+            -1536,
+            192
+          ],
+          "id": "572890fd-9a8c-47d4-baba-63e8c44706d2",
+          "name": "Every 10 Minutes"
+        },
+        {
+          "parameters": {
+            "rules": {
+              "values": [
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "leftValue": "={{ $json.sale_status_id }}",
+                        "rightValue": "={{ 2 || 3 || 19 }}",
+                        "operator": {
+                          "type": "number",
+                          "operation": "equals"
+                        },
+                        "id": "c7c77ce0-a69e-4f35-bd6e-3525fce14e5b"
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "Valid"
+                },
+                {
+                  "conditions": {
+                    "options": {
+                      "caseSensitive": true,
+                      "leftValue": "",
+                      "typeValidation": "strict",
+                      "version": 3
+                    },
+                    "conditions": [
+                      {
+                        "id": "32d0a554-2641-443e-b075-3163ca9987be",
+                        "leftValue": "={{ $json.sale_status_id }}",
+                        "rightValue": "={{ 2 || 3 || 19 }}",
+                        "operator": {
+                          "type": "number",
+                          "operation": "notEquals"
+                        }
+                      }
+                    ],
+                    "combinator": "and"
+                  },
+                  "renameOutput": true,
+                  "outputKey": "Invalid"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.switch",
+          "typeVersion": 3.4,
+          "position": [
+            -880,
+            224
+          ],
+          "id": "2b9a5a36-4f79-4c35-b4d5-b7803662a539",
+          "name": "Valide sale status"
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "UPDATE order_events SET status = 'completed', completed_at = NOW(), locked_at = NULL, locked_by = NULL WHERE id = {{ $json.id }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            -656,
+            384
+          ],
+          "id": "d8ed92fc-0172-4574-a428-b68b497ffc82",
+          "name": "Mark Invalid as Complete",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "workflowId": {
+              "__rl": true,
+              "value": "tMHJjrdmPYWZqU190EGh7",
+              "mode": "list",
+              "cachedResultUrl": "/workflow/tMHJjrdmPYWZqU190EGh7",
+              "cachedResultName": "Sub - Process Cancelled (Status 11)"
+            },
+            "workflowInputs": {
+              "mappingMode": "defineBelow",
+              "value": {},
+              "matchingColumns": [],
+              "schema": [],
+              "attemptToConvertTypes": false,
+              "convertFieldsToString": true
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.executeWorkflow",
+          "typeVersion": 1.2,
+          "position": [
+            928,
+            544
+          ],
+          "id": "a3316284-5fcc-4106-8471-0a1adfdb3f57",
+          "name": "Process Cancelled"
+        }
+      ],
+      "connections": {
+        "Get Pending Events": {
+          "main": [
+            [
+              {
+                "node": "Valide sale status",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Has Events?": {
+          "main": [
+            [
+              {
+                "node": "Check Prerequisites",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            []
+          ]
+        },
+        "Check Prerequisites": {
+          "main": [
+            [
+              {
+                "node": "Needs Synthesis?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Needs Synthesis?": {
+          "main": [
+            [
+              {
+                "node": "Build Synthetic Event",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Can Process?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Build Synthetic Event": {
+          "main": [
+            [
+              {
+                "node": "Insert Synthetic Event",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Insert Synthetic Event": {
+          "main": [
+            []
+          ]
+        },
+        "Can Process?": {
+          "main": [
+            [
+              {
+                "node": "Lock Event",
+                "type": "main",
+                "index": 0
+              },
+              {
+                "node": "Merge",
+                "type": "main",
+                "index": 1
+              }
+            ],
+            [
+              {
+                "node": "Schedule Retry",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Lock Event": {
+          "main": [
+            [
+              {
+                "node": "Merge",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Route by Status": {
+          "main": [
+            [
+              {
+                "node": "Process Preparing",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Process Shipped",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Process Returned",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Process Cancelled",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Process Preparing": {
+          "main": [
+            [
+              {
+                "node": "Mark Complete",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Process Shipped": {
+          "main": [
+            [
+              {
+                "node": "Mark Complete",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Process Returned": {
+          "main": [
+            [
+              {
+                "node": "Mark Complete",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Mark Complete": {
+          "main": [
+            []
+          ]
+        },
+        "Schedule Retry": {
+          "main": [
+            []
+          ]
+        },
+        "Get Active Sellers": {
+          "main": [
+            [
+              {
+                "node": "Get Pending Events",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Merge": {
+          "main": [
+            [
+              {
+                "node": "Route by Status",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Every 10 Minutes": {
+          "main": [
+            [
+              {
+                "node": "Get Active Sellers",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Valide sale status": {
+          "main": [
+            [
+              {
+                "node": "Has Events?",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Mark Invalid as Complete",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Process Cancelled": {
+          "main": [
+            [
+              {
+                "node": "Mark Complete",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version 056c3de5",
+      "description": "",
+      "autosaved": false,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-09T13:27:33.843Z",
+          "id": 77,
+          "workflowId": "4hR1URBUTBGvd3MxOG_YG",
+          "versionId": "056c3de5-a885-49a3-96e8-df3c2999a09e",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
