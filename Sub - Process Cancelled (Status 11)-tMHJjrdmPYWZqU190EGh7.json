@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-09T14:39:59.301Z",
+    "updatedAt": "2026-02-09T14:56:07.707Z",
     "createdAt": "2026-02-09T12:45:17.499Z",
     "id": "tMHJjrdmPYWZqU190EGh7",
     "name": "Sub - Process Cancelled (Status 11)",
@@ -145,7 +145,7 @@
       {
         "parameters": {
           "method": "POST",
-          "url": "=https://www.zohoapis.com/inventory/v1/invoices/{{ $('Get Order State').first().json[0].zoho_invoice_id }}/status/void",
+          "url": "=https://www.zohoapis.com/inventory/v1/invoices/{{ $('Get Order State').item.json.zoho_invoice_id }}/status/void",
           "sendQuery": true,
           "queryParameters": {
             "parameters": [
@@ -209,7 +209,7 @@
       },
       {
         "parameters": {
-          "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').first().json[0].zoho_salesorder_id }}",
+          "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').item.json.zoho_salesorder_id }}",
           "sendQuery": true,
           "queryParameters": {
             "parameters": [
@@ -248,6 +248,12 @@
       {
         "parameters": {
           "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
             "conditions": [
               {
                 "leftValue": "={{ $json.salesorder?.status }}",
@@ -255,9 +261,11 @@
                 "operator": {
                   "type": "string",
                   "operation": "notEquals"
-                }
+                },
+                "id": "9bf93fcc-b79a-49fc-bd62-9dfe787827cb"
               }
-            ]
+            ],
+            "combinator": "and"
           },
           "options": {}
         },
@@ -273,7 +281,7 @@
       {
         "parameters": {
           "method": "POST",
-          "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').first().json[0].zoho_salesorder_id }}/status/void",
+          "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').item.json.zoho_salesorder_id }}/status/void",
           "sendQuery": true,
           "queryParameters": {
             "parameters": [
@@ -303,8 +311,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          0,
-          0
+          912,
+          256
         ],
         "id": "bfe3c900-d620-4394-abf1-2e07824903cc",
         "name": "Void Sales Order"
@@ -318,8 +326,8 @@
         "type": "n8n-nodes-base.mySql",
         "typeVersion": 2.4,
         "position": [
-          224,
-          208
+          1120,
+          384
         ],
         "id": "e5335925-66b2-4037-9bc1-f563727a26a7",
         "name": "Update Order State",
@@ -339,8 +347,8 @@
         "type": "n8n-nodes-base.mySql",
         "typeVersion": 2.4,
         "position": [
-          448,
-          208
+          1344,
+          384
         ],
         "id": "31fa9cbb-81bc-483c-b070-da39ebe54e40",
         "name": "Log Success",
@@ -436,6 +444,152 @@
         ],
         "id": "139abe69-0658-4c78-bb7a-7949d9b4dc8d",
         "name": "Get Seller Config"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "4371020a-baf2-4a67-a519-bff486da386f",
+                "leftValue": "={{ $json.salesorder.packages }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "array",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -16,
+          16
+        ],
+        "id": "347c5062-eec4-47ac-9125-481ba5e0d054",
+        "name": "Has Package?"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "4371020a-baf2-4a67-a519-bff486da386f",
+                "leftValue": "={{ $json.salesorder.packages }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "array",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          256,
+          -48
+        ],
+        "id": "16b4db0f-9d7d-4c04-83aa-25735c48523f",
+        "name": "Has Shipment?"
+      },
+      {
+        "parameters": {
+          "method": "DELETE",
+          "url": "=https://www.zohoapis.com/inventory/v1/shipmentorders/{{ $json.salesorder.packages[0].shipment_order.shipment_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          544,
+          -48
+        ],
+        "id": "7b259c56-11ed-475b-a40e-7a54d10f03b7",
+        "name": "Delete Shipment"
+      },
+      {
+        "parameters": {
+          "method": "DELETE",
+          "url": "=https://www.zohoapis.com/inventory/v1/packages/{{ $('Get SO Current Status').item.json.salesorder.packages[0].package_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          720,
+          112
+        ],
+        "id": "9098be10-e587-4d4c-b91b-042a115d207c",
+        "name": "Delete Package"
       }
     ],
     "connections": {
@@ -563,7 +717,7 @@
         "main": [
           [
             {
-              "node": "Void Sales Order",
+              "node": "Has Package?",
               "type": "main",
               "index": 0
             }
@@ -604,6 +758,64 @@
           [
             {
               "node": "Get Order State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Package?": {
+        "main": [
+          [
+            {
+              "node": "Has Shipment?",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Void Sales Order",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Shipment?": {
+        "main": [
+          [
+            {
+              "node": "Delete Shipment",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Delete Package",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Delete Shipment": {
+        "main": [
+          [
+            {
+              "node": "Delete Package",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Delete Package": {
+        "main": [
+          [
+            {
+              "node": "Void Sales Order",
               "type": "main",
               "index": 0
             }
@@ -669,9 +881,9 @@
         }
       ]
     },
-    "versionId": "e165956f-df3a-43a9-9b02-07a641f54540",
-    "activeVersionId": "e165956f-df3a-43a9-9b02-07a641f54540",
-    "versionCounter": 12,
+    "versionId": "1f8ad529-cd25-41a9-b206-fb9ac98f4e10",
+    "activeVersionId": "1f8ad529-cd25-41a9-b206-fb9ac98f4e10",
+    "versionCounter": 15,
     "triggerCount": 0,
     "shared": [
       {
@@ -730,9 +942,9 @@
     ],
     "tags": [],
     "activeVersion": {
-      "updatedAt": "2026-02-09T14:40:02.000Z",
-      "createdAt": "2026-02-09T14:39:59.303Z",
-      "versionId": "e165956f-df3a-43a9-9b02-07a641f54540",
+      "updatedAt": "2026-02-09T14:56:45.000Z",
+      "createdAt": "2026-02-09T14:56:07.709Z",
+      "versionId": "1f8ad529-cd25-41a9-b206-fb9ac98f4e10",
       "workflowId": "tMHJjrdmPYWZqU190EGh7",
       "nodes": [
         {
@@ -872,7 +1084,7 @@
         {
           "parameters": {
             "method": "POST",
-            "url": "=https://www.zohoapis.com/inventory/v1/invoices/{{ $('Get Order State').first().json[0].zoho_invoice_id }}/status/void",
+            "url": "=https://www.zohoapis.com/inventory/v1/invoices/{{ $('Get Order State').item.json.zoho_invoice_id }}/status/void",
             "sendQuery": true,
             "queryParameters": {
               "parameters": [
@@ -936,7 +1148,7 @@
         },
         {
           "parameters": {
-            "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').first().json[0].zoho_salesorder_id }}",
+            "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').item.json.zoho_salesorder_id }}",
             "sendQuery": true,
             "queryParameters": {
               "parameters": [
@@ -975,6 +1187,12 @@
         {
           "parameters": {
             "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
               "conditions": [
                 {
                   "leftValue": "={{ $json.salesorder?.status }}",
@@ -982,9 +1200,11 @@
                   "operator": {
                     "type": "string",
                     "operation": "notEquals"
-                  }
+                  },
+                  "id": "9bf93fcc-b79a-49fc-bd62-9dfe787827cb"
                 }
-              ]
+              ],
+              "combinator": "and"
             },
             "options": {}
           },
@@ -1000,7 +1220,7 @@
         {
           "parameters": {
             "method": "POST",
-            "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').first().json[0].zoho_salesorder_id }}/status/void",
+            "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').item.json.zoho_salesorder_id }}/status/void",
             "sendQuery": true,
             "queryParameters": {
               "parameters": [
@@ -1030,8 +1250,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.3,
           "position": [
-            0,
-            0
+            912,
+            256
           ],
           "id": "bfe3c900-d620-4394-abf1-2e07824903cc",
           "name": "Void Sales Order"
@@ -1045,8 +1265,8 @@
           "type": "n8n-nodes-base.mySql",
           "typeVersion": 2.4,
           "position": [
-            224,
-            208
+            1120,
+            384
           ],
           "id": "e5335925-66b2-4037-9bc1-f563727a26a7",
           "name": "Update Order State",
@@ -1066,8 +1286,8 @@
           "type": "n8n-nodes-base.mySql",
           "typeVersion": 2.4,
           "position": [
-            448,
-            208
+            1344,
+            384
           ],
           "id": "31fa9cbb-81bc-483c-b070-da39ebe54e40",
           "name": "Log Success",
@@ -1163,6 +1383,152 @@
           ],
           "id": "139abe69-0658-4c78-bb7a-7949d9b4dc8d",
           "name": "Get Seller Config"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "4371020a-baf2-4a67-a519-bff486da386f",
+                  "leftValue": "={{ $json.salesorder.packages }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "array",
+                    "operation": "notEmpty",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -16,
+            16
+          ],
+          "id": "347c5062-eec4-47ac-9125-481ba5e0d054",
+          "name": "Has Package?"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "4371020a-baf2-4a67-a519-bff486da386f",
+                  "leftValue": "={{ $json.salesorder.packages }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "array",
+                    "operation": "notEmpty",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            256,
+            -48
+          ],
+          "id": "16b4db0f-9d7d-4c04-83aa-25735c48523f",
+          "name": "Has Shipment?"
+        },
+        {
+          "parameters": {
+            "method": "DELETE",
+            "url": "=https://www.zohoapis.com/inventory/v1/shipmentorders/{{ $json.salesorder.packages[0].shipment_order.shipment_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {
+              "response": {
+                "response": {
+                  "neverError": true
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            544,
+            -48
+          ],
+          "id": "7b259c56-11ed-475b-a40e-7a54d10f03b7",
+          "name": "Delete Shipment"
+        },
+        {
+          "parameters": {
+            "method": "DELETE",
+            "url": "=https://www.zohoapis.com/inventory/v1/packages/{{ $('Get SO Current Status').item.json.salesorder.packages[0].package_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {
+              "response": {
+                "response": {
+                  "neverError": true
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            720,
+            112
+          ],
+          "id": "9098be10-e587-4d4c-b91b-042a115d207c",
+          "name": "Delete Package"
         }
       ],
       "connections": {
@@ -1290,7 +1656,7 @@
           "main": [
             [
               {
-                "node": "Void Sales Order",
+                "node": "Has Package?",
                 "type": "main",
                 "index": 0
               }
@@ -1336,18 +1702,76 @@
               }
             ]
           ]
+        },
+        "Has Package?": {
+          "main": [
+            [
+              {
+                "node": "Has Shipment?",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Void Sales Order",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Has Shipment?": {
+          "main": [
+            [
+              {
+                "node": "Delete Shipment",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Delete Package",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Delete Shipment": {
+          "main": [
+            [
+              {
+                "node": "Delete Package",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Delete Package": {
+          "main": [
+            [
+              {
+                "node": "Void Sales Order",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version e165956f",
-      "description": "",
+      "name": "Version 1f8ad529",
+      "description": "Flow tested\n",
       "autosaved": false,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-09T14:40:02.429Z",
-          "id": 78,
+          "createdAt": "2026-02-09T14:56:45.425Z",
+          "id": 79,
           "workflowId": "tMHJjrdmPYWZqU190EGh7",
-          "versionId": "e165956f-df3a-43a9-9b02-07a641f54540",
+          "versionId": "1f8ad529-cd25-41a9-b206-fb9ac98f4e10",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
