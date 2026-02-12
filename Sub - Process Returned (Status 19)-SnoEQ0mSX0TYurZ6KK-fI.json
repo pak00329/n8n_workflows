@@ -1,0 +1,1528 @@
+[
+  {
+    "updatedAt": "2026-02-12T06:42:42.788Z",
+    "createdAt": "2026-02-08T10:07:46.159Z",
+    "id": "SnoEQ0mSX0TYurZ6KK-fI",
+    "name": "Sub - Process Returned (Status 19)",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -2208,
+          112
+        ],
+        "id": "2285832c-e7b2-47bc-a4e2-62ad1f462307",
+        "name": "Called by Parent"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT * FROM order_state WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }} LIMIT 1",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          -1776,
+          112
+        ],
+        "id": "3620e58c-61f5-4f55-a01a-7c33cfdb08ea",
+        "name": "Get Order State",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://accounts.zoho.com/oauth/v2/token",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpCustomAuth",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -1536,
+          112
+        ],
+        "id": "9f49b5c4-d1fd-4ebc-8401-efe88345c20b",
+        "name": "Get Zoho Token",
+        "credentials": {
+          "httpCustomAuth": {
+            "id": "9SvOEsYF9SjtHbhQ",
+            "name": "Zoho_Access_Token"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').first().json[0].zoho_salesorder_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -1328,
+          112
+        ],
+        "id": "fdb4e53a-a339-4282-ac47-9b8dcf02f637",
+        "name": "Get SO Details"
+      },
+      {
+        "parameters": {
+          "url": "https://www.zohoapis.com/inventory/v1/salesreturns",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+              },
+              {
+                "name": "salesorder_id",
+                "value": "={{ $('Get Order State').first().json[0].zoho_salesorder_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -1104,
+          112
+        ],
+        "id": "cb5aeaf4-b040-47a1-919c-f6fa155ed173",
+        "name": "Check Existing Sales Return"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "conditions": [
+              {
+                "leftValue": "={{ $json.salesreturns?.length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -880,
+          112
+        ],
+        "id": "17392329-a6ed-49e8-8650-44e4d93054bf",
+        "name": "Sales Return Exists?"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://www.zohoapis.com/inventory/v1/salesreturns",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+              },
+              {
+                "name": "salesorder_id",
+                "value": "={{ $('Get Order State').first().json[0].zoho_salesorder_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"date\": \"{{ $('Called by Parent').item.json.event_timestamp_utc.split('T')[0] }}\",\n  \"return_type\": \"return_credit\",\n  \"location_id\": \"{{ $('Get SO Details').first().json.salesorder.location_id }}\",\n  \"line_items\": [{\n    \"item_id\": \"{{ $('Get SO Details').first().json.salesorder.line_items[0].item_id }}\",\n    \"salesorder_item_id\": \"{{ $('Get SO Details').first().json.salesorder.line_items[0].line_item_id }}\",\n    \"quantity\": {{ $('Called by Parent').item.json.quantity }},\n    \"location_id\": \"{{ $('Get Seller Config').first().json[0].LocationID }}\"\n  }]\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -656,
+          208
+        ],
+        "id": "807e28c6-e7bc-4ef2-b6d0-77a9f55ebba0",
+        "name": "Create Sales Return"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "name": "salesreturn_id",
+                "value": "={{ $json.salesreturn?.salesreturn_id || $('Check Existing Sales Return').first().json.salesreturns?.[0]?.salesreturn_id }}",
+                "type": "string"
+              },
+              {
+                "name": "quantity_yet_to_receive",
+                "value": "={{ $json.salesreturn?.quantity_yet_to_receive ?? $('Check Existing Sales Return').first().json.salesreturns?.[0]?.quantity_yet_to_receive ?? 0 }}",
+                "type": "number"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -448,
+          112
+        ],
+        "id": "cb18d09a-c4d3-443c-bbe1-1c967eac777b",
+        "name": "Merge Sales Return Data"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "conditions": [
+              {
+                "leftValue": "={{ $json.quantity_yet_to_receive }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -224,
+          112
+        ],
+        "id": "f405d7f6-145b-4f5f-86d9-c00c7ba61406",
+        "name": "Needs Receive?"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/salesreturns/{{ $('Merge Sales Return Data').first().json.salesreturn_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          0,
+          0
+        ],
+        "id": "920a3ce7-c5f5-4e3f-81a6-4f168b2cd40b",
+        "name": "Get Sales Return Details"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://www.zohoapis.com/inventory/v1/salesreturnreceives",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+              },
+              {
+                "name": "salesreturn_id",
+                "value": "={{ $('Merge Sales Return Data').first().json.salesreturn_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"date\": \"{{ $('Called by Parent').item.json.event_timestamp_utc.split('T')[0] }}\",\n  \"line_items\": [{\n    \"line_item_id\": \"{{ $json.salesreturn.line_items[0].line_item_id }}\",\n    \"quantity\": {{ $json.salesreturn.line_items[0].quantity }}\n  }]\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          224,
+          0
+        ],
+        "id": "77d3a004-774f-441d-beb4-11e238035a2e",
+        "name": "Receive Sales Return"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "conditions": [
+              {
+                "leftValue": "={{ $('Get Order State').first().json[0]?.zoho_creditnote_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          448,
+          112
+        ],
+        "id": "5792e2de-b834-4651-8de2-a44f78a97da2",
+        "name": "Credit Note Exists?"
+      },
+      {
+        "parameters": {
+          "jsCode": "const event = $('Called by Parent').item.json;\nconst config = $('Get Seller Config').first().json[0];\nconst so = $('Get SO Details').first().json.salesorder;\n\nconst eventDate = event.event_timestamp_utc.split('T')[0];\nconst refNumber = `${event.order_item_id}(Order: ${event.order_id})`;\n\nreturn {\n  json: {\n    customer_id: config.CustomerID,\n    date: eventDate,\n    reference_number: refNumber,\n    is_inclusive_tax: true,\n    location_id: config.ParentLocationID,\n    notes: `Return for customer: ${event.customer}`,\n    line_items: [{\n      item_id: so.line_items[0].item_id,\n      name: so.line_items[0].name,\n      rate: so.line_items[0].rate,\n      quantity: event.quantity,\n      tax_id: config.TaxID,\n      location_id: config.LocationID\n    }]\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          672,
+          208
+        ],
+        "id": "a9babf9c-f163-4221-bb59-ae19f13735d3",
+        "name": "Build Credit Note Payload"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://www.zohoapis.com/inventory/v1/creditnotes",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          880,
+          208
+        ],
+        "id": "29e01afe-7ffc-4b85-aefe-455478352003",
+        "name": "Create Credit Note"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "name": "creditnote_id",
+                "value": "={{ $json.creditnote?.creditnote_id || $('Get Order State').first().json[0]?.zoho_creditnote_id }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1104,
+          112
+        ],
+        "id": "dc64c1df-ccba-460f-bfd5-8174963ca964",
+        "name": "Merge Credit Note Data"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE order_state SET current_stage = 'returned', zoho_salesreturn_id = '{{ $('Merge Sales Return Data').first().json.salesreturn_id }}', zoho_creditnote_id = '{{ $json.creditnote_id }}', returned_at = NOW() WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          1328,
+          112
+        ],
+        "id": "477bdc90-f18e-402d-ac3b-3cb55f3332a4",
+        "name": "Update Order State",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO processing_log (event_id, order_item_id, seller_id, execution_id, workflow_name, stage, status, message) VALUES ({{ $('Called by Parent').item.json.id }}, {{ $('Called by Parent').item.json.order_item_id }}, '{{ $('Called by Parent').item.json.seller_id }}', '{{ $execution.id }}', 'Process Returned', 'returned', 'success', 'Created Sales Return {{ $('Merge Sales Return Data').first().json.salesreturn_id }} and Credit Note {{ $('Merge Credit Note Data').first().json.creditnote_id }}')",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          1552,
+          112
+        ],
+        "id": "cf65bbbe-c99c-4984-bd70-1781f8f49a1c",
+        "name": "Log Success",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "P2idoCVDSQnCITNY",
+            "mode": "list",
+            "cachedResultName": "zoho_info",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "SellerID",
+                "keyValue": "={{ $json.seller_id }}"
+              },
+              {
+                "keyName": "active",
+                "condition": "isTrue"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          -1984,
+          112
+        ],
+        "id": "204a0411-56be-414d-8805-d0ad033c7546",
+        "name": "Get Seller Config"
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=SnoEQ0mSX0TYurZ6KK-fI) to commit change ",
+          "height": 140,
+          "width": 408,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -2208,
+          -96
+        ],
+        "typeVersion": 1,
+        "id": "5147acf5-6147-4fbb-aec2-f14fc39c5f27",
+        "name": "Sticky Note"
+      }
+    ],
+    "connections": {
+      "Called by Parent": {
+        "main": [
+          [
+            {
+              "node": "Get Seller Config",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Order State": {
+        "main": [
+          [
+            {
+              "node": "Get Zoho Token",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Zoho Token": {
+        "main": [
+          [
+            {
+              "node": "Get SO Details",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get SO Details": {
+        "main": [
+          [
+            {
+              "node": "Check Existing Sales Return",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Existing Sales Return": {
+        "main": [
+          [
+            {
+              "node": "Sales Return Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sales Return Exists?": {
+        "main": [
+          [
+            {
+              "node": "Merge Sales Return Data",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create Sales Return",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Sales Return": {
+        "main": [
+          [
+            {
+              "node": "Merge Sales Return Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Sales Return Data": {
+        "main": [
+          [
+            {
+              "node": "Needs Receive?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Needs Receive?": {
+        "main": [
+          [
+            {
+              "node": "Get Sales Return Details",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Credit Note Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Sales Return Details": {
+        "main": [
+          [
+            {
+              "node": "Receive Sales Return",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Receive Sales Return": {
+        "main": [
+          [
+            {
+              "node": "Credit Note Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Credit Note Exists?": {
+        "main": [
+          [
+            {
+              "node": "Merge Credit Note Data",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Credit Note Payload",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Credit Note Payload": {
+        "main": [
+          [
+            {
+              "node": "Create Credit Note",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Credit Note": {
+        "main": [
+          [
+            {
+              "node": "Merge Credit Note Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Credit Note Data": {
+        "main": [
+          [
+            {
+              "node": "Update Order State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Order State": {
+        "main": [
+          [
+            {
+              "node": "Log Success",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Seller Config": {
+        "main": [
+          [
+            {
+              "node": "Get Order State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "pinData": {},
+    "versionId": "f6bd4cff-3feb-4a12-8e24-b3316f43fdd5",
+    "activeVersionId": "f6bd4cff-3feb-4a12-8e24-b3316f43fdd5",
+    "versionCounter": 12,
+    "triggerCount": 0,
+    "shared": [
+      {
+        "updatedAt": "2026-02-08T10:07:46.190Z",
+        "createdAt": "2026-02-08T10:07:46.190Z",
+        "role": "workflow:owner",
+        "workflowId": "SnoEQ0mSX0TYurZ6KK-fI",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-12T06:36:42.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-02-11",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [],
+    "activeVersion": {
+      "updatedAt": "2026-02-12T06:42:47.000Z",
+      "createdAt": "2026-02-12T06:42:42.789Z",
+      "versionId": "f6bd4cff-3feb-4a12-8e24-b3316f43fdd5",
+      "workflowId": "SnoEQ0mSX0TYurZ6KK-fI",
+      "nodes": [
+        {
+          "parameters": {
+            "inputSource": "passthrough"
+          },
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "typeVersion": 1.1,
+          "position": [
+            -2208,
+            112
+          ],
+          "id": "2285832c-e7b2-47bc-a4e2-62ad1f462307",
+          "name": "Called by Parent"
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "SELECT * FROM order_state WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }} LIMIT 1",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            -1776,
+            112
+          ],
+          "id": "3620e58c-61f5-4f55-a01a-7c33cfdb08ea",
+          "name": "Get Order State",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://accounts.zoho.com/oauth/v2/token",
+            "authentication": "genericCredentialType",
+            "genericAuthType": "httpCustomAuth",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -1536,
+            112
+          ],
+          "id": "9f49b5c4-d1fd-4ebc-8401-efe88345c20b",
+          "name": "Get Zoho Token",
+          "credentials": {
+            "httpCustomAuth": {
+              "id": "9SvOEsYF9SjtHbhQ",
+              "name": "Zoho_Access_Token"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').first().json[0].zoho_salesorder_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -1328,
+            112
+          ],
+          "id": "fdb4e53a-a339-4282-ac47-9b8dcf02f637",
+          "name": "Get SO Details"
+        },
+        {
+          "parameters": {
+            "url": "https://www.zohoapis.com/inventory/v1/salesreturns",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                },
+                {
+                  "name": "salesorder_id",
+                  "value": "={{ $('Get Order State').first().json[0].zoho_salesorder_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -1104,
+            112
+          ],
+          "id": "cb5aeaf4-b040-47a1-919c-f6fa155ed173",
+          "name": "Check Existing Sales Return"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "conditions": [
+                {
+                  "leftValue": "={{ $json.salesreturns?.length }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gt"
+                  }
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -880,
+            112
+          ],
+          "id": "17392329-a6ed-49e8-8650-44e4d93054bf",
+          "name": "Sales Return Exists?"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://www.zohoapis.com/inventory/v1/salesreturns",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                },
+                {
+                  "name": "salesorder_id",
+                  "value": "={{ $('Get Order State').first().json[0].zoho_salesorder_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n  \"date\": \"{{ $('Called by Parent').item.json.event_timestamp_utc.split('T')[0] }}\",\n  \"return_type\": \"return_credit\",\n  \"location_id\": \"{{ $('Get SO Details').first().json.salesorder.location_id }}\",\n  \"line_items\": [{\n    \"item_id\": \"{{ $('Get SO Details').first().json.salesorder.line_items[0].item_id }}\",\n    \"salesorder_item_id\": \"{{ $('Get SO Details').first().json.salesorder.line_items[0].line_item_id }}\",\n    \"quantity\": {{ $('Called by Parent').item.json.quantity }},\n    \"location_id\": \"{{ $('Get Seller Config').first().json[0].LocationID }}\"\n  }]\n}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -656,
+            208
+          ],
+          "id": "807e28c6-e7bc-4ef2-b6d0-77a9f55ebba0",
+          "name": "Create Sales Return"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "name": "salesreturn_id",
+                  "value": "={{ $json.salesreturn?.salesreturn_id || $('Check Existing Sales Return').first().json.salesreturns?.[0]?.salesreturn_id }}",
+                  "type": "string"
+                },
+                {
+                  "name": "quantity_yet_to_receive",
+                  "value": "={{ $json.salesreturn?.quantity_yet_to_receive ?? $('Check Existing Sales Return').first().json.salesreturns?.[0]?.quantity_yet_to_receive ?? 0 }}",
+                  "type": "number"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            -448,
+            112
+          ],
+          "id": "cb18d09a-c4d3-443c-bbe1-1c967eac777b",
+          "name": "Merge Sales Return Data"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "conditions": [
+                {
+                  "leftValue": "={{ $json.quantity_yet_to_receive }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "gt"
+                  }
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -224,
+            112
+          ],
+          "id": "f405d7f6-145b-4f5f-86d9-c00c7ba61406",
+          "name": "Needs Receive?"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/salesreturns/{{ $('Merge Sales Return Data').first().json.salesreturn_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            0,
+            0
+          ],
+          "id": "920a3ce7-c5f5-4e3f-81a6-4f168b2cd40b",
+          "name": "Get Sales Return Details"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://www.zohoapis.com/inventory/v1/salesreturnreceives",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                },
+                {
+                  "name": "salesreturn_id",
+                  "value": "={{ $('Merge Sales Return Data').first().json.salesreturn_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n  \"date\": \"{{ $('Called by Parent').item.json.event_timestamp_utc.split('T')[0] }}\",\n  \"line_items\": [{\n    \"line_item_id\": \"{{ $json.salesreturn.line_items[0].line_item_id }}\",\n    \"quantity\": {{ $json.salesreturn.line_items[0].quantity }}\n  }]\n}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            224,
+            0
+          ],
+          "id": "77d3a004-774f-441d-beb4-11e238035a2e",
+          "name": "Receive Sales Return"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "conditions": [
+                {
+                  "leftValue": "={{ $('Get Order State').first().json[0]?.zoho_creditnote_id }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEmpty",
+                    "singleValue": true
+                  }
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            448,
+            112
+          ],
+          "id": "5792e2de-b834-4651-8de2-a44f78a97da2",
+          "name": "Credit Note Exists?"
+        },
+        {
+          "parameters": {
+            "jsCode": "const event = $('Called by Parent').item.json;\nconst config = $('Get Seller Config').first().json[0];\nconst so = $('Get SO Details').first().json.salesorder;\n\nconst eventDate = event.event_timestamp_utc.split('T')[0];\nconst refNumber = `${event.order_item_id}(Order: ${event.order_id})`;\n\nreturn {\n  json: {\n    customer_id: config.CustomerID,\n    date: eventDate,\n    reference_number: refNumber,\n    is_inclusive_tax: true,\n    location_id: config.ParentLocationID,\n    notes: `Return for customer: ${event.customer}`,\n    line_items: [{\n      item_id: so.line_items[0].item_id,\n      name: so.line_items[0].name,\n      rate: so.line_items[0].rate,\n      quantity: event.quantity,\n      tax_id: config.TaxID,\n      location_id: config.LocationID\n    }]\n  }\n};"
+          },
+          "type": "n8n-nodes-base.code",
+          "typeVersion": 2,
+          "position": [
+            672,
+            208
+          ],
+          "id": "a9babf9c-f163-4221-bb59-ae19f13735d3",
+          "name": "Build Credit Note Payload"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://www.zohoapis.com/inventory/v1/creditnotes",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').first().json[0].OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ JSON.stringify($json) }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            880,
+            208
+          ],
+          "id": "29e01afe-7ffc-4b85-aefe-455478352003",
+          "name": "Create Credit Note"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "name": "creditnote_id",
+                  "value": "={{ $json.creditnote?.creditnote_id || $('Get Order State').first().json[0]?.zoho_creditnote_id }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            1104,
+            112
+          ],
+          "id": "dc64c1df-ccba-460f-bfd5-8174963ca964",
+          "name": "Merge Credit Note Data"
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "UPDATE order_state SET current_stage = 'returned', zoho_salesreturn_id = '{{ $('Merge Sales Return Data').first().json.salesreturn_id }}', zoho_creditnote_id = '{{ $json.creditnote_id }}', returned_at = NOW() WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            1328,
+            112
+          ],
+          "id": "477bdc90-f18e-402d-ac3b-3cb55f3332a4",
+          "name": "Update Order State",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "INSERT INTO processing_log (event_id, order_item_id, seller_id, execution_id, workflow_name, stage, status, message) VALUES ({{ $('Called by Parent').item.json.id }}, {{ $('Called by Parent').item.json.order_item_id }}, '{{ $('Called by Parent').item.json.seller_id }}', '{{ $execution.id }}', 'Process Returned', 'returned', 'success', 'Created Sales Return {{ $('Merge Sales Return Data').first().json.salesreturn_id }} and Credit Note {{ $('Merge Credit Note Data').first().json.creditnote_id }}')",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            1552,
+            112
+          ],
+          "id": "cf65bbbe-c99c-4984-bd70-1781f8f49a1c",
+          "name": "Log Success",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "P2idoCVDSQnCITNY",
+              "mode": "list",
+              "cachedResultName": "zoho_info",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+            },
+            "matchType": "allConditions",
+            "filters": {
+              "conditions": [
+                {
+                  "keyName": "SellerID",
+                  "keyValue": "={{ $json.seller_id }}"
+                },
+                {
+                  "keyName": "active",
+                  "condition": "isTrue"
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            -1984,
+            112
+          ],
+          "id": "204a0411-56be-414d-8805-d0ad033c7546",
+          "name": "Get Seller Config"
+        },
+        {
+          "parameters": {
+            "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=SnoEQ0mSX0TYurZ6KK-fI) to commit change ",
+            "height": 140,
+            "width": 408,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            -2208,
+            -96
+          ],
+          "typeVersion": 1,
+          "id": "5147acf5-6147-4fbb-aec2-f14fc39c5f27",
+          "name": "Sticky Note"
+        }
+      ],
+      "connections": {
+        "Called by Parent": {
+          "main": [
+            [
+              {
+                "node": "Get Seller Config",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Order State": {
+          "main": [
+            [
+              {
+                "node": "Get Zoho Token",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Zoho Token": {
+          "main": [
+            [
+              {
+                "node": "Get SO Details",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get SO Details": {
+          "main": [
+            [
+              {
+                "node": "Check Existing Sales Return",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Check Existing Sales Return": {
+          "main": [
+            [
+              {
+                "node": "Sales Return Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Sales Return Exists?": {
+          "main": [
+            [
+              {
+                "node": "Merge Sales Return Data",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Create Sales Return",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create Sales Return": {
+          "main": [
+            [
+              {
+                "node": "Merge Sales Return Data",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Merge Sales Return Data": {
+          "main": [
+            [
+              {
+                "node": "Needs Receive?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Needs Receive?": {
+          "main": [
+            [
+              {
+                "node": "Get Sales Return Details",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Credit Note Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Sales Return Details": {
+          "main": [
+            [
+              {
+                "node": "Receive Sales Return",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Receive Sales Return": {
+          "main": [
+            [
+              {
+                "node": "Credit Note Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Credit Note Exists?": {
+          "main": [
+            [
+              {
+                "node": "Merge Credit Note Data",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Build Credit Note Payload",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Build Credit Note Payload": {
+          "main": [
+            [
+              {
+                "node": "Create Credit Note",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create Credit Note": {
+          "main": [
+            [
+              {
+                "node": "Merge Credit Note Data",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Merge Credit Note Data": {
+          "main": [
+            [
+              {
+                "node": "Update Order State",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Update Order State": {
+          "main": [
+            [
+              {
+                "node": "Log Success",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Seller Config": {
+          "main": [
+            [
+              {
+                "node": "Get Order State",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version f6bd4cff",
+      "description": "",
+      "autosaved": true,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-12T06:42:47.103Z",
+          "id": 86,
+          "workflowId": "SnoEQ0mSX0TYurZ6KK-fI",
+          "versionId": "f6bd4cff-3feb-4a12-8e24-b3316f43fdd5",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
