@@ -1,0 +1,1735 @@
+[
+  {
+    "updatedAt": "2026-02-12T06:39:27.341Z",
+    "createdAt": "2026-02-06T13:00:10.844Z",
+    "id": "l2vJCuCGn4LmTxud55MQN",
+    "name": "Sub - Process Shipped (Status 3)",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -1120,
+          368
+        ],
+        "id": "aaa380fb-e227-4e4b-9d13-ea579165e735",
+        "name": "Called by Parent"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT * FROM order_state WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }} LIMIT 1",
+          "options": {
+            "queryReplacement": "="
+          }
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          -672,
+          368
+        ],
+        "id": "59f8b16a-66bd-46cb-94a4-69c2dac4f26c",
+        "name": "Get Order State",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://accounts.zoho.com/oauth/v2/token",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpCustomAuth",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -464,
+          368
+        ],
+        "id": "7bad42c0-665c-47e3-9c0b-ce54dfc651f8",
+        "name": "Get Zoho Token",
+        "credentials": {
+          "httpCustomAuth": {
+            "id": "9SvOEsYF9SjtHbhQ",
+            "name": "Zoho_Access_Token"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $('Get Order State').item.json.zoho_shipment_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                },
+                "id": "949939dd-5391-4886-87ea-b241029238f7"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -240,
+          368
+        ],
+        "id": "3b6b1994-f53c-4820-89df-9efef0d90434",
+        "name": "Shipment Exists?"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://www.zohoapis.com/inventory/v1/shipmentorders",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+              },
+              {
+                "name": "salesorder_id",
+                "value": "={{ $('Get Order State').item.json.zoho_salesorder_id }}"
+              },
+              {
+                "name": "package_ids",
+                "value": "={{ $('Get Order State').item.json.zoho_package_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"shipment_number\": \"{{ $('Get Order State').item.json.zoho_salesorder_number }}\",\n  \"date\": \"{{ $('Called by Parent').item.json.event_timestamp_utc.toISOString.split('T')[0] }}\",\n  \"delivery_method\": \"Takealot\",\n  \"tracking_number\": \"{{ $('Called by Parent').item.json.order_item_id }}\"\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -32,
+          512
+        ],
+        "id": "25dac927-e8b2-49d7-9931-d1cc925479c6",
+        "name": "Create Shipment"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "name": "shipment_id",
+                "value": "={{ $json.shipmentorder?.shipment_id || $('Get Order State').item.json?.zoho_shipment_id }}",
+                "type": "string",
+                "id": "83aab089-d523-4fab-b605-5c89257e3685"
+              },
+              {
+                "name": "shipment_status",
+                "value": "={{ $json.shipmentorder?.shipment_status || 'existing' }}",
+                "type": "string",
+                "id": "f956a88b-91c6-4eb0-b9e6-57e884b9d254"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          208,
+          368
+        ],
+        "id": "0bea214f-b65e-4f6e-965e-6b80b0ecb0d6",
+        "name": "Merge Shipment Data"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.shipment_status }}",
+                "rightValue": "shipped",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                },
+                "id": "1a190b74-63e1-493f-b0bd-bda881f670b8"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          432,
+          368
+        ],
+        "id": "5f778c81-a8a7-4349-be9a-24511e91c19e",
+        "name": "Needs Delivery?"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.zohoapis.com/inventory/v1/shipmentorders/{{ $('Merge Shipment Data').first().json.shipment_id }}/status/delivered",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          656,
+          256
+        ],
+        "id": "ff92547c-0d64-4aa9-ab45-c3d677a01042",
+        "name": "Mark as Delivered",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $('Get Order State').item.json.zoho_invoice_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                },
+                "id": "4b458c5f-5f63-4976-ade1-44f733d4dce9"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          864,
+          368
+        ],
+        "id": "15df58dc-2ad2-4763-8833-5091f513898e",
+        "name": "Invoice Exists?"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').item.json.zoho_salesorder_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1088,
+          480
+        ],
+        "id": "6a0c892e-e0b3-4b6b-8038-293d792e4587",
+        "name": "Get SO Details"
+      },
+      {
+        "parameters": {
+          "jsCode": "const event = $('Called by Parent').item.json;\nconst config = $('Get Seller Config').item.json;\nconst so = $('Get SO Details').first().json.salesorder;\n\nconst eventDate = new Date(event.event_timestamp_utc)\n  .toISOString()\n  .split('T')[0];\nconst refNumber = `${event.order_item_id}(Order: ${event.order_id})`;\n\nreturn {\n  json: {\n    customer_id: config.CustomerID,\n    date: eventDate,\n    reference_number: refNumber,\n    is_inclusive_tax: true,\n    location_id: config.ParentLocationID,\n    notes: `Customer name: ${event.customer}`,\n    line_items: [{\n      item_id: so.line_items[0].item_id,\n      name: so.line_items[0].name,\n      rate: so.line_items[0].rate,\n      quantity: so.line_items[0].quantity,\n      tax_id: config.TaxID,\n      item_total: so.line_items[0].item_total,\n      location_id: config.LocationID\n    }]\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1312,
+          480
+        ],
+        "id": "737802a4-75f1-450d-8f1d-5b9f9bdd8834",
+        "name": "Build Invoice Payload"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://www.zohoapis.com/inventory/v1/invoices",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1536,
+          480
+        ],
+        "id": "86092f30-7697-493a-bf5c-a1cb4578fb60",
+        "name": "Create Invoice"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "name": "invoice_id",
+                "value": "={{ $json.invoice?.invoice_id || $('Get Order State').first().json[0]?.zoho_invoice_id }}",
+                "type": "string"
+              },
+              {
+                "name": "invoice_number",
+                "value": "={{ $json.invoice?.invoice_number || $('Get Order State').first().json[0]?.zoho_invoice_number }}",
+                "type": "string"
+              },
+              {
+                "name": "invoice_status",
+                "value": "={{ $json.invoice?.status || 'existing' }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1744,
+          368
+        ],
+        "id": "91b92c34-d5eb-4c84-b8d7-82677be5e074",
+        "name": "Merge Invoice Data"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "conditions": [
+              {
+                "leftValue": "={{ $json.invoice_status }}",
+                "rightValue": "sent",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1968,
+          368
+        ],
+        "id": "2224cb8b-3ca7-4fa8-9d98-2d74e5805211",
+        "name": "Needs Send?"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.zohoapis.com/inventory/v1/invoices/{{ $('Merge Invoice Data').first().json.invoice_id }}/status/sent",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2192,
+          256
+        ],
+        "id": "43da472a-e906-4d4e-ac7c-69af498a01ba",
+        "name": "Mark Invoice as Sent"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://www.zohoapis.com/inventory/v1/invoices/mapwithorder",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+              },
+              {
+                "name": "invoice_ids",
+                "value": "={{ $('Merge Invoice Data').first().json.invoice_id }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2384,
+          256
+        ],
+        "id": "de6c0089-8062-4d07-a9c0-b7151f55a670",
+        "name": "Map Invoice to SO"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE order_state SET current_stage = 'invoiced', zoho_shipment_id = '{{ $('Merge Shipment Data').first().json.shipment_id }}', zoho_shipment_status = 'delivered', zoho_invoice_id = '{{ $('Merge Invoice Data').first().json.invoice_id }}', zoho_invoice_number = '{{ $('Merge Invoice Data').first().json.invoice_number }}', zoho_invoice_status = 'sent', invoiced_at = NOW() WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          2576,
+          256
+        ],
+        "id": "3907aca8-542c-4848-9ec8-096fb655222a",
+        "name": "Update Order State",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO processing_log (event_id, order_item_id, seller_id, execution_id, workflow_name, stage, status, message) VALUES ({{ $('Called by Parent').item.json.id }}, {{ $('Called by Parent').item.json.order_item_id }}, '{{ $('Called by Parent').item.json.seller_id }}', '{{ $execution.id }}', 'Process Shipped', 'invoiced', 'success', 'Created Shipment {{ $('Merge Shipment Data').first().json.shipment_id }} and Invoice {{ $('Merge Invoice Data').first().json.invoice_id }}')",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 2.4,
+        "position": [
+          2784,
+          256
+        ],
+        "id": "de92c7fa-aff5-46c1-b91c-0942bec13cfa",
+        "name": "Log Success",
+        "credentials": {
+          "mySql": {
+            "id": "dJUtvtCJ2ElIhHfT",
+            "name": "Tallypro MySQL"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "P2idoCVDSQnCITNY",
+            "mode": "list",
+            "cachedResultName": "zoho_info",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "SellerID",
+                "keyValue": "={{ $json.seller_id }}"
+              },
+              {
+                "keyName": "active",
+                "condition": "isTrue"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          -912,
+          368
+        ],
+        "id": "fade60c6-d416-437f-8c5e-a2b22870174c",
+        "name": "Get Seller Config"
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=l2vJCuCGn4LmTxud55MQN) to commit change ",
+          "height": 140,
+          "width": 408,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -1120,
+          192
+        ],
+        "typeVersion": 1,
+        "id": "c42e65a8-fcef-4332-905c-b283099789ed",
+        "name": "Sticky Note"
+      }
+    ],
+    "connections": {
+      "Called by Parent": {
+        "main": [
+          [
+            {
+              "node": "Get Seller Config",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Order State": {
+        "main": [
+          [
+            {
+              "node": "Get Zoho Token",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Zoho Token": {
+        "main": [
+          [
+            {
+              "node": "Shipment Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Shipment Exists?": {
+        "main": [
+          [
+            {
+              "node": "Merge Shipment Data",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create Shipment",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Shipment": {
+        "main": [
+          [
+            {
+              "node": "Merge Shipment Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Shipment Data": {
+        "main": [
+          [
+            {
+              "node": "Needs Delivery?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Needs Delivery?": {
+        "main": [
+          [
+            {
+              "node": "Mark as Delivered",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Invoice Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark as Delivered": {
+        "main": [
+          [
+            {
+              "node": "Invoice Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Invoice Exists?": {
+        "main": [
+          [
+            {
+              "node": "Merge Invoice Data",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Get SO Details",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get SO Details": {
+        "main": [
+          [
+            {
+              "node": "Build Invoice Payload",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Invoice Payload": {
+        "main": [
+          [
+            {
+              "node": "Create Invoice",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Invoice": {
+        "main": [
+          [
+            {
+              "node": "Merge Invoice Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Invoice Data": {
+        "main": [
+          [
+            {
+              "node": "Needs Send?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Needs Send?": {
+        "main": [
+          [
+            {
+              "node": "Mark Invoice as Sent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Order State": {
+        "main": [
+          [
+            {
+              "node": "Log Success",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark Invoice as Sent": {
+        "main": [
+          [
+            {
+              "node": "Map Invoice to SO",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Map Invoice to SO": {
+        "main": [
+          [
+            {
+              "node": "Update Order State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Seller Config": {
+        "main": [
+          [
+            {
+              "node": "Get Order State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "pinData": {
+      "Called by Parent": [
+        {
+          "json": {
+            "id": 94,
+            "idempotency_key": "11932_398288575_3_2026-02-11",
+            "order_item_id": 398288575,
+            "order_id": 203627650,
+            "seller_id": "11932",
+            "sale_status_id": 3,
+            "sale_status": "Shipped to Customer",
+            "sku": "0348Ax001",
+            "tsin": "91422950",
+            "product_title": "SWAT-OPS Pepper Spray 45ml Direct Stream",
+            "quantity": 3,
+            "selling_price": "897.00",
+            "customer": "Jose Luis Bobes",
+            "warehouse": "JHB",
+            "warehouse_id": 0,
+            "event_timestamp_utc": "2026-02-11 10:56:15",
+            "received_at": "2026-02-11 12:56:19",
+            "status": "pending",
+            "locked_at": "2026-02-11 16:30:13",
+            "locked_by": "3153",
+            "attempt_count": 0,
+            "max_attempts": 5,
+            "last_attempt_at": null,
+            "next_retry_at": null,
+            "last_error": null,
+            "is_synthetic": 0,
+            "synthesis_reason": null,
+            "source_event_id": null,
+            "completed_at": null,
+            "processing_duration_ms": null,
+            "current_stage": "packaged",
+            "zoho_salesorder_id": "3432252000010970619",
+            "zoho_package_id": "3432252000010978302",
+            "zoho_shipment_id": null,
+            "zoho_invoice_id": null,
+            "prerequisitesMet": true,
+            "missingStatus": null,
+            "needsSynthesis": false,
+            "targetStage": "invoiced"
+          },
+          "pairedItem": {
+            "item": 0
+          }
+        }
+      ],
+      "Merge Shipment Data": [
+        {
+          "json": {
+            "shipment_id": "3432252000010978322",
+            "shipment_status": "shipped"
+          }
+        }
+      ]
+    },
+    "versionId": "f75eb4e7-eaef-4ff8-8caa-ebb3b15161dd",
+    "activeVersionId": "f75eb4e7-eaef-4ff8-8caa-ebb3b15161dd",
+    "versionCounter": 27,
+    "triggerCount": 0,
+    "shared": [
+      {
+        "updatedAt": "2026-02-06T13:00:10.852Z",
+        "createdAt": "2026-02-06T13:00:10.852Z",
+        "role": "workflow:owner",
+        "workflowId": "l2vJCuCGn4LmTxud55MQN",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-12T06:36:42.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-02-11",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [],
+    "activeVersion": {
+      "updatedAt": "2026-02-12T06:39:31.000Z",
+      "createdAt": "2026-02-12T06:39:27.343Z",
+      "versionId": "f75eb4e7-eaef-4ff8-8caa-ebb3b15161dd",
+      "workflowId": "l2vJCuCGn4LmTxud55MQN",
+      "nodes": [
+        {
+          "parameters": {
+            "inputSource": "passthrough"
+          },
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "typeVersion": 1.1,
+          "position": [
+            -1120,
+            368
+          ],
+          "id": "aaa380fb-e227-4e4b-9d13-ea579165e735",
+          "name": "Called by Parent"
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "SELECT * FROM order_state WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }} LIMIT 1",
+            "options": {
+              "queryReplacement": "="
+            }
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            -672,
+            368
+          ],
+          "id": "59f8b16a-66bd-46cb-94a4-69c2dac4f26c",
+          "name": "Get Order State",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://accounts.zoho.com/oauth/v2/token",
+            "authentication": "genericCredentialType",
+            "genericAuthType": "httpCustomAuth",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -464,
+            368
+          ],
+          "id": "7bad42c0-665c-47e3-9c0b-ce54dfc651f8",
+          "name": "Get Zoho Token",
+          "credentials": {
+            "httpCustomAuth": {
+              "id": "9SvOEsYF9SjtHbhQ",
+              "name": "Zoho_Access_Token"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "leftValue": "={{ $('Get Order State').item.json.zoho_shipment_id }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEmpty",
+                    "singleValue": true
+                  },
+                  "id": "949939dd-5391-4886-87ea-b241029238f7"
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            -240,
+            368
+          ],
+          "id": "3b6b1994-f53c-4820-89df-9efef0d90434",
+          "name": "Shipment Exists?"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://www.zohoapis.com/inventory/v1/shipmentorders",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "salesorder_id",
+                  "value": "={{ $('Get Order State').item.json.zoho_salesorder_id }}"
+                },
+                {
+                  "name": "package_ids",
+                  "value": "={{ $('Get Order State').item.json.zoho_package_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n  \"shipment_number\": \"{{ $('Get Order State').item.json.zoho_salesorder_number }}\",\n  \"date\": \"{{ $('Called by Parent').item.json.event_timestamp_utc.toISOString.split('T')[0] }}\",\n  \"delivery_method\": \"Takealot\",\n  \"tracking_number\": \"{{ $('Called by Parent').item.json.order_item_id }}\"\n}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -32,
+            512
+          ],
+          "id": "25dac927-e8b2-49d7-9931-d1cc925479c6",
+          "name": "Create Shipment"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "name": "shipment_id",
+                  "value": "={{ $json.shipmentorder?.shipment_id || $('Get Order State').item.json?.zoho_shipment_id }}",
+                  "type": "string",
+                  "id": "83aab089-d523-4fab-b605-5c89257e3685"
+                },
+                {
+                  "name": "shipment_status",
+                  "value": "={{ $json.shipmentorder?.shipment_status || 'existing' }}",
+                  "type": "string",
+                  "id": "f956a88b-91c6-4eb0-b9e6-57e884b9d254"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            208,
+            368
+          ],
+          "id": "0bea214f-b65e-4f6e-965e-6b80b0ecb0d6",
+          "name": "Merge Shipment Data"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "leftValue": "={{ $json.shipment_status }}",
+                  "rightValue": "shipped",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEquals"
+                  },
+                  "id": "1a190b74-63e1-493f-b0bd-bda881f670b8"
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            432,
+            368
+          ],
+          "id": "5f778c81-a8a7-4349-be9a-24511e91c19e",
+          "name": "Needs Delivery?"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://www.zohoapis.com/inventory/v1/shipmentorders/{{ $('Merge Shipment Data').first().json.shipment_id }}/status/delivered",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            656,
+            256
+          ],
+          "id": "ff92547c-0d64-4aa9-ab45-c3d677a01042",
+          "name": "Mark as Delivered",
+          "alwaysOutputData": true
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "leftValue": "={{ $('Get Order State').item.json.zoho_invoice_id }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEmpty",
+                    "singleValue": true
+                  },
+                  "id": "4b458c5f-5f63-4976-ade1-44f733d4dce9"
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            864,
+            368
+          ],
+          "id": "15df58dc-2ad2-4763-8833-5091f513898e",
+          "name": "Invoice Exists?"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/inventory/v1/salesorders/{{ $('Get Order State').item.json.zoho_salesorder_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1088,
+            480
+          ],
+          "id": "6a0c892e-e0b3-4b6b-8038-293d792e4587",
+          "name": "Get SO Details"
+        },
+        {
+          "parameters": {
+            "jsCode": "const event = $('Called by Parent').item.json;\nconst config = $('Get Seller Config').item.json;\nconst so = $('Get SO Details').first().json.salesorder;\n\nconst eventDate = new Date(event.event_timestamp_utc)\n  .toISOString()\n  .split('T')[0];\nconst refNumber = `${event.order_item_id}(Order: ${event.order_id})`;\n\nreturn {\n  json: {\n    customer_id: config.CustomerID,\n    date: eventDate,\n    reference_number: refNumber,\n    is_inclusive_tax: true,\n    location_id: config.ParentLocationID,\n    notes: `Customer name: ${event.customer}`,\n    line_items: [{\n      item_id: so.line_items[0].item_id,\n      name: so.line_items[0].name,\n      rate: so.line_items[0].rate,\n      quantity: so.line_items[0].quantity,\n      tax_id: config.TaxID,\n      item_total: so.line_items[0].item_total,\n      location_id: config.LocationID\n    }]\n  }\n};"
+          },
+          "type": "n8n-nodes-base.code",
+          "typeVersion": 2,
+          "position": [
+            1312,
+            480
+          ],
+          "id": "737802a4-75f1-450d-8f1d-5b9f9bdd8834",
+          "name": "Build Invoice Payload"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://www.zohoapis.com/inventory/v1/invoices",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={{ JSON.stringify($json) }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1536,
+            480
+          ],
+          "id": "86092f30-7697-493a-bf5c-a1cb4578fb60",
+          "name": "Create Invoice"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "name": "invoice_id",
+                  "value": "={{ $json.invoice?.invoice_id || $('Get Order State').first().json[0]?.zoho_invoice_id }}",
+                  "type": "string"
+                },
+                {
+                  "name": "invoice_number",
+                  "value": "={{ $json.invoice?.invoice_number || $('Get Order State').first().json[0]?.zoho_invoice_number }}",
+                  "type": "string"
+                },
+                {
+                  "name": "invoice_status",
+                  "value": "={{ $json.invoice?.status || 'existing' }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            1744,
+            368
+          ],
+          "id": "91b92c34-d5eb-4c84-b8d7-82677be5e074",
+          "name": "Merge Invoice Data"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "conditions": [
+                {
+                  "leftValue": "={{ $json.invoice_status }}",
+                  "rightValue": "sent",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEquals"
+                  }
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            1968,
+            368
+          ],
+          "id": "2224cb8b-3ca7-4fa8-9d98-2d74e5805211",
+          "name": "Needs Send?"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://www.zohoapis.com/inventory/v1/invoices/{{ $('Merge Invoice Data').first().json.invoice_id }}/status/sent",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2192,
+            256
+          ],
+          "id": "43da472a-e906-4d4e-ac7c-69af498a01ba",
+          "name": "Mark Invoice as Sent"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://www.zohoapis.com/inventory/v1/invoices/mapwithorder",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+                },
+                {
+                  "name": "invoice_ids",
+                  "value": "={{ $('Merge Invoice Data').first().json.invoice_id }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Token').first().json.access_token }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            2384,
+            256
+          ],
+          "id": "de6c0089-8062-4d07-a9c0-b7151f55a670",
+          "name": "Map Invoice to SO"
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "UPDATE order_state SET current_stage = 'invoiced', zoho_shipment_id = '{{ $('Merge Shipment Data').first().json.shipment_id }}', zoho_shipment_status = 'delivered', zoho_invoice_id = '{{ $('Merge Invoice Data').first().json.invoice_id }}', zoho_invoice_number = '{{ $('Merge Invoice Data').first().json.invoice_number }}', zoho_invoice_status = 'sent', invoiced_at = NOW() WHERE order_item_id = {{ $('Called by Parent').item.json.order_item_id }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            2576,
+            256
+          ],
+          "id": "3907aca8-542c-4848-9ec8-096fb655222a",
+          "name": "Update Order State",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "executeQuery",
+            "query": "INSERT INTO processing_log (event_id, order_item_id, seller_id, execution_id, workflow_name, stage, status, message) VALUES ({{ $('Called by Parent').item.json.id }}, {{ $('Called by Parent').item.json.order_item_id }}, '{{ $('Called by Parent').item.json.seller_id }}', '{{ $execution.id }}', 'Process Shipped', 'invoiced', 'success', 'Created Shipment {{ $('Merge Shipment Data').first().json.shipment_id }} and Invoice {{ $('Merge Invoice Data').first().json.invoice_id }}')",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.mySql",
+          "typeVersion": 2.4,
+          "position": [
+            2784,
+            256
+          ],
+          "id": "de92c7fa-aff5-46c1-b91c-0942bec13cfa",
+          "name": "Log Success",
+          "credentials": {
+            "mySql": {
+              "id": "dJUtvtCJ2ElIhHfT",
+              "name": "Tallypro MySQL"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "P2idoCVDSQnCITNY",
+              "mode": "list",
+              "cachedResultName": "zoho_info",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+            },
+            "matchType": "allConditions",
+            "filters": {
+              "conditions": [
+                {
+                  "keyName": "SellerID",
+                  "keyValue": "={{ $json.seller_id }}"
+                },
+                {
+                  "keyName": "active",
+                  "condition": "isTrue"
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            -912,
+            368
+          ],
+          "id": "fade60c6-d416-437f-8c5e-a2b22870174c",
+          "name": "Get Seller Config"
+        },
+        {
+          "parameters": {
+            "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=l2vJCuCGn4LmTxud55MQN) to commit change ",
+            "height": 140,
+            "width": 408,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            -1120,
+            192
+          ],
+          "typeVersion": 1,
+          "id": "c42e65a8-fcef-4332-905c-b283099789ed",
+          "name": "Sticky Note"
+        }
+      ],
+      "connections": {
+        "Called by Parent": {
+          "main": [
+            [
+              {
+                "node": "Get Seller Config",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Order State": {
+          "main": [
+            [
+              {
+                "node": "Get Zoho Token",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Zoho Token": {
+          "main": [
+            [
+              {
+                "node": "Shipment Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Shipment Exists?": {
+          "main": [
+            [
+              {
+                "node": "Merge Shipment Data",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Create Shipment",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create Shipment": {
+          "main": [
+            [
+              {
+                "node": "Merge Shipment Data",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Merge Shipment Data": {
+          "main": [
+            [
+              {
+                "node": "Needs Delivery?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Needs Delivery?": {
+          "main": [
+            [
+              {
+                "node": "Mark as Delivered",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Invoice Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Mark as Delivered": {
+          "main": [
+            [
+              {
+                "node": "Invoice Exists?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Invoice Exists?": {
+          "main": [
+            [
+              {
+                "node": "Merge Invoice Data",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Get SO Details",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get SO Details": {
+          "main": [
+            [
+              {
+                "node": "Build Invoice Payload",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Build Invoice Payload": {
+          "main": [
+            [
+              {
+                "node": "Create Invoice",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create Invoice": {
+          "main": [
+            [
+              {
+                "node": "Merge Invoice Data",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Merge Invoice Data": {
+          "main": [
+            [
+              {
+                "node": "Needs Send?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Needs Send?": {
+          "main": [
+            [
+              {
+                "node": "Mark Invoice as Sent",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Update Order State": {
+          "main": [
+            [
+              {
+                "node": "Log Success",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Mark Invoice as Sent": {
+          "main": [
+            [
+              {
+                "node": "Map Invoice to SO",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Map Invoice to SO": {
+          "main": [
+            [
+              {
+                "node": "Update Order State",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Seller Config": {
+          "main": [
+            [
+              {
+                "node": "Get Order State",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version f75eb4e7",
+      "description": "",
+      "autosaved": true,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-12T06:39:31.911Z",
+          "id": 84,
+          "workflowId": "l2vJCuCGn4LmTxud55MQN",
+          "versionId": "f75eb4e7-eaef-4ff8-8caa-ebb3b15161dd",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
