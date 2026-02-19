@@ -1,0 +1,616 @@
+[
+  {
+    "updatedAt": "2026-02-19T12:30:44.936Z",
+    "createdAt": "2026-02-16T10:04:20.115Z",
+    "id": "_D3tsBOsrpLi8h4T7cChx",
+    "name": "Chron: PIM - Update Woo",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -816,
+          -176
+        ],
+        "id": "3b4ea183-5de9-44d6-b3d5-d6e2170489bc",
+        "name": "Schedule Trigger"
+      },
+      {
+        "parameters": {
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "where",
+                "value": "((updated>=last_sync_time OR last_sync_time IS NULL) AND automation_enabled=true AND product_type IN ('simple', 'variant', 'bundle', 'kit'))"
+              },
+              {
+                "name": "pageSize",
+                "value": "50"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -592,
+          -176
+        ],
+        "id": "bab5d27d-6589-411b-8b97-8d170400f32a",
+        "name": "Get products"
+      },
+      {
+        "parameters": {
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "where",
+                "value": "=sku='{{ $json.sku }}' AND channel='woo' AND sync_enabled=true"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -368,
+          -176
+        ],
+        "id": "181506b7-ec68-4705-9b71-a0d0f551b763",
+        "name": "Get Channel Prices",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.channel_id }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "wooCommerceApi",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          80,
+          -240
+        ],
+        "id": "724143b5-bc82-44d0-848d-59eec8f23f70",
+        "name": "Get Woo prices",
+        "credentials": {
+          "wooCommerceApi": {
+            "id": "yIQIxIOCI9PZFZbx",
+            "name": "Woo-Security-Store"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "2b0c15cf-d902-4dce-bb1c-fd4eb3c57d42",
+                "leftValue": "={{ $('Get Channel Prices').item.json.price_override }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "number",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          304,
+          -240
+        ],
+        "id": "6576215a-7248-44cb-b69b-a7f908671bb0",
+        "name": "Use Channel Override?"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "00c0b5ad-209a-4935-9a60-2d1d59794608",
+                "name": "new_price",
+                "value": "={{ $('Get products').item.json.default_regular_price }}",
+                "type": "number"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          528,
+          -336
+        ],
+        "id": "1963abd6-6257-495a-8bd9-62d4c507fd53",
+        "name": "Set override price"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "00c0b5ad-209a-4935-9a60-2d1d59794608",
+                "name": "new_price",
+                "value": "={{ $('Get products').item.json.default_regular_price }}",
+                "type": "number"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          528,
+          -144
+        ],
+        "id": "63053839-a61c-41ef-b578-b2e9cd1ba6f2",
+        "name": "Set PIM price"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "fieldsToMatchString": "=price",
+          "joinMode": "keepEverything",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          752,
+          -240
+        ],
+        "id": "b11977ca-5363-414c-a742-20aaca1d7323",
+        "name": "Merge",
+        "alwaysOutputData": false
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {}
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "objectId",
+                "value": "={{ $('Get products').item.json.objectId }}"
+              },
+              {
+                "name": "last_sync_time",
+                "value": "={{ Date.now() + 3000 }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1680,
+          176
+        ],
+        "id": "66b7269e-896f-4cd5-84e4-db0984b33915",
+        "name": "Update last synced time"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "5fe4af5b-3c9b-48ea-9865-240b5d70aefc",
+                "name": "status",
+                "value": "={{ $('Get products').item.json.active && $('Get products').item.json.sellable ? 'publish' : 'draft' }}",
+                "type": "string"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          976,
+          -240
+        ],
+        "id": "1f36fbed-5cca-420c-803d-849d1000a18b",
+        "name": "Set publish status"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "c886e657-d779-40ac-9e9d-3d70face42ba",
+                "leftValue": "={{ $json.regular_price }}",
+                "rightValue": "={{ $json.new_price }}",
+                "operator": {
+                  "type": "dateTime",
+                  "operation": "notEquals"
+                }
+              },
+              {
+                "id": "2dea5ec1-0ad4-4f97-bdcd-2a91f65a5d4f",
+                "leftValue": "={{ $json.status }}",
+                "rightValue": "={{ $('Get Woo prices').item.json.status }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "or"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1200,
+          -240
+        ],
+        "id": "6a250d53-54aa-4e6f-9c58-e03798a04a60",
+        "name": "Update woo?"
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.id }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "wooCommerceApi",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "regular_price",
+                "value": "=\"{{ $json.new_price }}\""
+              },
+              {
+                "name": "status",
+                "value": "={{ $json.status }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1424,
+          -320
+        ],
+        "id": "3d61fecc-80bd-4437-b860-6e6ceb1f8ff4",
+        "name": "Update Woo Price and Status",
+        "credentials": {
+          "wooCommerceApi": {
+            "id": "yIQIxIOCI9PZFZbx",
+            "name": "Woo-Security-Store"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "d7ba4438-5d67-4a5f-9c87-0698a7933eb5",
+                "leftValue": "={{ $json.isEmpty() }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -144,
+          -176
+        ],
+        "id": "f57c3537-b786-4e7c-a4b5-2f9422206978",
+        "name": "Processing required"
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=_D3tsBOsrpLi8h4T7cChx) to commit change ",
+          "height": 140,
+          "width": 408,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -800,
+          -368
+        ],
+        "typeVersion": 1,
+        "id": "118ca90d-898a-40c2-9f82-e6ea891961c6",
+        "name": "Sticky Note"
+      }
+    ],
+    "connections": {
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "Get products",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get products": {
+        "main": [
+          [
+            {
+              "node": "Get Channel Prices",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Channel Prices": {
+        "main": [
+          [
+            {
+              "node": "Processing required",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Woo prices": {
+        "main": [
+          [
+            {
+              "node": "Use Channel Override?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Use Channel Override?": {
+        "main": [
+          [
+            {
+              "node": "Set override price",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Set PIM price",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set PIM price": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Set override price": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "Set publish status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set publish status": {
+        "main": [
+          [
+            {
+              "node": "Update woo?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update woo?": {
+        "main": [
+          [
+            {
+              "node": "Update Woo Price and Status",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Update last synced time",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Woo Price and Status": {
+        "main": [
+          [
+            {
+              "node": "Update last synced time",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Processing required": {
+        "main": [
+          [
+            {
+              "node": "Get Woo prices",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Update last synced time",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "pinData": {},
+    "versionId": "39284759-effd-41c1-ae64-6209c7071d2c",
+    "activeVersionId": null,
+    "versionCounter": 275,
+    "triggerCount": 0,
+    "shared": [
+      {
+        "updatedAt": "2026-02-16T10:04:20.223Z",
+        "createdAt": "2026-02-16T10:04:20.223Z",
+        "role": "workflow:owner",
+        "workflowId": "_D3tsBOsrpLi8h4T7cChx",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-19T06:45:33.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-02-18",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [],
+    "activeVersion": null
+  }
+]
