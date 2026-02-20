@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-19T12:30:44.936Z",
+    "updatedAt": "2026-02-20T08:39:18.328Z",
     "createdAt": "2026-02-16T10:04:20.115Z",
     "id": "_D3tsBOsrpLi8h4T7cChx",
     "name": "Chron: PIM - Update Woo",
@@ -141,8 +141,8 @@
               {
                 "id": "00c0b5ad-209a-4935-9a60-2d1d59794608",
                 "name": "new_price",
-                "value": "={{ $('Get products').item.json.default_regular_price }}",
-                "type": "number"
+                "value": "={{ $('Get Channel Prices').item.json.price_override }}",
+                "type": "string"
               }
             ]
           },
@@ -166,7 +166,7 @@
                 "id": "00c0b5ad-209a-4935-9a60-2d1d59794608",
                 "name": "new_price",
                 "value": "={{ $('Get products').item.json.default_regular_price }}",
-                "type": "number"
+                "type": "string"
               }
             ]
           },
@@ -184,23 +184,6 @@
       },
       {
         "parameters": {
-          "mode": "combine",
-          "fieldsToMatchString": "=price",
-          "joinMode": "keepEverything",
-          "options": {}
-        },
-        "type": "n8n-nodes-base.merge",
-        "typeVersion": 3.2,
-        "position": [
-          752,
-          -240
-        ],
-        "id": "b11977ca-5363-414c-a742-20aaca1d7323",
-        "name": "Merge",
-        "alwaysOutputData": false
-      },
-      {
-        "parameters": {
           "method": "PUT",
           "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
           "sendQuery": true,
@@ -214,7 +197,7 @@
             "parameters": [
               {
                 "name": "objectId",
-                "value": "={{ $('Get products').item.json.objectId }}"
+                "value": "={{ $('Get products').first().json.objectId }}"
               },
               {
                 "name": "last_sync_time",
@@ -227,8 +210,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          1680,
-          176
+          2160,
+          224
         ],
         "id": "66b7269e-896f-4cd5-84e4-db0984b33915",
         "name": "Update last synced time"
@@ -251,7 +234,7 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          976,
+          880,
           -240
         ],
         "id": "1f36fbed-5cca-420c-803d-849d1000a18b",
@@ -272,7 +255,7 @@
                 "leftValue": "={{ $json.regular_price }}",
                 "rightValue": "={{ $json.new_price }}",
                 "operator": {
-                  "type": "dateTime",
+                  "type": "string",
                   "operation": "notEquals"
                 }
               },
@@ -293,7 +276,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          1200,
+          1152,
           -240
         ],
         "id": "6a250d53-54aa-4e6f-9c58-e03798a04a60",
@@ -302,7 +285,7 @@
       {
         "parameters": {
           "method": "PUT",
-          "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.id }}",
+          "url": "={{ $json.endpoint }}",
           "authentication": "predefinedCredentialType",
           "nodeCredentialType": "wooCommerceApi",
           "sendBody": true,
@@ -310,11 +293,11 @@
             "parameters": [
               {
                 "name": "regular_price",
-                "value": "=\"{{ $json.new_price }}\""
+                "value": "=\"{{ $('Set publish status').item.json.new_price }}\""
               },
               {
                 "name": "status",
-                "value": "={{ $json.status }}"
+                "value": "={{ $('Set publish status').item.json.status }}"
               }
             ]
           },
@@ -323,8 +306,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          1424,
-          -320
+          1888,
+          -304
         ],
         "id": "3d61fecc-80bd-4437-b860-6e6ceb1f8ff4",
         "name": "Update Woo Price and Status",
@@ -384,6 +367,86 @@
         "typeVersion": 1,
         "id": "118ca90d-898a-40c2-9f82-e6ea891961c6",
         "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "29bcc48b-c19e-414a-9c8f-dcf315eb6eba",
+                "leftValue": "={{ $('Get products').item.json.product_type }}",
+                "rightValue": "variant",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals",
+                  "name": "filter.operator.equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1360,
+          -336
+        ],
+        "id": "48a66a77-7d07-417e-8071-bc9262d39d00",
+        "name": "Variant?"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "925afb28-a551-4466-9c74-2c0241ae5902",
+                "name": "endpoint",
+                "value": "=https://www.security-store.co.za/wp-json/wc/v3/products/{id}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1632,
+          -208
+        ],
+        "id": "74a356b8-5467-421d-99e5-116af9dc754e",
+        "name": "set simple endpoint"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "925afb28-a551-4466-9c74-2c0241ae5902",
+                "name": "endpoint",
+                "value": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.parent_id }}/variations/{{ $json.id }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1632,
+          -416
+        ],
+        "id": "47b9d2cf-ba18-446e-80dc-d91c8f24ffdb",
+        "name": "set variant endpoint"
       }
     ],
     "connections": {
@@ -453,25 +516,14 @@
         "main": [
           [
             {
-              "node": "Merge",
-              "type": "main",
-              "index": 1
-            }
-          ]
-        ]
-      },
-      "Set override price": {
-        "main": [
-          [
-            {
-              "node": "Merge",
+              "node": "Set publish status",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Merge": {
+      "Set override price": {
         "main": [
           [
             {
@@ -497,7 +549,7 @@
         "main": [
           [
             {
-              "node": "Update Woo Price and Status",
+              "node": "Variant?",
               "type": "main",
               "index": 0
             }
@@ -539,6 +591,46 @@
             }
           ]
         ]
+      },
+      "Variant?": {
+        "main": [
+          [
+            {
+              "node": "set variant endpoint",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "set simple endpoint",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "set simple endpoint": {
+        "main": [
+          [
+            {
+              "node": "Update Woo Price and Status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "set variant endpoint": {
+        "main": [
+          [
+            {
+              "node": "Update Woo Price and Status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "settings": {
@@ -551,9 +643,9 @@
       "templateCredsSetupCompleted": true
     },
     "pinData": {},
-    "versionId": "39284759-effd-41c1-ae64-6209c7071d2c",
+    "versionId": "48e71f05-acf4-46c5-9409-3e2041136038",
     "activeVersionId": null,
-    "versionCounter": 275,
+    "versionCounter": 340,
     "triggerCount": 0,
     "shared": [
       {
@@ -578,7 +670,7 @@
               "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
               "projectId": "A2rkQg960Oa5Tvrh",
               "user": {
-                "updatedAt": "2026-02-19T06:45:33.000Z",
+                "updatedAt": "2026-02-20T06:21:30.000Z",
                 "createdAt": "2025-12-31T14:10:08.854Z",
                 "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
                 "email": "mark@tallypro.co.za",
@@ -602,7 +694,7 @@
                 },
                 "disabled": false,
                 "mfaEnabled": false,
-                "lastActiveAt": "2026-02-18",
+                "lastActiveAt": "2026-02-19",
                 "isPending": false
               }
             }
