@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-20T08:39:18.328Z",
+    "updatedAt": "2026-02-20T10:24:18.877Z",
     "createdAt": "2026-02-16T10:04:20.115Z",
     "id": "_D3tsBOsrpLi8h4T7cChx",
     "name": "Chron: PIM - Update Woo",
@@ -152,8 +152,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          528,
-          -336
+          592,
+          -432
         ],
         "id": "1963abd6-6257-495a-8bd9-62d4c507fd53",
         "name": "Set override price"
@@ -176,8 +176,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          528,
-          -144
+          592,
+          -208
         ],
         "id": "63053839-a61c-41ef-b578-b2e9cd1ba6f2",
         "name": "Set PIM price"
@@ -276,7 +276,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          1152,
+          1072,
           -240
         ],
         "id": "6a250d53-54aa-4e6f-9c58-e03798a04a60",
@@ -306,7 +306,7 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          1888,
+          1808,
           -304
         ],
         "id": "3d61fecc-80bd-4437-b860-6e6ceb1f8ff4",
@@ -396,7 +396,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          1360,
+          1280,
           -336
         ],
         "id": "48a66a77-7d07-417e-8071-bc9262d39d00",
@@ -409,7 +409,7 @@
               {
                 "id": "925afb28-a551-4466-9c74-2c0241ae5902",
                 "name": "endpoint",
-                "value": "=https://www.security-store.co.za/wp-json/wc/v3/products/{id}",
+                "value": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.id }}",
                 "type": "string"
               }
             ]
@@ -419,7 +419,7 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          1632,
+          1552,
           -208
         ],
         "id": "74a356b8-5467-421d-99e5-116af9dc754e",
@@ -442,7 +442,7 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          1632,
+          1552,
           -416
         ],
         "id": "47b9d2cf-ba18-446e-80dc-d91c8f24ffdb",
@@ -643,9 +643,9 @@
       "templateCredsSetupCompleted": true
     },
     "pinData": {},
-    "versionId": "48e71f05-acf4-46c5-9409-3e2041136038",
+    "versionId": "47ed7645-219c-4151-8f29-a57250f8351e",
     "activeVersionId": null,
-    "versionCounter": 340,
+    "versionCounter": 348,
     "triggerCount": 0,
     "shared": [
       {
