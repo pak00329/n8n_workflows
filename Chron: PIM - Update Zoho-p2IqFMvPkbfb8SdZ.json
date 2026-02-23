@@ -1,0 +1,624 @@
+[
+  {
+    "updatedAt": "2026-02-23T10:35:39.478Z",
+    "createdAt": "2026-02-23T10:00:26.015Z",
+    "id": "p2IqFMvPkbfb8SdZ",
+    "name": "Chron: PIM - Update Zoho",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes",
+                "minutesInterval": 30
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -816,
+          -32
+        ],
+        "id": "d271bcda-83ed-450a-8d3f-ec28637d45d4",
+        "name": "Schedule Trigger"
+      },
+      {
+        "parameters": {
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "where",
+                "value": "((updated>=last_sync_time OR last_sync_time IS NULL) AND automation_enabled=true AND product_type IN ('simple', 'variant', 'bundle'))"
+              },
+              {
+                "name": "pageSize",
+                "value": "50"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -592,
+          -32
+        ],
+        "id": "048d58a0-e8f0-42aa-809a-219d90105b21",
+        "name": "Get products"
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {}
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "objectId",
+                "value": "={{ $('Get products').item.json.objectId }}"
+              },
+              {
+                "name": "last_sync_time",
+                "value": "={{ Date.now() + 3000 }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          304,
+          -32
+        ],
+        "id": "21b72d86-0412-4bda-bb76-56f92b855be1",
+        "name": "Update last synced time"
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=p2IqFMvPkbfb8SdZ) to commit change ",
+          "height": 140,
+          "width": 408,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -800,
+          -208
+        ],
+        "typeVersion": 1,
+        "id": "864d02bf-d176-4d37-993d-3a7dd4b7cc90",
+        "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://accounts.zoho.com/oauth/v2/token",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpCustomAuth",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -144,
+          -32
+        ],
+        "id": "f0109905-885f-4711-a24c-a4fd6ae85b57",
+        "name": "Get Zoho Access Token",
+        "credentials": {
+          "httpCustomAuth": {
+            "id": "9SvOEsYF9SjtHbhQ",
+            "name": "Zoho_Access_Token"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "P2idoCVDSQnCITNY",
+            "mode": "list",
+            "cachedResultName": "zoho_info",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "SellerID",
+                "keyValue": "=11932"
+              },
+              {
+                "keyName": "active",
+                "condition": "isTrue"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          -368,
+          -32
+        ],
+        "id": "b2ff6c48-4ad2-42b3-999b-c5b4da793130",
+        "name": "Get Seller Config"
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "=https://www.zohoapis.com/inventory/v1/items/{{ $('Get products').item.json.zoho_item_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $json.access_token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"rate\": {{ $('Get products').item.json.default_regular_price }},\n  \"ean\": \"{{ $('Get products').item.json.barcode_ean }}\",\n  \"name\": \"{{ $('Get products').item.json.name }}\",\n  \"sku\": \"{{ $('Get products').item.json.sku }}\",\n  \"status\": \"{{ $if($('Get products').item.json.active, \"active\", \"inactive\") }}\"\n}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 500
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          80,
+          -32
+        ],
+        "id": "68382ba2-4ec3-4e48-bf22-53c95a2d6be9",
+        "name": "Create Transaction",
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "Get products",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get products": {
+        "main": [
+          [
+            {
+              "node": "Get Seller Config",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Seller Config": {
+        "main": [
+          [
+            {
+              "node": "Get Zoho Access Token",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Zoho Access Token": {
+        "main": [
+          [
+            {
+              "node": "Create Transaction",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Transaction": {
+        "main": [
+          [
+            {
+              "node": "Update last synced time",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate",
+      "availableInMCP": false
+    },
+    "staticData": {
+      "node:Schedule Trigger": {
+        "recurrenceRules": []
+      }
+    },
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "pinData": {},
+    "versionId": "90a03f9e-6349-44f0-83db-7149eb76c9dc",
+    "activeVersionId": "90a03f9e-6349-44f0-83db-7149eb76c9dc",
+    "versionCounter": 93,
+    "triggerCount": 1,
+    "shared": [
+      {
+        "updatedAt": "2026-02-23T10:00:26.048Z",
+        "createdAt": "2026-02-23T10:00:26.048Z",
+        "role": "workflow:owner",
+        "workflowId": "p2IqFMvPkbfb8SdZ",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-23T06:19:44.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-02-22",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [
+      {
+        "updatedAt": "2026-02-23T10:00:24.262Z",
+        "createdAt": "2026-02-23T10:00:24.262Z",
+        "id": "RGIlFgINLrb8EeMx",
+        "name": "pim"
+      }
+    ],
+    "activeVersion": {
+      "updatedAt": "2026-02-23T10:36:12.000Z",
+      "createdAt": "2026-02-23T10:35:39.479Z",
+      "versionId": "90a03f9e-6349-44f0-83db-7149eb76c9dc",
+      "workflowId": "p2IqFMvPkbfb8SdZ",
+      "nodes": [
+        {
+          "parameters": {
+            "rule": {
+              "interval": [
+                {
+                  "field": "minutes",
+                  "minutesInterval": 30
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "typeVersion": 1.3,
+          "position": [
+            -816,
+            -32
+          ],
+          "id": "d271bcda-83ed-450a-8d3f-ec28637d45d4",
+          "name": "Schedule Trigger"
+        },
+        {
+          "parameters": {
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "where",
+                  "value": "((updated>=last_sync_time OR last_sync_time IS NULL) AND automation_enabled=true AND product_type IN ('simple', 'variant', 'bundle'))"
+                },
+                {
+                  "name": "pageSize",
+                  "value": "50"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            -592,
+            -32
+          ],
+          "id": "048d58a0-e8f0-42aa-809a-219d90105b21",
+          "name": "Get products"
+        },
+        {
+          "parameters": {
+            "method": "PUT",
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {}
+              ]
+            },
+            "sendBody": true,
+            "bodyParameters": {
+              "parameters": [
+                {
+                  "name": "objectId",
+                  "value": "={{ $('Get products').item.json.objectId }}"
+                },
+                {
+                  "name": "last_sync_time",
+                  "value": "={{ Date.now() + 3000 }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            304,
+            -32
+          ],
+          "id": "21b72d86-0412-4bda-bb76-56f92b855be1",
+          "name": "Update last synced time"
+        },
+        {
+          "parameters": {
+            "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=p2IqFMvPkbfb8SdZ) to commit change ",
+            "height": 140,
+            "width": 408,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            -800,
+            -208
+          ],
+          "typeVersion": 1,
+          "id": "864d02bf-d176-4d37-993d-3a7dd4b7cc90",
+          "name": "Sticky Note"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://accounts.zoho.com/oauth/v2/token",
+            "authentication": "genericCredentialType",
+            "genericAuthType": "httpCustomAuth",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            -144,
+            -32
+          ],
+          "id": "f0109905-885f-4711-a24c-a4fd6ae85b57",
+          "name": "Get Zoho Access Token",
+          "credentials": {
+            "httpCustomAuth": {
+              "id": "9SvOEsYF9SjtHbhQ",
+              "name": "Zoho_Access_Token"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "P2idoCVDSQnCITNY",
+              "mode": "list",
+              "cachedResultName": "zoho_info",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+            },
+            "matchType": "allConditions",
+            "filters": {
+              "conditions": [
+                {
+                  "keyName": "SellerID",
+                  "keyValue": "=11932"
+                },
+                {
+                  "keyName": "active",
+                  "condition": "isTrue"
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            -368,
+            -32
+          ],
+          "id": "b2ff6c48-4ad2-42b3-999b-c5b4da793130",
+          "name": "Get Seller Config"
+        },
+        {
+          "parameters": {
+            "method": "PUT",
+            "url": "=https://www.zohoapis.com/inventory/v1/items/{{ $('Get products').item.json.zoho_item_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get Seller Config').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $json.access_token }}"
+                }
+              ]
+            },
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n  \"rate\": {{ $('Get products').item.json.default_regular_price }},\n  \"ean\": \"{{ $('Get products').item.json.barcode_ean }}\",\n  \"name\": \"{{ $('Get products').item.json.name }}\",\n  \"sku\": \"{{ $('Get products').item.json.sku }}\",\n  \"status\": \"{{ $if($('Get products').item.json.active, \"active\", \"inactive\") }}\"\n}",
+            "options": {
+              "batching": {
+                "batch": {
+                  "batchSize": 1,
+                  "batchInterval": 500
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            80,
+            -32
+          ],
+          "id": "68382ba2-4ec3-4e48-bf22-53c95a2d6be9",
+          "name": "Create Transaction",
+          "onError": "continueRegularOutput"
+        }
+      ],
+      "connections": {
+        "Schedule Trigger": {
+          "main": [
+            [
+              {
+                "node": "Get products",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get products": {
+          "main": [
+            [
+              {
+                "node": "Get Seller Config",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Seller Config": {
+          "main": [
+            [
+              {
+                "node": "Get Zoho Access Token",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Zoho Access Token": {
+          "main": [
+            [
+              {
+                "node": "Create Transaction",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create Transaction": {
+          "main": [
+            [
+              {
+                "node": "Update last synced time",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version 90a03f9e",
+      "description": "",
+      "autosaved": true,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-23T10:36:11.973Z",
+          "id": 104,
+          "workflowId": "p2IqFMvPkbfb8SdZ",
+          "versionId": "90a03f9e-6349-44f0-83db-7149eb76c9dc",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
