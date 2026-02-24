@@ -1,0 +1,3397 @@
+[
+  {
+    "updatedAt": "2026-02-24T07:12:15.271Z",
+    "createdAt": "2026-01-10T10:43:51.556Z",
+    "id": "URTBDeY7zZyqPSB2",
+    "name": "Chron - Stock Recon - Send Email Report",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 1
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -96,
+          -400
+        ],
+        "id": "bbe07665-6ce3-41a8-93c1-1c25cb3adab7",
+        "name": "Schedule Trigger"
+      },
+      {
+        "parameters": {
+          "url": "https://seller-api.takealot.com/v2/offers",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "page_size",
+                "value": "100"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ $('Get row(s)').item.json.takealot_api_key }}"
+              }
+            ]
+          },
+          "options": {
+            "pagination": {
+              "pagination": {
+                "parameters": {
+                  "parameters": [
+                    {
+                      "name": "page_number",
+                      "value": "={{ $pageCount + 1 }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ $response.body[\"total_results\"] / $response.body[\"page_size\"] <= $pageCount }} ",
+                "limitPagesFetched": true,
+                "maxRequests": 10,
+                "requestInterval": 100
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          352,
+          -400
+        ],
+        "id": "dbdf90b8-d90a-4a85-b15c-79db31b00d31",
+        "name": "Retrieve Stock List from Takealot",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "offers",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          576,
+          -400
+        ],
+        "id": "40868e0a-c68c-4c06-ba87-2a69b21c9491",
+        "name": "Join separate pages"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "c1fa72a0-2fd1-4070-a108-1a785f264af0",
+                "leftValue": "={{ $json.status }}",
+                "rightValue": "Buyable",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              },
+              {
+                "id": "9fe1f6ea-c4eb-4565-93be-977ac284c73f",
+                "leftValue": "={{ $json.status }}",
+                "rightValue": "Not Buyable",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "or"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.3,
+        "position": [
+          800,
+          -400
+        ],
+        "id": "5adc82e2-097e-4653-8a5a-ade45ae9548d",
+        "name": "Remove Disabled Stock",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://accounts.zoho.com/oauth/v2/token",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "refresh_token",
+                "value": "={{ $json.refresh_token }}"
+              },
+              {
+                "name": "client_id",
+                "value": "={{ $json.client_id }}"
+              },
+              {
+                "name": "client_secret",
+                "value": "={{ $json.client_secret }}"
+              },
+              {
+                "name": "redirect_uri",
+                "value": "={{ $json.redirect_uri }}"
+              },
+              {
+                "name": "grant_type",
+                "value": "refresh_token"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1408,
+          -32
+        ],
+        "id": "4d6eeecb-ca45-4596-b8be-8d97b24b488e",
+        "name": "Get Zoho Access Token"
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "P2idoCVDSQnCITNY",
+            "mode": "list",
+            "cachedResultName": "zoho_info",
+            "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+          },
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "SellerID",
+                "keyValue": "=11932"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          128,
+          -400
+        ],
+        "id": "a4e5cc7d-1284-4774-b13a-1fd497800e08",
+        "name": "Get row(s)"
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "items",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          1856,
+          -32
+        ],
+        "id": "a23e643c-15ef-417c-84cb-d06683fa4365",
+        "name": "Split Out"
+      },
+      {
+        "parameters": {
+          "url": "https://www.zohoapis.com/books/v3/items",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {
+            "pagination": {
+              "pagination": {
+                "parameters": {
+                  "parameters": [
+                    {
+                      "name": "page",
+                      "value": "={{ $pageCount + 1 }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body[\"page_context\"][\"has_more_page\"]}}",
+                "limitPagesFetched": true,
+                "maxRequests": 2,
+                "requestInterval": 1
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1632,
+          -32
+        ],
+        "id": "836a3b7f-e3fe-4bc0-8eab-3136d842b5b9",
+        "name": "Get All Items"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "ac23222b-8a5d-499e-a4b2-37bc32c93185",
+                "leftValue": "={{ $('Get row(s)').item.json.SellerID }}",
+                "rightValue": "11932",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2784,
+          -400
+        ],
+        "id": "099a2b29-e0b0-40eb-a7b1-078f2854e35e",
+        "name": "Is Seller = 11932"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "35a39843-85f9-4479-8360-1542ffb4901e",
+                "name": "sku",
+                "value": "={{ $json.sku.substring(0, 4) }}",
+                "type": "string"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3008,
+          -464
+        ],
+        "id": "496e0db2-e8fc-4466-ae18-488a2ffa67da",
+        "name": "Special SKU handling"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "de983260-f462-4306-b44a-117183d70ad1",
+                "name": "item_id",
+                "value": "={{ $json.item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "756a0b31-d065-484e-99ef-770eacb03cee",
+                "name": "sku",
+                "value": "={{ $json.sku }}",
+                "type": "string"
+              },
+              {
+                "id": "7d42290d-883d-432c-ac0b-5ef8834615c5",
+                "name": "title",
+                "value": "={{ $json.name }}",
+                "type": "string"
+              },
+              {
+                "id": "513d661c-9b5a-4771-80d2-df926e7bf73d",
+                "name": "takealot_in_transit",
+                "value": "={{ $json.sum_total_stock_on_way }}",
+                "type": "number"
+              },
+              {
+                "id": "4e736cfc-b472-4cb8-bab5-03b293e07864",
+                "name": "takealot_total",
+                "value": "={{ $json.sum_stock_at_takealot_total }}",
+                "type": "number"
+              },
+              {
+                "id": "b3dc03e1-60a5-4adc-a9d7-0c7e8aed0dd5",
+                "name": "count_sku",
+                "value": "={{ $('Merge Multiple Listings').item.json.count_sku }}",
+                "type": "number"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          4128,
+          -400
+        ],
+        "id": "2c00bea8-09c4-4bbc-98ed-38c41cb319fd",
+        "name": "Remove uneccessary fields"
+      },
+      {
+        "parameters": {
+          "fieldsToSummarize": {
+            "values": [
+              {
+                "aggregation": "sum",
+                "field": "total_stock_on_way"
+              },
+              {
+                "aggregation": "sum",
+                "field": "stock_at_takealot_total"
+              },
+              {
+                "field": "sku"
+              }
+            ]
+          },
+          "fieldsToSplitBy": "sku",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.summarize",
+        "typeVersion": 1.1,
+        "position": [
+          3232,
+          -400
+        ],
+        "id": "a7ca9d4f-5fca-4e38-a2de-6dfe93965e79",
+        "name": "Merge Multiple Listings"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "fieldsToMatchString": "sku",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          3904,
+          -400
+        ],
+        "id": "31e33875-44a4-45f0-bd0d-a26637256379",
+        "name": "Combine TAL and Zoho Stock Lists"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.zohoapis.com/books/v3/items/{{ $json.item_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "organization_id",
+                "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+              }
+            ]
+          },
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 500
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          4352,
+          -400
+        ],
+        "id": "7f34c1b4-3178-47fe-a8f9-bf3f4af5b753",
+        "name": "Get Zoho Item Quantities"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "0c291e90-77ac-44c4-afc5-6b8462d1a934",
+                "name": "item_id",
+                "value": "={{ $('Remove uneccessary fields').item.json.item_id }}",
+                "type": "string"
+              },
+              {
+                "id": "81a2b849-9f30-4ab2-a0d5-c6a24389903e",
+                "name": "sku",
+                "value": "={{ $('Remove uneccessary fields').item.json.sku }}",
+                "type": "string"
+              },
+              {
+                "id": "361f4163-67b1-4b5c-9a69-f7c26b734dc8",
+                "name": "title",
+                "value": "={{ $('Remove uneccessary fields').item.json.title }}",
+                "type": "string"
+              },
+              {
+                "id": "6a233b03-0a1a-4c87-85e3-e1d80e6346ae",
+                "name": "takealot_in_transit",
+                "value": "={{ $('Remove uneccessary fields').item.json.takealot_in_transit }}",
+                "type": "number"
+              },
+              {
+                "id": "988f14fa-b705-4fe9-9e3c-8d36ed5b6642",
+                "name": "takealot_total",
+                "value": "={{ $('Remove uneccessary fields').item.json.takealot_total }}",
+                "type": "number"
+              },
+              {
+                "id": "a0a18fd6-e913-4ab4-b685-a405e4b6c8ab",
+                "name": "zoho_stock_on_hand",
+                "value": "={{\n  (\n    $json.item.warehouses ||\n    $json.item.locations ||\n    []\n  )\n    .filter(w =>\n      (w.warehouse_name || w.location_name || \"\")\n        .toLowerCase()\n        .includes(\"takealot\")\n    )\n    .reduce(\n      (sum, w) =>\n        sum + (\n          w.warehouse_stock_on_hand ||\n          w.location_stock_on_hand ||\n          0\n        ),\n      0\n    )\n}}\n",
+                "type": "number"
+              },
+              {
+                "id": "798bd3ba-4069-4399-b48e-bae9f713d56e",
+                "name": "zoho_quantity_in_transit",
+                "value": "={{\n  (\n    $json.item.warehouses ||\n    $json.item.locations ||\n    []\n  )\n    .filter(w =>\n      (w.warehouse_name || w.location_name || \"\")\n        .toLowerCase()\n        .includes(\"takealot\")\n    )\n    .reduce(\n      (sum, w) =>\n        sum + (\n          w.warehouse_quantity_in_transit ||\n          w.location_quantity_in_transit ||\n          0\n        ),\n      0\n    )\n}}",
+                "type": "number"
+              },
+              {
+                "id": "79654d5c-a00c-4d78-9809-4b9d455d1e60",
+                "name": "count_sku",
+                "value": "={{ $('Remove uneccessary fields').item.json.count_sku }}",
+                "type": "number"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          4576,
+          -400
+        ],
+        "id": "d3a3937d-d01e-4b04-be5e-a101f2589a7c",
+        "name": "Enrich with Zoho Data"
+      },
+      {
+        "parameters": {
+          "aggregate": "aggregateAllItemData",
+          "destinationFieldName": "report_items",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.aggregate",
+        "typeVersion": 1,
+        "position": [
+          5024,
+          -400
+        ],
+        "id": "431259e8-548b-45c5-8ab6-bc4b331d7adb",
+        "name": "Aggregate"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "814d90a1-445e-4641-915c-d38bba768fd5",
+                "name": "=html_report",
+                "value": "={{\n  `\n  <html>\n    <body style=\"font-family: Arial, sans-serif;\">\n      <h2>Stock Reconciliation Report</h2>\n\n      <table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse: collapse; width: 100%;\">\n        <thead style=\"background-color: #f2f2f2;\">\n          <tr>\n            <th>SKU</th>\n            <th>Title</th>\n            <th>Takealot Total</th>\n            <th>Takealot In Transit</th>\n            <th>Zoho Stock</th>\n            <th>Zoho In Transit</th>\n            <th>Difference</th>\n          </tr>\n        </thead>\n        <tbody>\n          ${\n            $json.report_items.map(item => `\n              <tr>\n                <td>${item.sku}</td>\n                <td>${item.title}</td>\n                <td align=\"right\">${item.takealot_total}</td>\n                <td align=\"right\">${item.takealot_in_transit}</td>\n                <td align=\"right\">${item.zoho_stock_on_hand}</td>\n                <td align=\"right\">${item.zoho_quantity_in_transit}</td>\n                <td align=\"right\" style=\"font-weight: bold; color: ${\n                  (item.takealot_total + item.takealot_in_transit) -\n                  (item.zoho_stock_on_hand + item.zoho_quantity_in_transit) !== 0\n                    ? 'red'\n                    : 'green'\n                };\">\n                  ${\n                    (item.takealot_total + item.takealot_in_transit) -\n                    (item.zoho_stock_on_hand + item.zoho_quantity_in_transit)\n                  }\n                </td>\n              </tr>\n            `).join('')\n          }\n        </tbody>\n      </table>\n\n      <p style=\"margin-top: 10px; font-size: 12px; color: #666;\">\n        Generated automatically by n8n\n      </p>\n    </body>\n  </html>\n  `\n}}\n",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          5248,
+          -400
+        ],
+        "id": "1c28e71b-fb86-4f7d-b909-13939a9ac174",
+        "name": "Build HTML Table"
+      },
+      {
+        "parameters": {
+          "fromEmail": "mark@tallypro.co.za",
+          "toEmail": "mark.tallypro@gmail.com",
+          "subject": "=Takealot Stock Report - {{ $now.format('yyyy-MM-dd') }}",
+          "html": "={{ $json.html_report }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          5472,
+          -400
+        ],
+        "id": "97719db1-6be9-41a1-b7da-fe6e92a54bf7",
+        "name": "Send email",
+        "webhookId": "41ed940b-6bb0-45f9-ab44-1a1395a8474a",
+        "credentials": {
+          "smtp": {
+            "id": "3aOYVaI2vk6mfgqq",
+            "name": "SMTP account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "95142748-a3b7-4c57-bcff-ca6ffc3dd762",
+                "leftValue": "={{ $json.zoho_quantity_in_transit }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "notEquals"
+                }
+              },
+              {
+                "id": "9bfe1ad9-f272-45ab-add8-707fad2791c8",
+                "leftValue": "={{ $json.zoho_stock_on_hand }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "notEquals"
+                }
+              },
+              {
+                "id": "2c0eb767-9cd9-4300-9b57-c1a67b936d5a",
+                "leftValue": "={{ $json.takealot_total }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "notEquals"
+                }
+              },
+              {
+                "id": "24bdf52f-2576-4fe7-ac70-b80f815eae77",
+                "leftValue": "={{ $json.takealot_in_transit }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "or"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.3,
+        "position": [
+          4800,
+          -400
+        ],
+        "id": "a8e1d9c5-a6fa-44f1-8e80-aeb2916381f3",
+        "name": "Filter"
+      },
+      {
+        "parameters": {
+          "url": "https://seller-api.takealot.com/v2/shipments",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "page_size",
+                "value": "200"
+              },
+              {
+                "name": "page_number",
+                "value": "={{ $json.page_number || 1 }}"
+              },
+              {
+                "name": "filters",
+                "value": "po_state:1"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ $('Get row(s)').item.json.takealot_api_key }}"
+              }
+            ]
+          },
+          "options": {
+            "pagination": {
+              "pagination": {
+                "parameters": {
+                  "parameters": [
+                    {
+                      "name": "page_number",
+                      "value": "={{ $pageCount + 1 }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ $response.body[\"page_summary\"][\"total\"] / $response.body[\"page_summary\"][\"page_size\"] <= $pageCount }} ",
+                "limitPagesFetched": true,
+                "maxRequests": 10,
+                "requestInterval": 100
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1024,
+          -656
+        ],
+        "id": "bdb8b0c5-da68-4f7a-aa8f-b7b49f9c6bf0",
+        "name": "Get open shipments",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "shipments",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          1248,
+          -656
+        ],
+        "id": "7be5c199-ebd9-4b26-a05a-ab0ecf1a0e58",
+        "name": "Split Out1"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "823e392f-c9f5-45a2-b8e0-7d4a9bba9270",
+                "leftValue": "={{ $json.quantity.required }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1472,
+          -656
+        ],
+        "id": "638a9b20-c2a1-4ff3-a4b9-a85da41cd7d6",
+        "name": "Any leadtime orders?"
+      },
+      {
+        "parameters": {
+          "url": "=https://seller-api.takealot.com/v2/shipment/{{ $json.shipment_id }}/shipment_items",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "page_size",
+                "value": "200"
+              },
+              {
+                "name": "page_number",
+                "value": "={{ $json.page_number || 1 }}"
+              },
+              {
+                "name": "filters",
+                "value": "po_state:1"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ $('Get row(s)').item.json.takealot_api_key }}"
+              }
+            ]
+          },
+          "options": {
+            "pagination": {
+              "pagination": {
+                "parameters": {
+                  "parameters": [
+                    {
+                      "name": "page_number",
+                      "value": "={{ $pageCount + 1 }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ $response.body[\"page_summary\"][\"total\"] / $response.body[\"page_summary\"][\"page_size\"] <= $pageCount }} ",
+                "limitPagesFetched": true,
+                "maxRequests": 10,
+                "requestInterval": 100
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1696,
+          -656
+        ],
+        "id": "de13e7df-0f09-4636-9af0-74a55b8fedfe",
+        "name": "Get details",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "shipment_items",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          1920,
+          -656
+        ],
+        "id": "0183a6fd-1418-4d3f-904e-a437d853c039",
+        "name": "Split Out2"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "ac241eb5-dd75-4ce6-959e-00291dbb15fe",
+                "name": "sku",
+                "value": "={{ $json.seller_listing.seller_sku }}",
+                "type": "string"
+              },
+              {
+                "id": "fbe19877-277b-4104-ac39-db00afa3f027",
+                "name": "in_transit_leadtime",
+                "value": "={{ $json.quantity.required }}",
+                "type": "number"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2144,
+          -656
+        ],
+        "id": "ceb967b6-496c-41a7-aa40-1e84da105e39",
+        "name": "Extract leadtime qty"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "ac23222b-8a5d-499e-a4b2-37bc32c93185",
+                "leftValue": "={{ $('Get row(s)').item.json.SellerID }}",
+                "rightValue": "11932",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2592,
+          -656
+        ],
+        "id": "0ead7f2d-0571-4015-8b0b-b817f58d0d7d",
+        "name": "Is Seller = ",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "35a39843-85f9-4479-8360-1542ffb4901e",
+                "name": "sku",
+                "value": "={{ $json.sku.substring(0, 4) }}",
+                "type": "string"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2816,
+          -656
+        ],
+        "id": "66756de3-5c47-4f4a-9822-7eefce1100ad",
+        "name": "Special SKU handling1"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "fieldsToMatchString": "sku",
+          "joinMode": "enrichInput2",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          3456,
+          -496
+        ],
+        "id": "9989c458-52d2-49f6-9abd-8272e0f246fe",
+        "name": "Add in-transit leadtime"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "168209e1-84af-4ac6-88bb-010d02511b6b",
+                "name": "sum_total_stock_on_way",
+                "value": "={{ ($json.sum_total_stock_on_way || 0) + ($json.sum_in_transit_leadtime || 0) }}\n",
+                "type": "number"
+              },
+              {
+                "id": "356ddda2-21d5-4a8d-bbaf-2f362157fe62",
+                "name": "sum_stock_at_takealot_total",
+                "value": "={{ $json.sum_stock_at_takealot_total }}",
+                "type": "number"
+              },
+              {
+                "id": "6b7ad034-b77a-4b8f-ae45-5174a82f84e3",
+                "name": "count_sku",
+                "value": "={{ $json.count_sku }}",
+                "type": "number"
+              },
+              {
+                "id": "a8d7aa78-d813-4327-8972-dc5a9af1cfd7",
+                "name": "sku",
+                "value": "={{ $json.sku }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3680,
+          -496
+        ],
+        "id": "c83c7ba0-5b48-4703-aa6a-d0bce52140e9",
+        "name": "Merge leadtime quantities"
+      },
+      {
+        "parameters": {
+          "content": "Takealot does not consider \"leadtime orders in transit\" as in transit stock. So this branch adds these quantities ti in-tansit stock."
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          2288,
+          -896
+        ],
+        "typeVersion": 1,
+        "id": "1de48101-e284-4ca8-881b-f20f59074ee1",
+        "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "fieldsToSummarize": {
+            "values": [
+              {
+                "aggregation": "sum",
+                "field": "in_transit_leadtime"
+              }
+            ]
+          },
+          "fieldsToSplitBy": "sku",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.summarize",
+        "typeVersion": 1.1,
+        "position": [
+          2368,
+          -656
+        ],
+        "id": "969ca7c6-2989-4fb3-8086-d6710c01a17c",
+        "name": "Summarize multiple shipments"
+      },
+      {
+        "parameters": {
+          "url": "https://seller-api.takealot.com/v2/sales",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "page_size",
+                "value": "200"
+              },
+              {
+                "name": "page_number",
+                "value": "={{ $json.page_number || 1 }}"
+              },
+              {
+                "name": "filters",
+                "value": "=sku:{{ $json.sku }}"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ $('Get row(s)').item.json.takealot_api_key }}"
+              }
+            ]
+          },
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 100
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "off"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1024,
+          -320
+        ],
+        "id": "838d967a-6ae1-4b6a-9517-f02afd5f168c",
+        "name": "Get reservations",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "fieldsToMatchString": "tsin_id",
+          "joinMode": "keepEverything",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          2352,
+          -400
+        ],
+        "id": "d1528efe-9e3b-418d-bb2d-00d8163ecc01",
+        "name": "Merge"
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "sales",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          1248,
+          -320
+        ],
+        "id": "cca40ce5-d734-48e4-8cc3-1447b1bfaa98",
+        "name": "Split transactions"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "a6d1b470-4e9d-43bf-845e-ee0d72384d45",
+                "leftValue": "={{ $json.sale_status }}",
+                "rightValue": "Inter DC Transfer",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              },
+              {
+                "id": "f18d710a-74f0-4662-8229-ccfe8a0be673",
+                "leftValue": "={{ $json.sale_status }}",
+                "rightValue": "Preparing for Customer",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "or"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.3,
+        "position": [
+          1472,
+          -320
+        ],
+        "id": "eae1d9b8-70bf-4eee-bf3e-accdf18a208d",
+        "name": "Keep relevant transactions"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "eab74685-6fd5-4047-a187-7e08def2f3e9",
+                "name": "reserved_qty",
+                "value": "={{ $json.quantity }}",
+                "type": "number"
+              },
+              {
+                "id": "f8d6fa93-7598-49e8-98da-7faded05225b",
+                "name": "tsin_id",
+                "value": "={{ $json.tsin }}",
+                "type": "number"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1696,
+          -320
+        ],
+        "id": "55c92d08-bb96-4c9a-a390-7bedf0a8fe4b",
+        "name": "Add field"
+      },
+      {
+        "parameters": {
+          "fieldsToSummarize": {
+            "values": [
+              {
+                "aggregation": "sum",
+                "field": "reserved_qty"
+              }
+            ]
+          },
+          "fieldsToSplitBy": "tsin_id",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.summarize",
+        "typeVersion": 1.1,
+        "position": [
+          1920,
+          -320
+        ],
+        "id": "49585075-46bb-4d51-878a-2a741d79cbed",
+        "name": "Sum quantites reserved"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "0d60935d-2198-4aaa-9681-e61d5b525b75",
+                "name": "stock_at_takealot_total",
+                "value": "={{ $json.stock_at_takealot_total + ($json.sum_reserved_qty ?? 0) }}",
+                "type": "number"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2560,
+          -400
+        ],
+        "id": "b96faf3a-9092-4003-bc7a-d585b08c36dc",
+        "name": "Edit Fields"
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=URTBDeY7zZyqPSB2) to commit change ",
+          "height": 140,
+          "width": 408,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -64,
+          -592
+        ],
+        "typeVersion": 1,
+        "id": "dfa87c4c-1b66-4a1d-89fe-9a92b17c94af",
+        "name": "Sticky Note1"
+      }
+    ],
+    "connections": {
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "Get row(s)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Retrieve Stock List from Takealot": {
+        "main": [
+          [
+            {
+              "node": "Join separate pages",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Join separate pages": {
+        "main": [
+          [
+            {
+              "node": "Remove Disabled Stock",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Remove Disabled Stock": {
+        "main": [
+          [
+            {
+              "node": "Get reservations",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Zoho Access Token": {
+        "main": [
+          [
+            {
+              "node": "Get All Items",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get row(s)": {
+        "main": [
+          [
+            {
+              "node": "Retrieve Stock List from Takealot",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Get Zoho Access Token",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Get open shipments",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get All Items": {
+        "main": [
+          [
+            {
+              "node": "Split Out",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Out": {
+        "main": [
+          [
+            {
+              "node": "Combine TAL and Zoho Stock Lists",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Is Seller = 11932": {
+        "main": [
+          [
+            {
+              "node": "Special SKU handling",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Merge Multiple Listings",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Special SKU handling": {
+        "main": [
+          [
+            {
+              "node": "Merge Multiple Listings",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Remove uneccessary fields": {
+        "main": [
+          [
+            {
+              "node": "Get Zoho Item Quantities",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Multiple Listings": {
+        "main": [
+          [
+            {
+              "node": "Add in-transit leadtime",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Combine TAL and Zoho Stock Lists": {
+        "main": [
+          [
+            {
+              "node": "Remove uneccessary fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Zoho Item Quantities": {
+        "main": [
+          [
+            {
+              "node": "Enrich with Zoho Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enrich with Zoho Data": {
+        "main": [
+          [
+            {
+              "node": "Filter",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aggregate": {
+        "main": [
+          [
+            {
+              "node": "Build HTML Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build HTML Table": {
+        "main": [
+          [
+            {
+              "node": "Send email",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter": {
+        "main": [
+          [
+            {
+              "node": "Aggregate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get open shipments": {
+        "main": [
+          [
+            {
+              "node": "Split Out1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Out1": {
+        "main": [
+          [
+            {
+              "node": "Any leadtime orders?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any leadtime orders?": {
+        "main": [
+          [
+            {
+              "node": "Get details",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get details": {
+        "main": [
+          [
+            {
+              "node": "Split Out2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Out2": {
+        "main": [
+          [
+            {
+              "node": "Extract leadtime qty",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract leadtime qty": {
+        "main": [
+          [
+            {
+              "node": "Summarize multiple shipments",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Seller = ": {
+        "main": [
+          [
+            {
+              "node": "Special SKU handling1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Special SKU handling1": {
+        "main": [
+          [
+            {
+              "node": "Add in-transit leadtime",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Add in-transit leadtime": {
+        "main": [
+          [
+            {
+              "node": "Merge leadtime quantities",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge leadtime quantities": {
+        "main": [
+          [
+            {
+              "node": "Combine TAL and Zoho Stock Lists",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Summarize multiple shipments": {
+        "main": [
+          [
+            {
+              "node": "Is Seller = ",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get reservations": {
+        "main": [
+          [
+            {
+              "node": "Split transactions",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split transactions": {
+        "main": [
+          [
+            {
+              "node": "Keep relevant transactions",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Keep relevant transactions": {
+        "main": [
+          [
+            {
+              "node": "Add field",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Add field": {
+        "main": [
+          [
+            {
+              "node": "Sum quantites reserved",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sum quantites reserved": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "node": "Is Seller = 11932",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "availableInMCP": false
+    },
+    "staticData": {
+      "node:Schedule Trigger": {
+        "recurrenceRules": []
+      }
+    },
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "pinData": {
+      "Schedule Trigger": [
+        {
+          "json": {
+            "timestamp": "2026-02-24T01:00:11.005+01:00",
+            "Readable date": "February 24th 2026, 1:00:11 am",
+            "Readable time": "1:00:11 am",
+            "Day of week": "Tuesday",
+            "Year": "2026",
+            "Month": "February",
+            "Day of month": "24",
+            "Hour": "01",
+            "Minute": "00",
+            "Second": "11",
+            "Timezone": "Europe/Amsterdam (UTC+01:00)"
+          },
+          "pairedItem": {
+            "item": 0
+          }
+        }
+      ]
+    },
+    "versionId": "ae32027b-5e70-40a3-ab39-ae80ffb0f52c",
+    "activeVersionId": "ae32027b-5e70-40a3-ab39-ae80ffb0f52c",
+    "versionCounter": 93,
+    "triggerCount": 1,
+    "shared": [
+      {
+        "updatedAt": "2026-01-10T10:43:51.574Z",
+        "createdAt": "2026-01-10T10:43:51.574Z",
+        "role": "workflow:owner",
+        "workflowId": "URTBDeY7zZyqPSB2",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-24T06:25:25.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-02-23",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [],
+    "activeVersion": {
+      "updatedAt": "2026-02-24T07:12:23.000Z",
+      "createdAt": "2026-02-24T07:12:15.273Z",
+      "versionId": "ae32027b-5e70-40a3-ab39-ae80ffb0f52c",
+      "workflowId": "URTBDeY7zZyqPSB2",
+      "nodes": [
+        {
+          "parameters": {
+            "rule": {
+              "interval": [
+                {
+                  "triggerAtHour": 1
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "typeVersion": 1.3,
+          "position": [
+            -96,
+            -400
+          ],
+          "id": "bbe07665-6ce3-41a8-93c1-1c25cb3adab7",
+          "name": "Schedule Trigger"
+        },
+        {
+          "parameters": {
+            "url": "https://seller-api.takealot.com/v2/offers",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "page_size",
+                  "value": "100"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "={{ $('Get row(s)').item.json.takealot_api_key }}"
+                }
+              ]
+            },
+            "options": {
+              "pagination": {
+                "pagination": {
+                  "parameters": {
+                    "parameters": [
+                      {
+                        "name": "page_number",
+                        "value": "={{ $pageCount + 1 }}"
+                      }
+                    ]
+                  },
+                  "paginationCompleteWhen": "other",
+                  "completeExpression": "={{ $response.body[\"total_results\"] / $response.body[\"page_size\"] <= $pageCount }} ",
+                  "limitPagesFetched": true,
+                  "maxRequests": 10,
+                  "requestInterval": 100
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            352,
+            -400
+          ],
+          "id": "dbdf90b8-d90a-4a85-b15c-79db31b00d31",
+          "name": "Retrieve Stock List from Takealot",
+          "alwaysOutputData": true
+        },
+        {
+          "parameters": {
+            "fieldToSplitOut": "offers",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.splitOut",
+          "typeVersion": 1,
+          "position": [
+            576,
+            -400
+          ],
+          "id": "40868e0a-c68c-4c06-ba87-2a69b21c9491",
+          "name": "Join separate pages"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "c1fa72a0-2fd1-4070-a108-1a785f264af0",
+                  "leftValue": "={{ $json.status }}",
+                  "rightValue": "Buyable",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                },
+                {
+                  "id": "9fe1f6ea-c4eb-4565-93be-977ac284c73f",
+                  "leftValue": "={{ $json.status }}",
+                  "rightValue": "Not Buyable",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "or"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.filter",
+          "typeVersion": 2.3,
+          "position": [
+            800,
+            -400
+          ],
+          "id": "5adc82e2-097e-4653-8a5a-ade45ae9548d",
+          "name": "Remove Disabled Stock",
+          "alwaysOutputData": true
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "https://accounts.zoho.com/oauth/v2/token",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "refresh_token",
+                  "value": "={{ $json.refresh_token }}"
+                },
+                {
+                  "name": "client_id",
+                  "value": "={{ $json.client_id }}"
+                },
+                {
+                  "name": "client_secret",
+                  "value": "={{ $json.client_secret }}"
+                },
+                {
+                  "name": "redirect_uri",
+                  "value": "={{ $json.redirect_uri }}"
+                },
+                {
+                  "name": "grant_type",
+                  "value": "refresh_token"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1408,
+            -32
+          ],
+          "id": "4d6eeecb-ca45-4596-b8be-8d97b24b488e",
+          "name": "Get Zoho Access Token"
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "dataTableId": {
+              "__rl": true,
+              "value": "P2idoCVDSQnCITNY",
+              "mode": "list",
+              "cachedResultName": "zoho_info",
+              "cachedResultUrl": "/projects/A2rkQg960Oa5Tvrh/datatables/P2idoCVDSQnCITNY"
+            },
+            "filters": {
+              "conditions": [
+                {
+                  "keyName": "SellerID",
+                  "keyValue": "=11932"
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.dataTable",
+          "typeVersion": 1.1,
+          "position": [
+            128,
+            -400
+          ],
+          "id": "a4e5cc7d-1284-4774-b13a-1fd497800e08",
+          "name": "Get row(s)"
+        },
+        {
+          "parameters": {
+            "fieldToSplitOut": "items",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.splitOut",
+          "typeVersion": 1,
+          "position": [
+            1856,
+            -32
+          ],
+          "id": "a23e643c-15ef-417c-84cb-d06683fa4365",
+          "name": "Split Out"
+        },
+        {
+          "parameters": {
+            "url": "https://www.zohoapis.com/books/v3/items",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {
+              "pagination": {
+                "pagination": {
+                  "parameters": {
+                    "parameters": [
+                      {
+                        "name": "page",
+                        "value": "={{ $pageCount + 1 }}"
+                      }
+                    ]
+                  },
+                  "paginationCompleteWhen": "other",
+                  "completeExpression": "={{ !$response.body[\"page_context\"][\"has_more_page\"]}}",
+                  "limitPagesFetched": true,
+                  "maxRequests": 2,
+                  "requestInterval": 1
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1632,
+            -32
+          ],
+          "id": "836a3b7f-e3fe-4bc0-8eab-3136d842b5b9",
+          "name": "Get All Items"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "ac23222b-8a5d-499e-a4b2-37bc32c93185",
+                  "leftValue": "={{ $('Get row(s)').item.json.SellerID }}",
+                  "rightValue": "11932",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            2784,
+            -400
+          ],
+          "id": "099a2b29-e0b0-40eb-a7b1-078f2854e35e",
+          "name": "Is Seller = 11932"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "35a39843-85f9-4479-8360-1542ffb4901e",
+                  "name": "sku",
+                  "value": "={{ $json.sku.substring(0, 4) }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "includeOtherFields": true,
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            3008,
+            -464
+          ],
+          "id": "496e0db2-e8fc-4466-ae18-488a2ffa67da",
+          "name": "Special SKU handling"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "de983260-f462-4306-b44a-117183d70ad1",
+                  "name": "item_id",
+                  "value": "={{ $json.item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "756a0b31-d065-484e-99ef-770eacb03cee",
+                  "name": "sku",
+                  "value": "={{ $json.sku }}",
+                  "type": "string"
+                },
+                {
+                  "id": "7d42290d-883d-432c-ac0b-5ef8834615c5",
+                  "name": "title",
+                  "value": "={{ $json.name }}",
+                  "type": "string"
+                },
+                {
+                  "id": "513d661c-9b5a-4771-80d2-df926e7bf73d",
+                  "name": "takealot_in_transit",
+                  "value": "={{ $json.sum_total_stock_on_way }}",
+                  "type": "number"
+                },
+                {
+                  "id": "4e736cfc-b472-4cb8-bab5-03b293e07864",
+                  "name": "takealot_total",
+                  "value": "={{ $json.sum_stock_at_takealot_total }}",
+                  "type": "number"
+                },
+                {
+                  "id": "b3dc03e1-60a5-4adc-a9d7-0c7e8aed0dd5",
+                  "name": "count_sku",
+                  "value": "={{ $('Merge Multiple Listings').item.json.count_sku }}",
+                  "type": "number"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            4128,
+            -400
+          ],
+          "id": "2c00bea8-09c4-4bbc-98ed-38c41cb319fd",
+          "name": "Remove uneccessary fields"
+        },
+        {
+          "parameters": {
+            "fieldsToSummarize": {
+              "values": [
+                {
+                  "aggregation": "sum",
+                  "field": "total_stock_on_way"
+                },
+                {
+                  "aggregation": "sum",
+                  "field": "stock_at_takealot_total"
+                },
+                {
+                  "field": "sku"
+                }
+              ]
+            },
+            "fieldsToSplitBy": "sku",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.summarize",
+          "typeVersion": 1.1,
+          "position": [
+            3232,
+            -400
+          ],
+          "id": "a7ca9d4f-5fca-4e38-a2de-6dfe93965e79",
+          "name": "Merge Multiple Listings"
+        },
+        {
+          "parameters": {
+            "mode": "combine",
+            "fieldsToMatchString": "sku",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.merge",
+          "typeVersion": 3.2,
+          "position": [
+            3904,
+            -400
+          ],
+          "id": "31e33875-44a4-45f0-bd0d-a26637256379",
+          "name": "Combine TAL and Zoho Stock Lists"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.zohoapis.com/books/v3/items/{{ $json.item_id }}",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "organization_id",
+                  "value": "={{ $('Get row(s)').item.json.OrganizationID }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "=Zoho-oauthtoken {{ $('Get Zoho Access Token').item.json.access_token }}"
+                }
+              ]
+            },
+            "options": {
+              "batching": {
+                "batch": {
+                  "batchSize": 1,
+                  "batchInterval": 500
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            4352,
+            -400
+          ],
+          "id": "7f34c1b4-3178-47fe-a8f9-bf3f4af5b753",
+          "name": "Get Zoho Item Quantities"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "0c291e90-77ac-44c4-afc5-6b8462d1a934",
+                  "name": "item_id",
+                  "value": "={{ $('Remove uneccessary fields').item.json.item_id }}",
+                  "type": "string"
+                },
+                {
+                  "id": "81a2b849-9f30-4ab2-a0d5-c6a24389903e",
+                  "name": "sku",
+                  "value": "={{ $('Remove uneccessary fields').item.json.sku }}",
+                  "type": "string"
+                },
+                {
+                  "id": "361f4163-67b1-4b5c-9a69-f7c26b734dc8",
+                  "name": "title",
+                  "value": "={{ $('Remove uneccessary fields').item.json.title }}",
+                  "type": "string"
+                },
+                {
+                  "id": "6a233b03-0a1a-4c87-85e3-e1d80e6346ae",
+                  "name": "takealot_in_transit",
+                  "value": "={{ $('Remove uneccessary fields').item.json.takealot_in_transit }}",
+                  "type": "number"
+                },
+                {
+                  "id": "988f14fa-b705-4fe9-9e3c-8d36ed5b6642",
+                  "name": "takealot_total",
+                  "value": "={{ $('Remove uneccessary fields').item.json.takealot_total }}",
+                  "type": "number"
+                },
+                {
+                  "id": "a0a18fd6-e913-4ab4-b685-a405e4b6c8ab",
+                  "name": "zoho_stock_on_hand",
+                  "value": "={{\n  (\n    $json.item.warehouses ||\n    $json.item.locations ||\n    []\n  )\n    .filter(w =>\n      (w.warehouse_name || w.location_name || \"\")\n        .toLowerCase()\n        .includes(\"takealot\")\n    )\n    .reduce(\n      (sum, w) =>\n        sum + (\n          w.warehouse_stock_on_hand ||\n          w.location_stock_on_hand ||\n          0\n        ),\n      0\n    )\n}}\n",
+                  "type": "number"
+                },
+                {
+                  "id": "798bd3ba-4069-4399-b48e-bae9f713d56e",
+                  "name": "zoho_quantity_in_transit",
+                  "value": "={{\n  (\n    $json.item.warehouses ||\n    $json.item.locations ||\n    []\n  )\n    .filter(w =>\n      (w.warehouse_name || w.location_name || \"\")\n        .toLowerCase()\n        .includes(\"takealot\")\n    )\n    .reduce(\n      (sum, w) =>\n        sum + (\n          w.warehouse_quantity_in_transit ||\n          w.location_quantity_in_transit ||\n          0\n        ),\n      0\n    )\n}}",
+                  "type": "number"
+                },
+                {
+                  "id": "79654d5c-a00c-4d78-9809-4b9d455d1e60",
+                  "name": "count_sku",
+                  "value": "={{ $('Remove uneccessary fields').item.json.count_sku }}",
+                  "type": "number"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            4576,
+            -400
+          ],
+          "id": "d3a3937d-d01e-4b04-be5e-a101f2589a7c",
+          "name": "Enrich with Zoho Data"
+        },
+        {
+          "parameters": {
+            "aggregate": "aggregateAllItemData",
+            "destinationFieldName": "report_items",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.aggregate",
+          "typeVersion": 1,
+          "position": [
+            5024,
+            -400
+          ],
+          "id": "431259e8-548b-45c5-8ab6-bc4b331d7adb",
+          "name": "Aggregate"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "814d90a1-445e-4641-915c-d38bba768fd5",
+                  "name": "=html_report",
+                  "value": "={{\n  `\n  <html>\n    <body style=\"font-family: Arial, sans-serif;\">\n      <h2>Stock Reconciliation Report</h2>\n\n      <table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse: collapse; width: 100%;\">\n        <thead style=\"background-color: #f2f2f2;\">\n          <tr>\n            <th>SKU</th>\n            <th>Title</th>\n            <th>Takealot Total</th>\n            <th>Takealot In Transit</th>\n            <th>Zoho Stock</th>\n            <th>Zoho In Transit</th>\n            <th>Difference</th>\n          </tr>\n        </thead>\n        <tbody>\n          ${\n            $json.report_items.map(item => `\n              <tr>\n                <td>${item.sku}</td>\n                <td>${item.title}</td>\n                <td align=\"right\">${item.takealot_total}</td>\n                <td align=\"right\">${item.takealot_in_transit}</td>\n                <td align=\"right\">${item.zoho_stock_on_hand}</td>\n                <td align=\"right\">${item.zoho_quantity_in_transit}</td>\n                <td align=\"right\" style=\"font-weight: bold; color: ${\n                  (item.takealot_total + item.takealot_in_transit) -\n                  (item.zoho_stock_on_hand + item.zoho_quantity_in_transit) !== 0\n                    ? 'red'\n                    : 'green'\n                };\">\n                  ${\n                    (item.takealot_total + item.takealot_in_transit) -\n                    (item.zoho_stock_on_hand + item.zoho_quantity_in_transit)\n                  }\n                </td>\n              </tr>\n            `).join('')\n          }\n        </tbody>\n      </table>\n\n      <p style=\"margin-top: 10px; font-size: 12px; color: #666;\">\n        Generated automatically by n8n\n      </p>\n    </body>\n  </html>\n  `\n}}\n",
+                  "type": "string"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            5248,
+            -400
+          ],
+          "id": "1c28e71b-fb86-4f7d-b909-13939a9ac174",
+          "name": "Build HTML Table"
+        },
+        {
+          "parameters": {
+            "fromEmail": "mark@tallypro.co.za",
+            "toEmail": "mark.tallypro@gmail.com",
+            "subject": "=Takealot Stock Report - {{ $now.format('yyyy-MM-dd') }}",
+            "html": "={{ $json.html_report }}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.emailSend",
+          "typeVersion": 2.1,
+          "position": [
+            5472,
+            -400
+          ],
+          "id": "97719db1-6be9-41a1-b7da-fe6e92a54bf7",
+          "name": "Send email",
+          "webhookId": "41ed940b-6bb0-45f9-ab44-1a1395a8474a",
+          "credentials": {
+            "smtp": {
+              "id": "3aOYVaI2vk6mfgqq",
+              "name": "SMTP account"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "95142748-a3b7-4c57-bcff-ca6ffc3dd762",
+                  "leftValue": "={{ $json.zoho_quantity_in_transit }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "notEquals"
+                  }
+                },
+                {
+                  "id": "9bfe1ad9-f272-45ab-add8-707fad2791c8",
+                  "leftValue": "={{ $json.zoho_stock_on_hand }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "notEquals"
+                  }
+                },
+                {
+                  "id": "2c0eb767-9cd9-4300-9b57-c1a67b936d5a",
+                  "leftValue": "={{ $json.takealot_total }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "notEquals"
+                  }
+                },
+                {
+                  "id": "24bdf52f-2576-4fe7-ac70-b80f815eae77",
+                  "leftValue": "={{ $json.takealot_in_transit }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "notEquals"
+                  }
+                }
+              ],
+              "combinator": "or"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.filter",
+          "typeVersion": 2.3,
+          "position": [
+            4800,
+            -400
+          ],
+          "id": "a8e1d9c5-a6fa-44f1-8e80-aeb2916381f3",
+          "name": "Filter"
+        },
+        {
+          "parameters": {
+            "url": "https://seller-api.takealot.com/v2/shipments",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "page_size",
+                  "value": "200"
+                },
+                {
+                  "name": "page_number",
+                  "value": "={{ $json.page_number || 1 }}"
+                },
+                {
+                  "name": "filters",
+                  "value": "po_state:1"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "={{ $('Get row(s)').item.json.takealot_api_key }}"
+                }
+              ]
+            },
+            "options": {
+              "pagination": {
+                "pagination": {
+                  "parameters": {
+                    "parameters": [
+                      {
+                        "name": "page_number",
+                        "value": "={{ $pageCount + 1 }}"
+                      }
+                    ]
+                  },
+                  "paginationCompleteWhen": "other",
+                  "completeExpression": "={{ $response.body[\"page_summary\"][\"total\"] / $response.body[\"page_summary\"][\"page_size\"] <= $pageCount }} ",
+                  "limitPagesFetched": true,
+                  "maxRequests": 10,
+                  "requestInterval": 100
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1024,
+            -656
+          ],
+          "id": "bdb8b0c5-da68-4f7a-aa8f-b7b49f9c6bf0",
+          "name": "Get open shipments",
+          "alwaysOutputData": true
+        },
+        {
+          "parameters": {
+            "fieldToSplitOut": "shipments",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.splitOut",
+          "typeVersion": 1,
+          "position": [
+            1248,
+            -656
+          ],
+          "id": "7be5c199-ebd9-4b26-a05a-ab0ecf1a0e58",
+          "name": "Split Out1"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "823e392f-c9f5-45a2-b8e0-7d4a9bba9270",
+                  "leftValue": "={{ $json.quantity.required }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "notEquals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            1472,
+            -656
+          ],
+          "id": "638a9b20-c2a1-4ff3-a4b9-a85da41cd7d6",
+          "name": "Any leadtime orders?"
+        },
+        {
+          "parameters": {
+            "url": "=https://seller-api.takealot.com/v2/shipment/{{ $json.shipment_id }}/shipment_items",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "page_size",
+                  "value": "200"
+                },
+                {
+                  "name": "page_number",
+                  "value": "={{ $json.page_number || 1 }}"
+                },
+                {
+                  "name": "filters",
+                  "value": "po_state:1"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "={{ $('Get row(s)').item.json.takealot_api_key }}"
+                }
+              ]
+            },
+            "options": {
+              "pagination": {
+                "pagination": {
+                  "parameters": {
+                    "parameters": [
+                      {
+                        "name": "page_number",
+                        "value": "={{ $pageCount + 1 }}"
+                      }
+                    ]
+                  },
+                  "paginationCompleteWhen": "other",
+                  "completeExpression": "={{ $response.body[\"page_summary\"][\"total\"] / $response.body[\"page_summary\"][\"page_size\"] <= $pageCount }} ",
+                  "limitPagesFetched": true,
+                  "maxRequests": 10,
+                  "requestInterval": 100
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1696,
+            -656
+          ],
+          "id": "de13e7df-0f09-4636-9af0-74a55b8fedfe",
+          "name": "Get details",
+          "alwaysOutputData": true
+        },
+        {
+          "parameters": {
+            "fieldToSplitOut": "shipment_items",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.splitOut",
+          "typeVersion": 1,
+          "position": [
+            1920,
+            -656
+          ],
+          "id": "0183a6fd-1418-4d3f-904e-a437d853c039",
+          "name": "Split Out2"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "ac241eb5-dd75-4ce6-959e-00291dbb15fe",
+                  "name": "sku",
+                  "value": "={{ $json.seller_listing.seller_sku }}",
+                  "type": "string"
+                },
+                {
+                  "id": "fbe19877-277b-4104-ac39-db00afa3f027",
+                  "name": "in_transit_leadtime",
+                  "value": "={{ $json.quantity.required }}",
+                  "type": "number"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            2144,
+            -656
+          ],
+          "id": "ceb967b6-496c-41a7-aa40-1e84da105e39",
+          "name": "Extract leadtime qty"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "ac23222b-8a5d-499e-a4b2-37bc32c93185",
+                  "leftValue": "={{ $('Get row(s)').item.json.SellerID }}",
+                  "rightValue": "11932",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            2592,
+            -656
+          ],
+          "id": "0ead7f2d-0571-4015-8b0b-b817f58d0d7d",
+          "name": "Is Seller = ",
+          "alwaysOutputData": true
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "35a39843-85f9-4479-8360-1542ffb4901e",
+                  "name": "sku",
+                  "value": "={{ $json.sku.substring(0, 4) }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "includeOtherFields": true,
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            2816,
+            -656
+          ],
+          "id": "66756de3-5c47-4f4a-9822-7eefce1100ad",
+          "name": "Special SKU handling1"
+        },
+        {
+          "parameters": {
+            "mode": "combine",
+            "fieldsToMatchString": "sku",
+            "joinMode": "enrichInput2",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.merge",
+          "typeVersion": 3.2,
+          "position": [
+            3456,
+            -496
+          ],
+          "id": "9989c458-52d2-49f6-9abd-8272e0f246fe",
+          "name": "Add in-transit leadtime"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "168209e1-84af-4ac6-88bb-010d02511b6b",
+                  "name": "sum_total_stock_on_way",
+                  "value": "={{ ($json.sum_total_stock_on_way || 0) + ($json.sum_in_transit_leadtime || 0) }}\n",
+                  "type": "number"
+                },
+                {
+                  "id": "356ddda2-21d5-4a8d-bbaf-2f362157fe62",
+                  "name": "sum_stock_at_takealot_total",
+                  "value": "={{ $json.sum_stock_at_takealot_total }}",
+                  "type": "number"
+                },
+                {
+                  "id": "6b7ad034-b77a-4b8f-ae45-5174a82f84e3",
+                  "name": "count_sku",
+                  "value": "={{ $json.count_sku }}",
+                  "type": "number"
+                },
+                {
+                  "id": "a8d7aa78-d813-4327-8972-dc5a9af1cfd7",
+                  "name": "sku",
+                  "value": "={{ $json.sku }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            3680,
+            -496
+          ],
+          "id": "c83c7ba0-5b48-4703-aa6a-d0bce52140e9",
+          "name": "Merge leadtime quantities"
+        },
+        {
+          "parameters": {
+            "content": "Takealot does not consider \"leadtime orders in transit\" as in transit stock. So this branch adds these quantities ti in-tansit stock."
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            2288,
+            -896
+          ],
+          "typeVersion": 1,
+          "id": "1de48101-e284-4ca8-881b-f20f59074ee1",
+          "name": "Sticky Note"
+        },
+        {
+          "parameters": {
+            "fieldsToSummarize": {
+              "values": [
+                {
+                  "aggregation": "sum",
+                  "field": "in_transit_leadtime"
+                }
+              ]
+            },
+            "fieldsToSplitBy": "sku",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.summarize",
+          "typeVersion": 1.1,
+          "position": [
+            2368,
+            -656
+          ],
+          "id": "969ca7c6-2989-4fb3-8086-d6710c01a17c",
+          "name": "Summarize multiple shipments"
+        },
+        {
+          "parameters": {
+            "url": "https://seller-api.takealot.com/v2/sales",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "page_size",
+                  "value": "200"
+                },
+                {
+                  "name": "page_number",
+                  "value": "={{ $json.page_number || 1 }}"
+                },
+                {
+                  "name": "filters",
+                  "value": "=sku:{{ $json.sku }}"
+                }
+              ]
+            },
+            "sendHeaders": true,
+            "headerParameters": {
+              "parameters": [
+                {
+                  "name": "Authorization",
+                  "value": "={{ $('Get row(s)').item.json.takealot_api_key }}"
+                }
+              ]
+            },
+            "options": {
+              "batching": {
+                "batch": {
+                  "batchSize": 1,
+                  "batchInterval": 100
+                }
+              },
+              "pagination": {
+                "pagination": {
+                  "paginationMode": "off"
+                }
+              }
+            }
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.3,
+          "position": [
+            1024,
+            -320
+          ],
+          "id": "838d967a-6ae1-4b6a-9517-f02afd5f168c",
+          "name": "Get reservations",
+          "alwaysOutputData": true
+        },
+        {
+          "parameters": {
+            "mode": "combine",
+            "fieldsToMatchString": "tsin_id",
+            "joinMode": "keepEverything",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.merge",
+          "typeVersion": 3.2,
+          "position": [
+            2352,
+            -400
+          ],
+          "id": "d1528efe-9e3b-418d-bb2d-00d8163ecc01",
+          "name": "Merge"
+        },
+        {
+          "parameters": {
+            "fieldToSplitOut": "sales",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.splitOut",
+          "typeVersion": 1,
+          "position": [
+            1248,
+            -320
+          ],
+          "id": "cca40ce5-d734-48e4-8cc3-1447b1bfaa98",
+          "name": "Split transactions"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "a6d1b470-4e9d-43bf-845e-ee0d72384d45",
+                  "leftValue": "={{ $json.sale_status }}",
+                  "rightValue": "Inter DC Transfer",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                },
+                {
+                  "id": "f18d710a-74f0-4662-8229-ccfe8a0be673",
+                  "leftValue": "={{ $json.sale_status }}",
+                  "rightValue": "Preparing for Customer",
+                  "operator": {
+                    "type": "string",
+                    "operation": "equals"
+                  }
+                }
+              ],
+              "combinator": "or"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.filter",
+          "typeVersion": 2.3,
+          "position": [
+            1472,
+            -320
+          ],
+          "id": "eae1d9b8-70bf-4eee-bf3e-accdf18a208d",
+          "name": "Keep relevant transactions"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "eab74685-6fd5-4047-a187-7e08def2f3e9",
+                  "name": "reserved_qty",
+                  "value": "={{ $json.quantity }}",
+                  "type": "number"
+                },
+                {
+                  "id": "f8d6fa93-7598-49e8-98da-7faded05225b",
+                  "name": "tsin_id",
+                  "value": "={{ $json.tsin }}",
+                  "type": "number"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            1696,
+            -320
+          ],
+          "id": "55c92d08-bb96-4c9a-a390-7bedf0a8fe4b",
+          "name": "Add field"
+        },
+        {
+          "parameters": {
+            "fieldsToSummarize": {
+              "values": [
+                {
+                  "aggregation": "sum",
+                  "field": "reserved_qty"
+                }
+              ]
+            },
+            "fieldsToSplitBy": "tsin_id",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.summarize",
+          "typeVersion": 1.1,
+          "position": [
+            1920,
+            -320
+          ],
+          "id": "49585075-46bb-4d51-878a-2a741d79cbed",
+          "name": "Sum quantites reserved"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "0d60935d-2198-4aaa-9681-e61d5b525b75",
+                  "name": "stock_at_takealot_total",
+                  "value": "={{ $json.stock_at_takealot_total + ($json.sum_reserved_qty ?? 0) }}",
+                  "type": "number"
+                }
+              ]
+            },
+            "includeOtherFields": true,
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            2560,
+            -400
+          ],
+          "id": "b96faf3a-9092-4003-bc7a-d585b08c36dc",
+          "name": "Edit Fields"
+        },
+        {
+          "parameters": {
+            "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=URTBDeY7zZyqPSB2) to commit change ",
+            "height": 140,
+            "width": 408,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            -64,
+            -592
+          ],
+          "typeVersion": 1,
+          "id": "dfa87c4c-1b66-4a1d-89fe-9a92b17c94af",
+          "name": "Sticky Note1"
+        }
+      ],
+      "connections": {
+        "Schedule Trigger": {
+          "main": [
+            [
+              {
+                "node": "Get row(s)",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Retrieve Stock List from Takealot": {
+          "main": [
+            [
+              {
+                "node": "Join separate pages",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Join separate pages": {
+          "main": [
+            [
+              {
+                "node": "Remove Disabled Stock",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Remove Disabled Stock": {
+          "main": [
+            [
+              {
+                "node": "Get reservations",
+                "type": "main",
+                "index": 0
+              },
+              {
+                "node": "Merge",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Zoho Access Token": {
+          "main": [
+            [
+              {
+                "node": "Get All Items",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get row(s)": {
+          "main": [
+            [
+              {
+                "node": "Retrieve Stock List from Takealot",
+                "type": "main",
+                "index": 0
+              },
+              {
+                "node": "Get Zoho Access Token",
+                "type": "main",
+                "index": 0
+              },
+              {
+                "node": "Get open shipments",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get All Items": {
+          "main": [
+            [
+              {
+                "node": "Split Out",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Split Out": {
+          "main": [
+            [
+              {
+                "node": "Combine TAL and Zoho Stock Lists",
+                "type": "main",
+                "index": 1
+              }
+            ]
+          ]
+        },
+        "Is Seller = 11932": {
+          "main": [
+            [
+              {
+                "node": "Special SKU handling",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Merge Multiple Listings",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Special SKU handling": {
+          "main": [
+            [
+              {
+                "node": "Merge Multiple Listings",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Remove uneccessary fields": {
+          "main": [
+            [
+              {
+                "node": "Get Zoho Item Quantities",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Merge Multiple Listings": {
+          "main": [
+            [
+              {
+                "node": "Add in-transit leadtime",
+                "type": "main",
+                "index": 1
+              }
+            ]
+          ]
+        },
+        "Combine TAL and Zoho Stock Lists": {
+          "main": [
+            [
+              {
+                "node": "Remove uneccessary fields",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Zoho Item Quantities": {
+          "main": [
+            [
+              {
+                "node": "Enrich with Zoho Data",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Enrich with Zoho Data": {
+          "main": [
+            [
+              {
+                "node": "Filter",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Aggregate": {
+          "main": [
+            [
+              {
+                "node": "Build HTML Table",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Build HTML Table": {
+          "main": [
+            [
+              {
+                "node": "Send email",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Filter": {
+          "main": [
+            [
+              {
+                "node": "Aggregate",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get open shipments": {
+          "main": [
+            [
+              {
+                "node": "Split Out1",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Split Out1": {
+          "main": [
+            [
+              {
+                "node": "Any leadtime orders?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Any leadtime orders?": {
+          "main": [
+            [
+              {
+                "node": "Get details",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get details": {
+          "main": [
+            [
+              {
+                "node": "Split Out2",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Split Out2": {
+          "main": [
+            [
+              {
+                "node": "Extract leadtime qty",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Extract leadtime qty": {
+          "main": [
+            [
+              {
+                "node": "Summarize multiple shipments",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Is Seller = ": {
+          "main": [
+            [
+              {
+                "node": "Special SKU handling1",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            []
+          ]
+        },
+        "Special SKU handling1": {
+          "main": [
+            [
+              {
+                "node": "Add in-transit leadtime",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Add in-transit leadtime": {
+          "main": [
+            [
+              {
+                "node": "Merge leadtime quantities",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Merge leadtime quantities": {
+          "main": [
+            [
+              {
+                "node": "Combine TAL and Zoho Stock Lists",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Summarize multiple shipments": {
+          "main": [
+            [
+              {
+                "node": "Is Seller = ",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get reservations": {
+          "main": [
+            [
+              {
+                "node": "Split transactions",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Merge": {
+          "main": [
+            [
+              {
+                "node": "Edit Fields",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Split transactions": {
+          "main": [
+            [
+              {
+                "node": "Keep relevant transactions",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Keep relevant transactions": {
+          "main": [
+            [
+              {
+                "node": "Add field",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Add field": {
+          "main": [
+            [
+              {
+                "node": "Sum quantites reserved",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Sum quantites reserved": {
+          "main": [
+            [
+              {
+                "node": "Merge",
+                "type": "main",
+                "index": 1
+              }
+            ]
+          ]
+        },
+        "Edit Fields": {
+          "main": [
+            [
+              {
+                "node": "Is Seller = 11932",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version ae32027b",
+      "description": "",
+      "autosaved": true,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-24T07:12:23.327Z",
+          "id": 108,
+          "workflowId": "URTBDeY7zZyqPSB2",
+          "versionId": "ae32027b-5e70-40a3-ab39-ae80ffb0f52c",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
