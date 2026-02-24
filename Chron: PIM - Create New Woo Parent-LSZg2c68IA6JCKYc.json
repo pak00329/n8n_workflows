@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-24T12:53:37.691Z",
+    "updatedAt": "2026-02-24T14:05:51.188Z",
     "createdAt": "2026-02-23T11:54:52.469Z",
     "id": "LSZg2c68IA6JCKYc",
     "name": "Chron: PIM - Create New Woo Parent",
@@ -12,15 +12,19 @@
         "parameters": {
           "rule": {
             "interval": [
-              {}
+              {
+                "field": "hours",
+                "hoursInterval": 4,
+                "triggerAtMinute": 15
+              }
             ]
           }
         },
         "type": "n8n-nodes-base.scheduleTrigger",
         "typeVersion": 1.3,
         "position": [
-          -160,
-          -496
+          -192,
+          -288
         ],
         "id": "6400ef42-7a4c-4e10-9990-480a11fe229e",
         "name": "Schedule Trigger"
@@ -53,8 +57,8 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          1392,
-          -512
+          1360,
+          -304
         ],
         "id": "2a7ba5d7-b469-45a3-9b3e-a2e6d24d1d27",
         "name": "SKU already exists"
@@ -69,8 +73,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          1200,
-          -512
+          1168,
+          -304
         ],
         "id": "17bc34d4-1150-41da-9255-395808f736e8",
         "name": "Check for existing",
@@ -107,8 +111,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          64,
-          -496
+          32,
+          -288
         ],
         "id": "a6cf3c76-a2da-444d-b4f8-6959c35c3318",
         "name": "Get all Parents",
@@ -136,8 +140,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          512,
-          -496
+          480,
+          -288
         ],
         "id": "cb8cb657-4c70-4a3c-b078-6dc1f3382690",
         "name": "Get pending Woo listings",
@@ -171,8 +175,8 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          736,
-          -496
+          704,
+          -288
         ],
         "id": "1ef20a56-6917-47a7-b9e9-661b340f2df8",
         "name": "Is a parent?",
@@ -336,8 +340,8 @@
         },
         "type": "n8n-nodes-base.stickyNote",
         "position": [
-          0,
-          -608
+          -32,
+          -400
         ],
         "typeVersion": 1,
         "id": "2714eeb9-f4c5-4baf-9e5b-5c4158b152aa",
@@ -357,8 +361,8 @@
         "type": "n8n-nodes-base.aggregate",
         "typeVersion": 1,
         "position": [
-          288,
-          -496
+          256,
+          -288
         ],
         "id": "67fc9051-2080-4184-93ce-e32c2880974e",
         "name": "Extract parent sku list",
@@ -371,8 +375,8 @@
         "type": "n8n-nodes-base.splitInBatches",
         "typeVersion": 3,
         "position": [
-          976,
-          -512
+          944,
+          -304
         ],
         "id": "83aaafaa-9501-47ee-8835-1645bd351575",
         "name": "Loop Over Items"
@@ -850,8 +854,8 @@
         },
         "type": "n8n-nodes-base.stickyNote",
         "position": [
-          -448,
-          -672
+          -480,
+          -464
         ],
         "typeVersion": 1,
         "id": "a8f9ffbb-e20c-4ddf-92f8-534d6f99c5db",
@@ -1196,6 +1200,28 @@
             }
           ]
         ]
+      },
+      "Set status to error": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Items",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update channel status": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Items",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "settings": {
@@ -1210,9 +1236,9 @@
     },
     "meta": null,
     "pinData": {},
-    "versionId": "5a99304a-5d0c-46bb-b627-66386cd5f198",
-    "activeVersionId": "5a99304a-5d0c-46bb-b627-66386cd5f198",
-    "versionCounter": 437,
+    "versionId": "33f0ede2-838f-49cb-ab48-b18c54a8198b",
+    "activeVersionId": "33f0ede2-838f-49cb-ab48-b18c54a8198b",
+    "versionCounter": 450,
     "triggerCount": 1,
     "shared": [
       {
@@ -1278,24 +1304,28 @@
       }
     ],
     "activeVersion": {
-      "updatedAt": "2026-02-24T12:53:41.000Z",
-      "createdAt": "2026-02-24T12:53:37.694Z",
-      "versionId": "5a99304a-5d0c-46bb-b627-66386cd5f198",
+      "updatedAt": "2026-02-24T14:06:06.000Z",
+      "createdAt": "2026-02-24T14:05:51.190Z",
+      "versionId": "33f0ede2-838f-49cb-ab48-b18c54a8198b",
       "workflowId": "LSZg2c68IA6JCKYc",
       "nodes": [
         {
           "parameters": {
             "rule": {
               "interval": [
-                {}
+                {
+                  "field": "hours",
+                  "hoursInterval": 4,
+                  "triggerAtMinute": 15
+                }
               ]
             }
           },
           "type": "n8n-nodes-base.scheduleTrigger",
           "typeVersion": 1.3,
           "position": [
-            -160,
-            -496
+            -192,
+            -288
           ],
           "id": "6400ef42-7a4c-4e10-9990-480a11fe229e",
           "name": "Schedule Trigger"
@@ -1328,8 +1358,8 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            1392,
-            -512
+            1360,
+            -304
           ],
           "id": "2a7ba5d7-b469-45a3-9b3e-a2e6d24d1d27",
           "name": "SKU already exists"
@@ -1344,8 +1374,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.4,
           "position": [
-            1200,
-            -512
+            1168,
+            -304
           ],
           "id": "17bc34d4-1150-41da-9255-395808f736e8",
           "name": "Check for existing",
@@ -1382,8 +1412,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.4,
           "position": [
-            64,
-            -496
+            32,
+            -288
           ],
           "id": "a6cf3c76-a2da-444d-b4f8-6959c35c3318",
           "name": "Get all Parents",
@@ -1411,8 +1441,8 @@
           "type": "n8n-nodes-base.httpRequest",
           "typeVersion": 4.4,
           "position": [
-            512,
-            -496
+            480,
+            -288
           ],
           "id": "cb8cb657-4c70-4a3c-b078-6dc1f3382690",
           "name": "Get pending Woo listings",
@@ -1446,8 +1476,8 @@
           "type": "n8n-nodes-base.if",
           "typeVersion": 2.3,
           "position": [
-            736,
-            -496
+            704,
+            -288
           ],
           "id": "1ef20a56-6917-47a7-b9e9-661b340f2df8",
           "name": "Is a parent?",
@@ -1611,8 +1641,8 @@
           },
           "type": "n8n-nodes-base.stickyNote",
           "position": [
-            0,
-            -608
+            -32,
+            -400
           ],
           "typeVersion": 1,
           "id": "2714eeb9-f4c5-4baf-9e5b-5c4158b152aa",
@@ -1632,8 +1662,8 @@
           "type": "n8n-nodes-base.aggregate",
           "typeVersion": 1,
           "position": [
-            288,
-            -496
+            256,
+            -288
           ],
           "id": "67fc9051-2080-4184-93ce-e32c2880974e",
           "name": "Extract parent sku list",
@@ -1646,8 +1676,8 @@
           "type": "n8n-nodes-base.splitInBatches",
           "typeVersion": 3,
           "position": [
-            976,
-            -512
+            944,
+            -304
           ],
           "id": "83aaafaa-9501-47ee-8835-1645bd351575",
           "name": "Loop Over Items"
@@ -2125,8 +2155,8 @@
           },
           "type": "n8n-nodes-base.stickyNote",
           "position": [
-            -448,
-            -672
+            -480,
+            -464
           ],
           "typeVersion": 1,
           "id": "a8f9ffbb-e20c-4ddf-92f8-534d6f99c5db",
@@ -2471,18 +2501,40 @@
               }
             ]
           ]
+        },
+        "Set status to error": {
+          "main": [
+            [
+              {
+                "node": "Loop Over Items",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Update channel status": {
+          "main": [
+            [
+              {
+                "node": "Loop Over Items",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version 5a99304a",
-      "description": "",
+      "name": "Version 33f0ede2",
+      "description": "Added loop back to batch",
       "autosaved": true,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-24T12:53:41.836Z",
-          "id": 113,
+          "createdAt": "2026-02-24T14:06:06.826Z",
+          "id": 116,
           "workflowId": "LSZg2c68IA6JCKYc",
-          "versionId": "5a99304a-5d0c-46bb-b627-66386cd5f198",
+          "versionId": "33f0ede2-838f-49cb-ab48-b18c54a8198b",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
