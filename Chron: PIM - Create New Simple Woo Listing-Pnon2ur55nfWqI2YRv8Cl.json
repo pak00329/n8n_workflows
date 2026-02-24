@@ -1,0 +1,1696 @@
+[
+  {
+    "updatedAt": "2026-02-24T12:52:41.724Z",
+    "createdAt": "2026-02-22T08:46:16.339Z",
+    "id": "Pnon2ur55nfWqI2YRv8Cl",
+    "name": "Chron: PIM - Create New Simple Woo Listing",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {}
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          0,
+          16
+        ],
+        "id": "36e3f5b5-1643-4e53-ac5b-8434d0512471",
+        "name": "Schedule Trigger"
+      },
+      {
+        "parameters": {
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "where",
+                "value": "channel='woo' AND external_id IS NULL AND enabled=true AND (sync_status IS NULL OR sync_status='pending')"
+              },
+              {
+                "name": "pageSize",
+                "value": "50"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          224,
+          16
+        ],
+        "id": "1969e646-dde5-4988-8105-61a0a1282736",
+        "name": "Get pending Woo listings"
+      },
+      {
+        "parameters": {
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "where",
+                "value": "=sku={{ $json.sku }} AND automation_enabled=true AND zoho_item_id IS NOT NULL AND sellable=true AND active=true AND  product_type IN ('simple', 'bundle')"
+              },
+              {
+                "name": "pageSize",
+                "value": "50"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          448,
+          16
+        ],
+        "id": "0bbc8023-2158-4b7e-bce8-b58bf743aa99",
+        "name": "Get product from PIM"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "5ef10b61-6e4b-4bb0-a307-258967848f47",
+                "leftValue": "={{ $json.isNotEmpty()}}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1104,
+          16
+        ],
+        "id": "bd07767d-0b13-4ce5-b784-1fa9af904a66",
+        "name": "SKU already exists"
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "pageSize",
+                "value": "50"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "objectId",
+                "value": "={{ $('Get pending Woo listings').item.json.objectId }}"
+              },
+              {
+                "name": "sync_status",
+                "value": "synced"
+              },
+              {
+                "name": "external_id",
+                "value": "={{ $('Check for existing').item.json.id }}"
+              },
+              {
+                "name": "last_synced_at",
+                "value": "={{ Date.now() }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1328,
+          -128
+        ],
+        "id": "61656189-cdd1-4dff-8970-fd86ec51f58a",
+        "name": "Update PIM Channel listing"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.security-store.co.za/wp-json/wc/v3/products",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "wooCommerceApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"sku\": \"{{ $('Get product from PIM').item.json.sku }}\",\n  \"name\": {{ JSON.stringify($('Get product from PIM').item.json.enriched_title) }},\n  \"ean_code\": {{ $('Get product from PIM').item.json.barcode_ean }},\n  \"type\": \"simple\",\n  \"regular_price\": \"{{ $('Get product from PIM').item.json.default_regular_price }}\",\n  \"description\": {{ JSON.stringify($('Get product from PIM').item.json.description) }},\n  \"short_description\": {{ JSON.stringify($('Get product from PIM').item.json.short_description) }},\n  \"categories\": {{ JSON.stringify($json.attributes[0].categories) }},\n  \"images\": {{ JSON.stringify($json.attributes[1].images) }},\n  \"weight\": \"{{ $('Get product from PIM').item.json.weight_kg }}\",\n  \"dimensions\": {\n      \"length\": \"{{ $('Get product from PIM').item.json.length_cm }}\",\n      \"width\": \"{{ $('Get product from PIM').item.json.width_cm }}\",\n      \"height\": \"{{ $('Get product from PIM').item.json.height_cm }}\"\n    },\n  \"status\": \"publish\"\n  \"meta_data\": [\n    {\n      \"key\": \"zoho_item_id\",\n      \"value\": \"{{ $('Get product from PIM').item.json.zoho_item_id }}\"\n    }\n  ]\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2800,
+          112
+        ],
+        "id": "8b3f93d4-4e1f-4150-b89f-e1bed57c4fb5",
+        "name": "Create new listing",
+        "alwaysOutputData": true,
+        "credentials": {
+          "wooCommerceApi": {
+            "id": "yIQIxIOCI9PZFZbx",
+            "name": "Woo-Security-Store"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_product_images",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "where",
+                "value": "=sku={{ $('Get product from PIM').item.json.sku }} AND active=true"
+              },
+              {
+                "name": "pageSize",
+                "value": "50"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1344,
+          416
+        ],
+        "id": "94af9961-9390-4bb7-a915-324f0ac358ba",
+        "name": "Get product images"
+      },
+      {
+        "parameters": {
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_product_categories",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "where",
+                "value": "=sku={{ $('Get product from PIM').item.json.sku }}"
+              },
+              {
+                "name": "pageSize",
+                "value": "50"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1536,
+          256
+        ],
+        "id": "e1bb8d6f-1fc7-4de1-ac27-14bcbe573532",
+        "name": "Get product categories"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          2352,
+          112
+        ],
+        "id": "8d5a01b5-f967-49bc-9add-3e9f44a84f02",
+        "name": "Merge"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "de04a1b8-0ca2-4829-bf21-9bd592580195",
+                "name": "src",
+                "value": "=https://res.cloudinary.com/dqxovx4bf/image/upload/v1771745494/{{ $json.public_id }}.jpg",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1840,
+          416
+        ],
+        "id": "68952b99-2eed-4c9d-837b-cd766e3b791e",
+        "name": "add URL"
+      },
+      {
+        "parameters": {
+          "aggregate": "aggregateAllItemData",
+          "destinationFieldName": "images",
+          "include": "specifiedFields",
+          "fieldsToInclude": "src",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.aggregate",
+        "typeVersion": 1,
+        "position": [
+          2096,
+          416
+        ],
+        "id": "5618b874-3a17-408a-8959-ffbaf4f54907",
+        "name": "Aggregate image list"
+      },
+      {
+        "parameters": {
+          "aggregate": "aggregateAllItemData",
+          "destinationFieldName": "categories",
+          "include": "specifiedFields",
+          "fieldsToInclude": "id",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.aggregate",
+        "typeVersion": 1,
+        "position": [
+          2000,
+          144
+        ],
+        "id": "8ddd78ae-d1e7-445b-bae0-c2a01e3509ec",
+        "name": "Collapse categories list"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/?sku={{ $json.sku }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "wooCommerceApi",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          880,
+          16
+        ],
+        "id": "5beef411-2c45-402f-a05a-81832dd9a914",
+        "name": "Check for existing",
+        "alwaysOutputData": true,
+        "credentials": {
+          "wooCommerceApi": {
+            "id": "yIQIxIOCI9PZFZbx",
+            "name": "Woo-Security-Store"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "cca406da-b80a-4dcd-85f3-cd56e53444e7",
+                "name": "default_regular_price",
+                "value": "={{  $if($('Get pending Woo listings').item.json.price_override == null, $json.default_regular_price,$('Get pending Woo listings').item.json.price_override ) }}",
+                "type": "number"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          656,
+          16
+        ],
+        "id": "78d85493-aabb-43c4-b60e-920f816405f7",
+        "name": "Edit Fields"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/categories",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "wooCommerceApi",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "per_page",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1536,
+          48
+        ],
+        "id": "e1029a7c-511c-43e4-b33c-b41d293acaad",
+        "name": "Get Woo categories",
+        "alwaysOutputData": true,
+        "credentials": {
+          "wooCommerceApi": {
+            "id": "yIQIxIOCI9PZFZbx",
+            "name": "Woo-Security-Store"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "advanced": true,
+          "mergeByFields": {
+            "values": [
+              {
+                "field1": "slug",
+                "field2": "category"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          1792,
+          144
+        ],
+        "id": "92e0a9d0-411a-478c-a2b8-8e6b773d1433",
+        "name": "Filter Categories"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Define role priority\nconst rolePriority = {\n  main: 1,\n  gallery: 2,\n  lifestyle: 3\n};\n\n// Get all incoming items\nconst items = $input.all();\n\n// Sort items\nitems.sort((a, b) => {\n  const roleA = rolePriority[a.json.role] ?? 99;\n  const roleB = rolePriority[b.json.role] ?? 99;\n\n  // 1️⃣ Sort by role priority\n  if (roleA !== roleB) {\n    return roleA - roleB;\n  }\n\n  // 2️⃣ Sort by sort_order (if exists)\n  const sortA = a.json.sort_order ?? 9999;\n  const sortB = b.json.sort_order ?? 9999;\n\n  if (sortA !== sortB) {\n    return sortA - sortB;\n  }\n\n  // 3️⃣ Fallback to filename (numeric aware)\n  return a.json.file_name.localeCompare(\n    b.json.file_name,\n    undefined,\n    { numeric: true }\n  );\n});\n\nreturn items;"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1552,
+          416
+        ],
+        "id": "f6f27f6c-06db-4b6a-9047-c29811f0640d",
+        "name": "Sort images"
+      },
+      {
+        "parameters": {
+          "aggregate": "aggregateAllItemData",
+          "destinationFieldName": "attributes",
+          "include": "specifiedFields",
+          "fieldsToInclude": "categories,images",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.aggregate",
+        "typeVersion": 1,
+        "position": [
+          2560,
+          112
+        ],
+        "id": "ca4b7c12-e55c-4948-a868-945f9fafdb99",
+        "name": "Collapse attributes"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "0003bcae-867f-42da-9d5e-7f2382819bc6",
+                "leftValue": "={{ $json.id }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3008,
+          112
+        ],
+        "id": "e574596c-9b5d-485f-9f75-d2dda4aceda1",
+        "name": "Success?"
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {}
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "objectId",
+                "value": "={{ $('Get pending Woo listings').item.json.objectId }}"
+              },
+              {
+                "name": "external_id",
+                "value": "={{ $json.id }}"
+              },
+              {
+                "name": "sync_status",
+                "value": "synced"
+              },
+              {
+                "name": "last_synced_at",
+                "value": "={{ Date.now() }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3280,
+          16
+        ],
+        "id": "b625481c-50cf-4e2a-ace8-b507927caf22",
+        "name": "Update channel status"
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {}
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "objectId",
+                "value": "={{ $('Get pending Woo listings').item.json.objectId }}"
+              },
+              {
+                "name": "external_id",
+                "value": "={{ $json.id }}"
+              },
+              {
+                "name": "sync_status",
+                "value": "error"
+              },
+              {
+                "name": "last_synced_at",
+                "value": "={{ Date.now() }}"
+              },
+              {
+                "name": "sync_error",
+                "value": "Failed to create item"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3280,
+          224
+        ],
+        "id": "3d3d6ddb-db64-473e-b829-46c09375cd94",
+        "name": "Set status to error"
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=Pnon2ur55nfWqI2YRv8Cl) to commit change ",
+          "height": 140,
+          "width": 408,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          0,
+          -160
+        ],
+        "typeVersion": 1,
+        "id": "abb19116-27d4-4072-8bca-c478a4021529",
+        "name": "Sticky Note1"
+      }
+    ],
+    "connections": {
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "Get pending Woo listings",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get pending Woo listings": {
+        "main": [
+          [
+            {
+              "node": "Get product from PIM",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get product from PIM": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SKU already exists": {
+        "main": [
+          [
+            {
+              "node": "Update PIM Channel listing",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Get product images",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Get Woo categories",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Get product categories",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get product images": {
+        "main": [
+          [
+            {
+              "node": "Sort images",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create new listing": {
+        "main": [
+          [
+            {
+              "node": "Success?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get product categories": {
+        "main": [
+          [
+            {
+              "node": "Filter Categories",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "add URL": {
+        "main": [
+          [
+            {
+              "node": "Aggregate image list",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aggregate image list": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Collapse categories list": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "Collapse attributes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check for existing": {
+        "main": [
+          [
+            {
+              "node": "SKU already exists",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "node": "Check for existing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Woo categories": {
+        "main": [
+          [
+            {
+              "node": "Filter Categories",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter Categories": {
+        "main": [
+          [
+            {
+              "node": "Collapse categories list",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sort images": {
+        "main": [
+          [
+            {
+              "node": "add URL",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collapse attributes": {
+        "main": [
+          [
+            {
+              "node": "Create new listing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Success?": {
+        "main": [
+          [
+            {
+              "node": "Update channel status",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Set status to error",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": null,
+    "pinData": {},
+    "versionId": "c5c1f972-7976-4159-8d6c-7b76214746f4",
+    "activeVersionId": "c5c1f972-7976-4159-8d6c-7b76214746f4",
+    "versionCounter": 474,
+    "triggerCount": 1,
+    "shared": [
+      {
+        "updatedAt": "2026-02-22T08:46:16.361Z",
+        "createdAt": "2026-02-22T08:46:16.361Z",
+        "role": "workflow:owner",
+        "workflowId": "Pnon2ur55nfWqI2YRv8Cl",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-24T06:25:25.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-02-23",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [
+      {
+        "updatedAt": "2026-02-23T10:00:24.262Z",
+        "createdAt": "2026-02-23T10:00:24.262Z",
+        "id": "RGIlFgINLrb8EeMx",
+        "name": "pim"
+      }
+    ],
+    "activeVersion": {
+      "updatedAt": "2026-02-24T12:52:45.000Z",
+      "createdAt": "2026-02-24T12:52:41.726Z",
+      "versionId": "c5c1f972-7976-4159-8d6c-7b76214746f4",
+      "workflowId": "Pnon2ur55nfWqI2YRv8Cl",
+      "nodes": [
+        {
+          "parameters": {
+            "rule": {
+              "interval": [
+                {}
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "typeVersion": 1.3,
+          "position": [
+            0,
+            16
+          ],
+          "id": "36e3f5b5-1643-4e53-ac5b-8434d0512471",
+          "name": "Schedule Trigger"
+        },
+        {
+          "parameters": {
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "where",
+                  "value": "channel='woo' AND external_id IS NULL AND enabled=true AND (sync_status IS NULL OR sync_status='pending')"
+                },
+                {
+                  "name": "pageSize",
+                  "value": "50"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            224,
+            16
+          ],
+          "id": "1969e646-dde5-4988-8105-61a0a1282736",
+          "name": "Get pending Woo listings"
+        },
+        {
+          "parameters": {
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "where",
+                  "value": "=sku={{ $json.sku }} AND automation_enabled=true AND zoho_item_id IS NOT NULL AND sellable=true AND active=true AND  product_type IN ('simple', 'bundle')"
+                },
+                {
+                  "name": "pageSize",
+                  "value": "50"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            448,
+            16
+          ],
+          "id": "0bbc8023-2158-4b7e-bce8-b58bf743aa99",
+          "name": "Get product from PIM"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "5ef10b61-6e4b-4bb0-a307-258967848f47",
+                  "leftValue": "={{ $json.isNotEmpty()}}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "boolean",
+                    "operation": "true",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            1104,
+            16
+          ],
+          "id": "bd07767d-0b13-4ce5-b784-1fa9af904a66",
+          "name": "SKU already exists"
+        },
+        {
+          "parameters": {
+            "method": "PUT",
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "pageSize",
+                  "value": "50"
+                }
+              ]
+            },
+            "sendBody": true,
+            "bodyParameters": {
+              "parameters": [
+                {
+                  "name": "objectId",
+                  "value": "={{ $('Get pending Woo listings').item.json.objectId }}"
+                },
+                {
+                  "name": "sync_status",
+                  "value": "synced"
+                },
+                {
+                  "name": "external_id",
+                  "value": "={{ $('Check for existing').item.json.id }}"
+                },
+                {
+                  "name": "last_synced_at",
+                  "value": "={{ Date.now() }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            1328,
+            -128
+          ],
+          "id": "61656189-cdd1-4dff-8970-fd86ec51f58a",
+          "name": "Update PIM Channel listing"
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "=https://www.security-store.co.za/wp-json/wc/v3/products",
+            "authentication": "predefinedCredentialType",
+            "nodeCredentialType": "wooCommerceApi",
+            "sendBody": true,
+            "specifyBody": "json",
+            "jsonBody": "={\n  \"sku\": \"{{ $('Get product from PIM').item.json.sku }}\",\n  \"name\": {{ JSON.stringify($('Get product from PIM').item.json.enriched_title) }},\n  \"ean_code\": {{ $('Get product from PIM').item.json.barcode_ean }},\n  \"type\": \"simple\",\n  \"regular_price\": \"{{ $('Get product from PIM').item.json.default_regular_price }}\",\n  \"description\": {{ JSON.stringify($('Get product from PIM').item.json.description) }},\n  \"short_description\": {{ JSON.stringify($('Get product from PIM').item.json.short_description) }},\n  \"categories\": {{ JSON.stringify($json.attributes[0].categories) }},\n  \"images\": {{ JSON.stringify($json.attributes[1].images) }},\n  \"weight\": \"{{ $('Get product from PIM').item.json.weight_kg }}\",\n  \"dimensions\": {\n      \"length\": \"{{ $('Get product from PIM').item.json.length_cm }}\",\n      \"width\": \"{{ $('Get product from PIM').item.json.width_cm }}\",\n      \"height\": \"{{ $('Get product from PIM').item.json.height_cm }}\"\n    },\n  \"status\": \"publish\"\n  \"meta_data\": [\n    {\n      \"key\": \"zoho_item_id\",\n      \"value\": \"{{ $('Get product from PIM').item.json.zoho_item_id }}\"\n    }\n  ]\n}",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            2800,
+            112
+          ],
+          "id": "8b3f93d4-4e1f-4150-b89f-e1bed57c4fb5",
+          "name": "Create new listing",
+          "alwaysOutputData": true,
+          "credentials": {
+            "wooCommerceApi": {
+              "id": "yIQIxIOCI9PZFZbx",
+              "name": "Woo-Security-Store"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_product_images",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "where",
+                  "value": "=sku={{ $('Get product from PIM').item.json.sku }} AND active=true"
+                },
+                {
+                  "name": "pageSize",
+                  "value": "50"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            1344,
+            416
+          ],
+          "id": "94af9961-9390-4bb7-a915-324f0ac358ba",
+          "name": "Get product images"
+        },
+        {
+          "parameters": {
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_product_categories",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "where",
+                  "value": "=sku={{ $('Get product from PIM').item.json.sku }}"
+                },
+                {
+                  "name": "pageSize",
+                  "value": "50"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            1536,
+            256
+          ],
+          "id": "e1bb8d6f-1fc7-4de1-ac27-14bcbe573532",
+          "name": "Get product categories"
+        },
+        {
+          "parameters": {},
+          "type": "n8n-nodes-base.merge",
+          "typeVersion": 3.2,
+          "position": [
+            2352,
+            112
+          ],
+          "id": "8d5a01b5-f967-49bc-9add-3e9f44a84f02",
+          "name": "Merge"
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "de04a1b8-0ca2-4829-bf21-9bd592580195",
+                  "name": "src",
+                  "value": "=https://res.cloudinary.com/dqxovx4bf/image/upload/v1771745494/{{ $json.public_id }}.jpg",
+                  "type": "string"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            1840,
+            416
+          ],
+          "id": "68952b99-2eed-4c9d-837b-cd766e3b791e",
+          "name": "add URL"
+        },
+        {
+          "parameters": {
+            "aggregate": "aggregateAllItemData",
+            "destinationFieldName": "images",
+            "include": "specifiedFields",
+            "fieldsToInclude": "src",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.aggregate",
+          "typeVersion": 1,
+          "position": [
+            2096,
+            416
+          ],
+          "id": "5618b874-3a17-408a-8959-ffbaf4f54907",
+          "name": "Aggregate image list"
+        },
+        {
+          "parameters": {
+            "aggregate": "aggregateAllItemData",
+            "destinationFieldName": "categories",
+            "include": "specifiedFields",
+            "fieldsToInclude": "id",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.aggregate",
+          "typeVersion": 1,
+          "position": [
+            2000,
+            144
+          ],
+          "id": "8ddd78ae-d1e7-445b-bae0-c2a01e3509ec",
+          "name": "Collapse categories list"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/?sku={{ $json.sku }}",
+            "authentication": "predefinedCredentialType",
+            "nodeCredentialType": "wooCommerceApi",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            880,
+            16
+          ],
+          "id": "5beef411-2c45-402f-a05a-81832dd9a914",
+          "name": "Check for existing",
+          "alwaysOutputData": true,
+          "credentials": {
+            "wooCommerceApi": {
+              "id": "yIQIxIOCI9PZFZbx",
+              "name": "Woo-Security-Store"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "cca406da-b80a-4dcd-85f3-cd56e53444e7",
+                  "name": "default_regular_price",
+                  "value": "={{  $if($('Get pending Woo listings').item.json.price_override == null, $json.default_regular_price,$('Get pending Woo listings').item.json.price_override ) }}",
+                  "type": "number"
+                }
+              ]
+            },
+            "includeOtherFields": true,
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            656,
+            16
+          ],
+          "id": "78d85493-aabb-43c4-b60e-920f816405f7",
+          "name": "Edit Fields"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/categories",
+            "authentication": "predefinedCredentialType",
+            "nodeCredentialType": "wooCommerceApi",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "per_page",
+                  "value": "100"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            1536,
+            48
+          ],
+          "id": "e1029a7c-511c-43e4-b33c-b41d293acaad",
+          "name": "Get Woo categories",
+          "alwaysOutputData": true,
+          "credentials": {
+            "wooCommerceApi": {
+              "id": "yIQIxIOCI9PZFZbx",
+              "name": "Woo-Security-Store"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "mode": "combine",
+            "advanced": true,
+            "mergeByFields": {
+              "values": [
+                {
+                  "field1": "slug",
+                  "field2": "category"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.merge",
+          "typeVersion": 3.2,
+          "position": [
+            1792,
+            144
+          ],
+          "id": "92e0a9d0-411a-478c-a2b8-8e6b773d1433",
+          "name": "Filter Categories"
+        },
+        {
+          "parameters": {
+            "jsCode": "// Define role priority\nconst rolePriority = {\n  main: 1,\n  gallery: 2,\n  lifestyle: 3\n};\n\n// Get all incoming items\nconst items = $input.all();\n\n// Sort items\nitems.sort((a, b) => {\n  const roleA = rolePriority[a.json.role] ?? 99;\n  const roleB = rolePriority[b.json.role] ?? 99;\n\n  // 1️⃣ Sort by role priority\n  if (roleA !== roleB) {\n    return roleA - roleB;\n  }\n\n  // 2️⃣ Sort by sort_order (if exists)\n  const sortA = a.json.sort_order ?? 9999;\n  const sortB = b.json.sort_order ?? 9999;\n\n  if (sortA !== sortB) {\n    return sortA - sortB;\n  }\n\n  // 3️⃣ Fallback to filename (numeric aware)\n  return a.json.file_name.localeCompare(\n    b.json.file_name,\n    undefined,\n    { numeric: true }\n  );\n});\n\nreturn items;"
+          },
+          "type": "n8n-nodes-base.code",
+          "typeVersion": 2,
+          "position": [
+            1552,
+            416
+          ],
+          "id": "f6f27f6c-06db-4b6a-9047-c29811f0640d",
+          "name": "Sort images"
+        },
+        {
+          "parameters": {
+            "aggregate": "aggregateAllItemData",
+            "destinationFieldName": "attributes",
+            "include": "specifiedFields",
+            "fieldsToInclude": "categories,images",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.aggregate",
+          "typeVersion": 1,
+          "position": [
+            2560,
+            112
+          ],
+          "id": "ca4b7c12-e55c-4948-a868-945f9fafdb99",
+          "name": "Collapse attributes"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "0003bcae-867f-42da-9d5e-7f2382819bc6",
+                  "leftValue": "={{ $json.id }}",
+                  "rightValue": 0,
+                  "operator": {
+                    "type": "number",
+                    "operation": "exists",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            3008,
+            112
+          ],
+          "id": "e574596c-9b5d-485f-9f75-d2dda4aceda1",
+          "name": "Success?"
+        },
+        {
+          "parameters": {
+            "method": "PUT",
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {}
+              ]
+            },
+            "sendBody": true,
+            "bodyParameters": {
+              "parameters": [
+                {
+                  "name": "objectId",
+                  "value": "={{ $('Get pending Woo listings').item.json.objectId }}"
+                },
+                {
+                  "name": "external_id",
+                  "value": "={{ $json.id }}"
+                },
+                {
+                  "name": "sync_status",
+                  "value": "synced"
+                },
+                {
+                  "name": "last_synced_at",
+                  "value": "={{ Date.now() }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            3280,
+            16
+          ],
+          "id": "b625481c-50cf-4e2a-ace8-b507927caf22",
+          "name": "Update channel status"
+        },
+        {
+          "parameters": {
+            "method": "PUT",
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {}
+              ]
+            },
+            "sendBody": true,
+            "bodyParameters": {
+              "parameters": [
+                {
+                  "name": "objectId",
+                  "value": "={{ $('Get pending Woo listings').item.json.objectId }}"
+                },
+                {
+                  "name": "external_id",
+                  "value": "={{ $json.id }}"
+                },
+                {
+                  "name": "sync_status",
+                  "value": "error"
+                },
+                {
+                  "name": "last_synced_at",
+                  "value": "={{ Date.now() }}"
+                },
+                {
+                  "name": "sync_error",
+                  "value": "Failed to create item"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            3280,
+            224
+          ],
+          "id": "3d3d6ddb-db64-473e-b829-46c09375cd94",
+          "name": "Set status to error"
+        },
+        {
+          "parameters": {
+            "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=Pnon2ur55nfWqI2YRv8Cl) to commit change ",
+            "height": 140,
+            "width": 408,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            0,
+            -160
+          ],
+          "typeVersion": 1,
+          "id": "abb19116-27d4-4072-8bca-c478a4021529",
+          "name": "Sticky Note1"
+        }
+      ],
+      "connections": {
+        "Schedule Trigger": {
+          "main": [
+            [
+              {
+                "node": "Get pending Woo listings",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get pending Woo listings": {
+          "main": [
+            [
+              {
+                "node": "Get product from PIM",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get product from PIM": {
+          "main": [
+            [
+              {
+                "node": "Edit Fields",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "SKU already exists": {
+          "main": [
+            [
+              {
+                "node": "Update PIM Channel listing",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Get product images",
+                "type": "main",
+                "index": 0
+              },
+              {
+                "node": "Get Woo categories",
+                "type": "main",
+                "index": 0
+              },
+              {
+                "node": "Get product categories",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get product images": {
+          "main": [
+            [
+              {
+                "node": "Sort images",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create new listing": {
+          "main": [
+            [
+              {
+                "node": "Success?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get product categories": {
+          "main": [
+            [
+              {
+                "node": "Filter Categories",
+                "type": "main",
+                "index": 1
+              }
+            ]
+          ]
+        },
+        "add URL": {
+          "main": [
+            [
+              {
+                "node": "Aggregate image list",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Aggregate image list": {
+          "main": [
+            [
+              {
+                "node": "Merge",
+                "type": "main",
+                "index": 1
+              }
+            ]
+          ]
+        },
+        "Collapse categories list": {
+          "main": [
+            [
+              {
+                "node": "Merge",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Merge": {
+          "main": [
+            [
+              {
+                "node": "Collapse attributes",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Check for existing": {
+          "main": [
+            [
+              {
+                "node": "SKU already exists",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Edit Fields": {
+          "main": [
+            [
+              {
+                "node": "Check for existing",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Woo categories": {
+          "main": [
+            [
+              {
+                "node": "Filter Categories",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Filter Categories": {
+          "main": [
+            [
+              {
+                "node": "Collapse categories list",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Sort images": {
+          "main": [
+            [
+              {
+                "node": "add URL",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Collapse attributes": {
+          "main": [
+            [
+              {
+                "node": "Create new listing",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Success?": {
+          "main": [
+            [
+              {
+                "node": "Update channel status",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Set status to error",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version c5c1f972",
+      "description": "",
+      "autosaved": true,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-24T12:52:45.228Z",
+          "id": 112,
+          "workflowId": "Pnon2ur55nfWqI2YRv8Cl",
+          "versionId": "c5c1f972-7976-4159-8d6c-7b76214746f4",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
