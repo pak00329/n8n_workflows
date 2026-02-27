@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-24T12:52:41.724Z",
+    "updatedAt": "2026-02-27T06:37:31.203Z",
     "createdAt": "2026-02-22T08:46:16.339Z",
     "id": "Pnon2ur55nfWqI2YRv8Cl",
     "name": "Chron: PIM - Create New Simple Woo Listing",
@@ -60,7 +60,7 @@
             "parameters": [
               {
                 "name": "where",
-                "value": "=sku={{ $json.sku }} AND automation_enabled=true AND zoho_item_id IS NOT NULL AND sellable=true AND active=true AND  product_type IN ('simple', 'bundle')"
+                "value": "=sku='{{ $json.sku }}' AND automation_enabled=true AND zoho_item_id IS NOT NULL AND sellable=true AND active=true AND  product_type IN ('simple', 'bundle')"
               },
               {
                 "name": "pageSize",
@@ -809,10 +809,31 @@
     },
     "staticData": null,
     "meta": null,
-    "pinData": {},
-    "versionId": "c5c1f972-7976-4159-8d6c-7b76214746f4",
-    "activeVersionId": "c5c1f972-7976-4159-8d6c-7b76214746f4",
-    "versionCounter": 474,
+    "pinData": {
+      "Schedule Trigger": [
+        {
+          "json": {
+            "timestamp": "2026-02-27T00:00:43.005+01:00",
+            "Readable date": "February 27th 2026, 12:00:43 am",
+            "Readable time": "12:00:43 am",
+            "Day of week": "Friday",
+            "Year": "2026",
+            "Month": "February",
+            "Day of month": "27",
+            "Hour": "00",
+            "Minute": "00",
+            "Second": "43",
+            "Timezone": "Europe/Amsterdam (UTC+01:00)"
+          },
+          "pairedItem": {
+            "item": 0
+          }
+        }
+      ]
+    },
+    "versionId": "57d4a29c-764a-4616-ba32-06c94f99adc2",
+    "activeVersionId": "57d4a29c-764a-4616-ba32-06c94f99adc2",
+    "versionCounter": 480,
     "triggerCount": 1,
     "shared": [
       {
@@ -837,7 +858,7 @@
               "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
               "projectId": "A2rkQg960Oa5Tvrh",
               "user": {
-                "updatedAt": "2026-02-24T06:25:25.000Z",
+                "updatedAt": "2026-02-27T06:31:26.000Z",
                 "createdAt": "2025-12-31T14:10:08.854Z",
                 "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
                 "email": "mark@tallypro.co.za",
@@ -861,7 +882,7 @@
                 },
                 "disabled": false,
                 "mfaEnabled": false,
-                "lastActiveAt": "2026-02-23",
+                "lastActiveAt": "2026-02-26",
                 "isPending": false
               }
             }
@@ -878,9 +899,9 @@
       }
     ],
     "activeVersion": {
-      "updatedAt": "2026-02-24T12:52:45.000Z",
-      "createdAt": "2026-02-24T12:52:41.726Z",
-      "versionId": "c5c1f972-7976-4159-8d6c-7b76214746f4",
+      "updatedAt": "2026-02-27T06:38:02.000Z",
+      "createdAt": "2026-02-27T06:37:31.206Z",
+      "versionId": "57d4a29c-764a-4616-ba32-06c94f99adc2",
       "workflowId": "Pnon2ur55nfWqI2YRv8Cl",
       "nodes": [
         {
@@ -935,7 +956,7 @@
               "parameters": [
                 {
                   "name": "where",
-                  "value": "=sku={{ $json.sku }} AND automation_enabled=true AND zoho_item_id IS NOT NULL AND sellable=true AND active=true AND  product_type IN ('simple', 'bundle')"
+                  "value": "=sku='{{ $json.sku }}' AND automation_enabled=true AND zoho_item_id IS NOT NULL AND sellable=true AND active=true AND  product_type IN ('simple', 'bundle')"
                 },
                 {
                   "name": "pageSize",
@@ -1678,15 +1699,15 @@
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version c5c1f972",
-      "description": "",
+      "name": "Version 57d4a29c",
+      "description": "Added quotes to sku parameter in query",
       "autosaved": true,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-24T12:52:45.228Z",
-          "id": 112,
+          "createdAt": "2026-02-27T06:38:02.796Z",
+          "id": 119,
           "workflowId": "Pnon2ur55nfWqI2YRv8Cl",
-          "versionId": "c5c1f972-7976-4159-8d6c-7b76214746f4",
+          "versionId": "57d4a29c-764a-4616-ba32-06c94f99adc2",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
