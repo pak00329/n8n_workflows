@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-28T11:35:02.584Z",
+    "updatedAt": "2026-02-28T11:47:33.578Z",
     "createdAt": "2026-02-28T11:31:45.426Z",
     "id": "KF76X1lMo6pNrzJGppQVs",
     "name": "Chron: PIM - Update Woo - Parent",
@@ -267,16 +267,16 @@
       {
         "parameters": {
           "method": "PUT",
-          "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
           "sendBody": true,
           "bodyParameters": {
             "parameters": [
               {
                 "name": "objectId",
-                "value": "={{ $('Get parent products').item.json.objectId }}"
+                "value": "={{ $('Get Channel Listing').item.json.objectId }}"
               },
               {
-                "name": "last_sync_time",
+                "name": "last_synced_at",
                 "value": "={{ Date.now() + 3000 }}"
               }
             ]
@@ -437,9 +437,9 @@
     "staticData": null,
     "meta": null,
     "pinData": {},
-    "versionId": "548f172b-e039-49b7-a2d8-b417cdd878f0",
-    "activeVersionId": "548f172b-e039-49b7-a2d8-b417cdd878f0",
-    "versionCounter": 10,
+    "versionId": "bbf8b4ba-643d-4935-a820-00e9eff7efd3",
+    "activeVersionId": "bbf8b4ba-643d-4935-a820-00e9eff7efd3",
+    "versionCounter": 20,
     "triggerCount": 1,
     "shared": [
       {
@@ -505,9 +505,9 @@
       }
     ],
     "activeVersion": {
-      "updatedAt": "2026-02-28T11:35:06.000Z",
-      "createdAt": "2026-02-28T11:35:02.585Z",
-      "versionId": "548f172b-e039-49b7-a2d8-b417cdd878f0",
+      "updatedAt": "2026-02-28T11:47:39.000Z",
+      "createdAt": "2026-02-28T11:47:33.579Z",
+      "versionId": "bbf8b4ba-643d-4935-a820-00e9eff7efd3",
       "workflowId": "KF76X1lMo6pNrzJGppQVs",
       "nodes": [
         {
@@ -769,16 +769,16 @@
         {
           "parameters": {
             "method": "PUT",
-            "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
             "sendBody": true,
             "bodyParameters": {
               "parameters": [
                 {
                   "name": "objectId",
-                  "value": "={{ $('Get parent products').item.json.objectId }}"
+                  "value": "={{ $('Get Channel Listing').item.json.objectId }}"
                 },
                 {
-                  "name": "last_sync_time",
+                  "name": "last_synced_at",
                   "value": "={{ Date.now() + 3000 }}"
                 }
               ]
@@ -932,15 +932,15 @@
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version 548f172b",
+      "name": "Version bbf8b4ba",
       "description": "",
       "autosaved": true,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-28T11:35:06.915Z",
-          "id": 125,
+          "createdAt": "2026-02-28T11:47:39.006Z",
+          "id": 127,
           "workflowId": "KF76X1lMo6pNrzJGppQVs",
-          "versionId": "548f172b-e039-49b7-a2d8-b417cdd878f0",
+          "versionId": "bbf8b4ba-643d-4935-a820-00e9eff7efd3",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
