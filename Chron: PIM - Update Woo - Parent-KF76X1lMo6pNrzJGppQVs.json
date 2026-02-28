@@ -1,0 +1,950 @@
+[
+  {
+    "updatedAt": "2026-02-28T11:35:02.584Z",
+    "createdAt": "2026-02-28T11:31:45.426Z",
+    "id": "KF76X1lMo6pNrzJGppQVs",
+    "name": "Chron: PIM - Update Woo - Parent",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "hours",
+                "hoursInterval": 8,
+                "triggerAtMinute": 37
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -16,
+          176
+        ],
+        "id": "36496012-5736-41c2-80be-72776f6cdeda",
+        "name": "Schedule Trigger"
+      },
+      {
+        "parameters": {
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "where",
+                "value": "((updated>=last_sync_time OR last_sync_time IS NULL) AND automation_enabled=true AND product_type='parent')"
+              },
+              {
+                "name": "pageSize",
+                "value": "50"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          208,
+          176
+        ],
+        "id": "c0315704-c971-4a59-add2-09694596af92",
+        "name": "Get parent products"
+      },
+      {
+        "parameters": {
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "where",
+                "value": "=sku='{{ $json.sku }}' AND channel='woo' AND enabled=true"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          432,
+          176
+        ],
+        "id": "e1030302-757b-4f57-b604-091ce90cadb7",
+        "name": "Get Channel Listing",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "c1111111-0001-4aaa-b000-000000000001",
+                "leftValue": "={{ $json.isEmpty() }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          656,
+          176
+        ],
+        "id": "20414cbb-44cc-4d64-b6c3-4c03226756da",
+        "name": "Processing required"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.external_id }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "wooCommerceApi",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          880,
+          176
+        ],
+        "id": "38584671-8f3a-4ef0-ab8b-00322ac47461",
+        "name": "Get Woo product",
+        "credentials": {
+          "wooCommerceApi": {
+            "id": "yIQIxIOCI9PZFZbx",
+            "name": "Woo-Security-Store"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "e1111111-0001-4aaa-b000-000000000001",
+                "name": "status",
+                "value": "={{ $('Get parent products').item.json.active && $('Get parent products').item.json.sellable ? 'publish' : 'draft' }}",
+                "type": "string"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1104,
+          176
+        ],
+        "id": "40051056-ec1a-4c65-9050-b44cce271040",
+        "name": "Set publish status"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "c2222222-0001-4aaa-b000-000000000001",
+                "leftValue": "={{ $('Get parent products').item.json.product_name }}",
+                "rightValue": "={{ $json.name }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              },
+              {
+                "id": "c2222222-0002-4aaa-b000-000000000002",
+                "leftValue": "={{ $('Get parent products').item.json.description }}",
+                "rightValue": "={{ $json.description }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              },
+              {
+                "id": "c2222222-0003-4aaa-b000-000000000003",
+                "leftValue": "={{ $('Get parent products').item.json.short_description }}",
+                "rightValue": "={{ $json.short_description }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              },
+              {
+                "id": "c2222222-0004-4aaa-b000-000000000004",
+                "leftValue": "={{ $json.status }}",
+                "rightValue": "={{ $('Get Woo product').item.json.status }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "or"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1328,
+          176
+        ],
+        "id": "0fd254c6-4952-466a-ba8c-66789018c7e0",
+        "name": "Need update?"
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $('Get Woo product').item.json.id }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "wooCommerceApi",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "name",
+                "value": "={{ $('Get parent products').item.json.product_name }}"
+              },
+              {
+                "name": "description",
+                "value": "={{ $('Get parent products').item.json.description }}"
+              },
+              {
+                "name": "short_description",
+                "value": "={{ $('Get parent products').item.json.short_description }}"
+              },
+              {
+                "name": "status",
+                "value": "={{ $('Set publish status').item.json.status }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1568,
+          112
+        ],
+        "id": "9fafba62-9ce8-4c6c-a00e-4f6d6cdffb53",
+        "name": "Update Woo product",
+        "credentials": {
+          "wooCommerceApi": {
+            "id": "yIQIxIOCI9PZFZbx",
+            "name": "Woo-Security-Store"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "objectId",
+                "value": "={{ $('Get parent products').item.json.objectId }}"
+              },
+              {
+                "name": "last_sync_time",
+                "value": "={{ Date.now() + 3000 }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1840,
+          352
+        ],
+        "id": "48c5d09a-41ae-427d-89a7-43e2fd939252",
+        "name": "Update last synced time"
+      },
+      {
+        "parameters": {
+          "content": "## Syncs parent/variable product content to WooCommerce\nFields: name, description, short_description, status",
+          "height": 120,
+          "width": 408,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          0,
+          0
+        ],
+        "typeVersion": 1,
+        "id": "a0e51814-ca42-488f-b98d-b482294e2c42",
+        "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=KF76X1lMo6pNrzJGppQVs) to commit change ",
+          "height": 140,
+          "width": 408,
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          0,
+          -160
+        ],
+        "typeVersion": 1,
+        "id": "8f9edfd4-c97b-4a29-9838-ba8b8c55adc6",
+        "name": "Sticky Note1"
+      }
+    ],
+    "connections": {
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "Get parent products",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get parent products": {
+        "main": [
+          [
+            {
+              "node": "Get Channel Listing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Channel Listing": {
+        "main": [
+          [
+            {
+              "node": "Processing required",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Processing required": {
+        "main": [
+          [
+            {
+              "node": "Get Woo product",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Update last synced time",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Woo product": {
+        "main": [
+          [
+            {
+              "node": "Set publish status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set publish status": {
+        "main": [
+          [
+            {
+              "node": "Need update?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Need update?": {
+        "main": [
+          [
+            {
+              "node": "Update Woo product",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Update last synced time",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Woo product": {
+        "main": [
+          [
+            {
+              "node": "Update last synced time",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": null,
+    "pinData": {},
+    "versionId": "548f172b-e039-49b7-a2d8-b417cdd878f0",
+    "activeVersionId": "548f172b-e039-49b7-a2d8-b417cdd878f0",
+    "versionCounter": 10,
+    "triggerCount": 1,
+    "shared": [
+      {
+        "updatedAt": "2026-02-28T11:31:45.452Z",
+        "createdAt": "2026-02-28T11:31:45.452Z",
+        "role": "workflow:owner",
+        "workflowId": "KF76X1lMo6pNrzJGppQVs",
+        "projectId": "A2rkQg960Oa5Tvrh",
+        "project": {
+          "updatedAt": "2025-12-31T14:13:45.374Z",
+          "createdAt": "2025-12-31T14:10:14.084Z",
+          "id": "A2rkQg960Oa5Tvrh",
+          "name": "Mark Wilson <mark@tallypro.co.za>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+          "projectRelations": [
+            {
+              "updatedAt": "2025-12-31T14:10:14.084Z",
+              "createdAt": "2025-12-31T14:10:14.084Z",
+              "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+              "projectId": "A2rkQg960Oa5Tvrh",
+              "user": {
+                "updatedAt": "2026-02-28T07:06:26.000Z",
+                "createdAt": "2025-12-31T14:10:08.854Z",
+                "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
+                "email": "mark@tallypro.co.za",
+                "firstName": "Mark",
+                "lastName": "Wilson",
+                "personalizationAnswers": {
+                  "version": "v4",
+                  "personalization_survey_submitted_at": "2025-12-31T14:14:09.155Z",
+                  "personalization_survey_n8n_version": "2.1.4",
+                  "companyType": "personal",
+                  "reportedSource": "youtube"
+                },
+                "settings": {
+                  "userActivated": true,
+                  "firstSuccessfulWorkflowId": "XYhKungDNJV46vQF",
+                  "userActivatedAt": 1767342699529,
+                  "npsSurvey": {
+                    "responded": true,
+                    "lastShownAt": 1768308412140
+                  }
+                },
+                "disabled": false,
+                "mfaEnabled": false,
+                "lastActiveAt": "2026-02-27",
+                "isPending": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tags": [
+      {
+        "updatedAt": "2026-02-23T10:00:24.262Z",
+        "createdAt": "2026-02-23T10:00:24.262Z",
+        "id": "RGIlFgINLrb8EeMx",
+        "name": "pim"
+      }
+    ],
+    "activeVersion": {
+      "updatedAt": "2026-02-28T11:35:06.000Z",
+      "createdAt": "2026-02-28T11:35:02.585Z",
+      "versionId": "548f172b-e039-49b7-a2d8-b417cdd878f0",
+      "workflowId": "KF76X1lMo6pNrzJGppQVs",
+      "nodes": [
+        {
+          "parameters": {
+            "rule": {
+              "interval": [
+                {
+                  "field": "hours",
+                  "hoursInterval": 8,
+                  "triggerAtMinute": 37
+                }
+              ]
+            }
+          },
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "typeVersion": 1.3,
+          "position": [
+            -16,
+            176
+          ],
+          "id": "36496012-5736-41c2-80be-72776f6cdeda",
+          "name": "Schedule Trigger"
+        },
+        {
+          "parameters": {
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "where",
+                  "value": "((updated>=last_sync_time OR last_sync_time IS NULL) AND automation_enabled=true AND product_type='parent')"
+                },
+                {
+                  "name": "pageSize",
+                  "value": "50"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            208,
+            176
+          ],
+          "id": "c0315704-c971-4a59-add2-09694596af92",
+          "name": "Get parent products"
+        },
+        {
+          "parameters": {
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_channel_listings",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                {
+                  "name": "where",
+                  "value": "=sku='{{ $json.sku }}' AND channel='woo' AND enabled=true"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            432,
+            176
+          ],
+          "id": "e1030302-757b-4f57-b604-091ce90cadb7",
+          "name": "Get Channel Listing",
+          "alwaysOutputData": true
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "c1111111-0001-4aaa-b000-000000000001",
+                  "leftValue": "={{ $json.isEmpty() }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "boolean",
+                    "operation": "false",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            656,
+            176
+          ],
+          "id": "20414cbb-44cc-4d64-b6c3-4c03226756da",
+          "name": "Processing required"
+        },
+        {
+          "parameters": {
+            "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.external_id }}",
+            "authentication": "predefinedCredentialType",
+            "nodeCredentialType": "wooCommerceApi",
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            880,
+            176
+          ],
+          "id": "38584671-8f3a-4ef0-ab8b-00322ac47461",
+          "name": "Get Woo product",
+          "credentials": {
+            "wooCommerceApi": {
+              "id": "yIQIxIOCI9PZFZbx",
+              "name": "Woo-Security-Store"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "assignments": {
+              "assignments": [
+                {
+                  "id": "e1111111-0001-4aaa-b000-000000000001",
+                  "name": "status",
+                  "value": "={{ $('Get parent products').item.json.active && $('Get parent products').item.json.sellable ? 'publish' : 'draft' }}",
+                  "type": "string"
+                }
+              ]
+            },
+            "includeOtherFields": true,
+            "options": {}
+          },
+          "type": "n8n-nodes-base.set",
+          "typeVersion": 3.4,
+          "position": [
+            1104,
+            176
+          ],
+          "id": "40051056-ec1a-4c65-9050-b44cce271040",
+          "name": "Set publish status"
+        },
+        {
+          "parameters": {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 3
+              },
+              "conditions": [
+                {
+                  "id": "c2222222-0001-4aaa-b000-000000000001",
+                  "leftValue": "={{ $('Get parent products').item.json.product_name }}",
+                  "rightValue": "={{ $json.name }}",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEquals"
+                  }
+                },
+                {
+                  "id": "c2222222-0002-4aaa-b000-000000000002",
+                  "leftValue": "={{ $('Get parent products').item.json.description }}",
+                  "rightValue": "={{ $json.description }}",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEquals"
+                  }
+                },
+                {
+                  "id": "c2222222-0003-4aaa-b000-000000000003",
+                  "leftValue": "={{ $('Get parent products').item.json.short_description }}",
+                  "rightValue": "={{ $json.short_description }}",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEquals"
+                  }
+                },
+                {
+                  "id": "c2222222-0004-4aaa-b000-000000000004",
+                  "leftValue": "={{ $json.status }}",
+                  "rightValue": "={{ $('Get Woo product').item.json.status }}",
+                  "operator": {
+                    "type": "string",
+                    "operation": "notEquals"
+                  }
+                }
+              ],
+              "combinator": "or"
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.if",
+          "typeVersion": 2.3,
+          "position": [
+            1328,
+            176
+          ],
+          "id": "0fd254c6-4952-466a-ba8c-66789018c7e0",
+          "name": "Need update?"
+        },
+        {
+          "parameters": {
+            "method": "PUT",
+            "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $('Get Woo product').item.json.id }}",
+            "authentication": "predefinedCredentialType",
+            "nodeCredentialType": "wooCommerceApi",
+            "sendBody": true,
+            "bodyParameters": {
+              "parameters": [
+                {
+                  "name": "name",
+                  "value": "={{ $('Get parent products').item.json.product_name }}"
+                },
+                {
+                  "name": "description",
+                  "value": "={{ $('Get parent products').item.json.description }}"
+                },
+                {
+                  "name": "short_description",
+                  "value": "={{ $('Get parent products').item.json.short_description }}"
+                },
+                {
+                  "name": "status",
+                  "value": "={{ $('Set publish status').item.json.status }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            1568,
+            112
+          ],
+          "id": "9fafba62-9ce8-4c6c-a00e-4f6d6cdffb53",
+          "name": "Update Woo product",
+          "credentials": {
+            "wooCommerceApi": {
+              "id": "yIQIxIOCI9PZFZbx",
+              "name": "Woo-Security-Store"
+            }
+          }
+        },
+        {
+          "parameters": {
+            "method": "PUT",
+            "url": "https://devoutaftermath.backendless.app/api/data/pim_products",
+            "sendBody": true,
+            "bodyParameters": {
+              "parameters": [
+                {
+                  "name": "objectId",
+                  "value": "={{ $('Get parent products').item.json.objectId }}"
+                },
+                {
+                  "name": "last_sync_time",
+                  "value": "={{ Date.now() + 3000 }}"
+                }
+              ]
+            },
+            "options": {}
+          },
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4.4,
+          "position": [
+            1840,
+            352
+          ],
+          "id": "48c5d09a-41ae-427d-89a7-43e2fd939252",
+          "name": "Update last synced time"
+        },
+        {
+          "parameters": {
+            "content": "## Syncs parent/variable product content to WooCommerce\nFields: name, description, short_description, status",
+            "height": 120,
+            "width": 408,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            0,
+            0
+          ],
+          "typeVersion": 1,
+          "id": "a0e51814-ca42-488f-b98d-b482294e2c42",
+          "name": "Sticky Note"
+        },
+        {
+          "parameters": {
+            "content": "## Click [here](https://n8n.tallypro.co.za/form/commit?id=KF76X1lMo6pNrzJGppQVs) to commit change ",
+            "height": 140,
+            "width": 408,
+            "color": 5
+          },
+          "type": "n8n-nodes-base.stickyNote",
+          "position": [
+            0,
+            -160
+          ],
+          "typeVersion": 1,
+          "id": "8f9edfd4-c97b-4a29-9838-ba8b8c55adc6",
+          "name": "Sticky Note1"
+        }
+      ],
+      "connections": {
+        "Schedule Trigger": {
+          "main": [
+            [
+              {
+                "node": "Get parent products",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get parent products": {
+          "main": [
+            [
+              {
+                "node": "Get Channel Listing",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Channel Listing": {
+          "main": [
+            [
+              {
+                "node": "Processing required",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Processing required": {
+          "main": [
+            [
+              {
+                "node": "Get Woo product",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Update last synced time",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Woo product": {
+          "main": [
+            [
+              {
+                "node": "Set publish status",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Set publish status": {
+          "main": [
+            [
+              {
+                "node": "Need update?",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Need update?": {
+          "main": [
+            [
+              {
+                "node": "Update Woo product",
+                "type": "main",
+                "index": 0
+              }
+            ],
+            [
+              {
+                "node": "Update last synced time",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Update Woo product": {
+          "main": [
+            [
+              {
+                "node": "Update last synced time",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      },
+      "authors": "Mark Wilson",
+      "name": "Version 548f172b",
+      "description": "",
+      "autosaved": true,
+      "workflowPublishHistory": [
+        {
+          "createdAt": "2026-02-28T11:35:06.915Z",
+          "id": 125,
+          "workflowId": "KF76X1lMo6pNrzJGppQVs",
+          "versionId": "548f172b-e039-49b7-a2d8-b417cdd878f0",
+          "event": "activated",
+          "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
+        }
+      ]
+    }
+  }
+]
