@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-02-22T12:17:43.635Z",
+    "updatedAt": "2026-02-28T11:16:20.353Z",
     "createdAt": "2026-02-16T10:04:20.115Z",
     "id": "_D3tsBOsrpLi8h4T7cChx",
     "name": "Chron: PIM - Update Woo",
@@ -13,7 +13,9 @@
           "rule": {
             "interval": [
               {
-                "field": "minutes"
+                "field": "hours",
+                "hoursInterval": 8,
+                "triggerAtMinute": 25
               }
             ]
           }
@@ -80,7 +82,7 @@
       },
       {
         "parameters": {
-          "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.channel_id }}",
+          "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.external_id }}",
           "authentication": "predefinedCredentialType",
           "nodeCredentialType": "wooCommerceApi",
           "options": {}
@@ -643,9 +645,9 @@
       "templateCredsSetupCompleted": true
     },
     "pinData": {},
-    "versionId": "a961d2e7-8e8c-4e2b-adbb-01a1ef6c7b2b",
-    "activeVersionId": "a961d2e7-8e8c-4e2b-adbb-01a1ef6c7b2b",
-    "versionCounter": 355,
+    "versionId": "2130a67c-bc5e-429d-ad53-baadc02fd266",
+    "activeVersionId": "2130a67c-bc5e-429d-ad53-baadc02fd266",
+    "versionCounter": 368,
     "triggerCount": 1,
     "shared": [
       {
@@ -670,7 +672,7 @@
               "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
               "projectId": "A2rkQg960Oa5Tvrh",
               "user": {
-                "updatedAt": "2026-02-22T06:30:51.000Z",
+                "updatedAt": "2026-02-28T07:06:26.000Z",
                 "createdAt": "2025-12-31T14:10:08.854Z",
                 "id": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89",
                 "email": "mark@tallypro.co.za",
@@ -694,7 +696,7 @@
                 },
                 "disabled": false,
                 "mfaEnabled": false,
-                "lastActiveAt": "2026-02-21",
+                "lastActiveAt": "2026-02-27",
                 "isPending": false
               }
             }
@@ -702,11 +704,18 @@
         }
       }
     ],
-    "tags": [],
+    "tags": [
+      {
+        "updatedAt": "2026-02-23T10:00:24.262Z",
+        "createdAt": "2026-02-23T10:00:24.262Z",
+        "id": "RGIlFgINLrb8EeMx",
+        "name": "pim"
+      }
+    ],
     "activeVersion": {
-      "updatedAt": "2026-02-22T12:17:48.000Z",
-      "createdAt": "2026-02-22T12:17:43.636Z",
-      "versionId": "a961d2e7-8e8c-4e2b-adbb-01a1ef6c7b2b",
+      "updatedAt": "2026-02-28T11:17:46.000Z",
+      "createdAt": "2026-02-28T11:16:20.354Z",
+      "versionId": "2130a67c-bc5e-429d-ad53-baadc02fd266",
       "workflowId": "_D3tsBOsrpLi8h4T7cChx",
       "nodes": [
         {
@@ -714,7 +723,9 @@
             "rule": {
               "interval": [
                 {
-                  "field": "minutes"
+                  "field": "hours",
+                  "hoursInterval": 8,
+                  "triggerAtMinute": 25
                 }
               ]
             }
@@ -781,7 +792,7 @@
         },
         {
           "parameters": {
-            "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.channel_id }}",
+            "url": "=https://www.security-store.co.za/wp-json/wc/v3/products/{{ $json.external_id }}",
             "authentication": "predefinedCredentialType",
             "nodeCredentialType": "wooCommerceApi",
             "options": {}
@@ -1335,15 +1346,15 @@
         }
       },
       "authors": "Mark Wilson",
-      "name": "Version a961d2e7",
+      "name": "Version 2130a67c",
       "description": "",
       "autosaved": true,
       "workflowPublishHistory": [
         {
-          "createdAt": "2026-02-22T12:17:48.250Z",
-          "id": 102,
+          "createdAt": "2026-02-28T11:17:46.508Z",
+          "id": 121,
           "workflowId": "_D3tsBOsrpLi8h4T7cChx",
-          "versionId": "a961d2e7-8e8c-4e2b-adbb-01a1ef6c7b2b",
+          "versionId": "2130a67c-bc5e-429d-ad53-baadc02fd266",
           "event": "activated",
           "userId": "cb6b4be4-4f57-4999-b61c-7cb9ecfa4a89"
         }
